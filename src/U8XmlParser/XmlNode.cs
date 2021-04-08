@@ -46,5 +46,17 @@ namespace U8Xml
         {
             return Name.ToString();
         }
+
+
+        internal static void AddChild(XmlNode* parent, XmlNode* child)
+        {
+            if(parent->HasChildren) {
+                Unsafe.AsRef(((XmlNode*)parent->LastChild)->Sibling) = (IntPtr)child;
+            }
+            else {
+                Unsafe.AsRef(parent->FirstChild) = (IntPtr)child;
+            }
+            Unsafe.AsRef(parent->LastChild) = (IntPtr)child;
+        }
     }
 }

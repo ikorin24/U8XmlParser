@@ -7,7 +7,7 @@ namespace U8Xml
 {
     /// <summary>Attribute of node in xml</summary>
     [DebuggerDisplay("{ToString(),nq}")]
-    public unsafe struct XmlAttribute : IEquatable<XmlAttribute>
+    public unsafe readonly struct XmlAttribute : IEquatable<XmlAttribute>
     {
         /// <summary>Attribute name</summary>
         public readonly RawString Name;

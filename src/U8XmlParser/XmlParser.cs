@@ -131,12 +131,18 @@ namespace U8Xml
                     var node = nodes.Add(new XmlNode(GetNodeName(data, ref i), attrs));
                     while(true) {
                         if(data.At(i) == '>') {
+                            if(nodeStack.Count > 0) {
+                                XmlNode.AddChild(nodeStack.Peek(), node);
+                            }
                             nodeStack.Push(node);
                             i++;
                             if(i >= data.Length) { throw NewFormatException(); }
                             goto None;
                         }
                         else if((i + 1 < data.Length) && data.At(i) == '/' && data.At(i + 1) == '>') {
+                            if(nodeStack.Count > 0) {
+                                XmlNode.AddChild(nodeStack.Peek(), node);
+                            }
                             i += 2;
                             goto None;
                         }

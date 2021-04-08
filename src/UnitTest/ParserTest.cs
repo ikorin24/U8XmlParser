@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using Xunit;
 using StringLiteral;
 using U8Xml;
@@ -11,10 +12,9 @@ namespace UnitTest
     {
         [Utf8(
 @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<Ç†Ç¢Ç§Ç¶Ç®>
-    <Ç©Ç´Ç≠ÇØÇ±/>
-</Ç†Ç¢Ç§Ç¶Ç®>
-")]
+<„ÅÇ„ÅÑ„ÅÜ„Åà„Åä>
+    <„Åã„Åç„Åè„Åë„Åì/>
+</„ÅÇ„ÅÑ„ÅÜ„Åà„Åä>")]
         private static partial ReadOnlySpan<byte> Xml1();
 
         [Fact]
@@ -22,6 +22,10 @@ namespace UnitTest
         {
             using(var obj = XmlParser.Parse(Xml1())) {
                 Assert.NotNull(obj);
+                ref readonly var root = ref obj.Root;
+                Assert.True(root.Name == "„ÅÇ„ÅÑ„ÅÜ„Åà„Åä");
+                Assert.True(root.HasChildren);
+                Assert.True(root.Children.First().Name == "„Åã„Åç„Åè„Åë„Åì");
             }
             AllocationSafety.Ensure();
         }

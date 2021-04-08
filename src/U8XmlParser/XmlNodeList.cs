@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace U8Xml
 {
@@ -41,6 +42,7 @@ namespace U8Xml
 
             public void Dispose() { }   // nop
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
             {
                 if(_next == IntPtr.Zero) { return false; }
