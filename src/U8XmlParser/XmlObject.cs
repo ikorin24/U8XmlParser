@@ -3,19 +3,21 @@ using System;
 using System.Threading;
 using U8Xml.Internal;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace U8Xml
 {
-    public sealed class XmlObject : IDisposable
+    public unsafe sealed class XmlObject : IDisposable
     {
         private IntPtr _rawByteData;
         private int _byteLength;
         private int _offset;        // 0 or 3 (3 is UTF-8 BOM)
         private CustomList<XmlNode> _nodes;
         private CustomList<XmlAttribute> _attributes;
-        private AllNodesList? _allNodes;
 
         public bool IsDisposed => _rawByteData == IntPtr.Zero;
+
+        public ref readonly XmlNode Root => ref Unsafe.AsRef<XmlNode>(_nodes.FirstItem);
 
         public unsafe XmlNodeList Children => _nodes.IsDisposed ? XmlNodeList.Empty : new XmlNodeList((IntPtr)_nodes.FirstItem);
 
@@ -42,12 +44,6 @@ namespace U8Xml
             }
         }
 
-        public AllNodesList AllNodes() => _allNodes ??= new AllNodesList(_nodes);
-
-        public unsafe RawString AsRawString()
-        {
-            if (IsDisposed) { ThrowHelper.ThrowDisposed(nameof(XmlObject)); }
-            return new RawString((byte*)_rawByteData + _offset, _byteLength - _offset);
-        }
+        public RawString AsRawString() => new RawString((byte*)_rawByteData + _offset, _byteLength - _offset);
     }
 }

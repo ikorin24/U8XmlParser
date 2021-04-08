@@ -9,7 +9,6 @@ using System.Buffers;
 
 using System;
 using System.IO;
-using System.Linq;
 
 namespace U8Xml.Internal
 {
