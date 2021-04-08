@@ -10,31 +10,35 @@ using System.Buffers;
 using System;
 using System.IO;
 using System.Linq;
-using UnmanageUtility;
 
 namespace U8Xml.Internal
 {
     internal static class StreamExtension
     {
-        public static unsafe (UnmanagedList<byte> data, RawString rawString) ReadAllToUnmanaged(this Stream stream, long fileSizeHint)
+        public static unsafe (UnmanagedBuffer buffer, int length) ReadAllToUnmanaged(this Stream stream, int fileSizeHint)
         {
-            int capacity = (int)Math.Min(int.MaxValue, Math.Max(0, fileSizeHint));       // 0 <= capacity <= int.MaxValue
+            int capacity = Math.Min(int.MaxValue, Math.Max(0, fileSizeHint));       // 0 <= capacity <= int.MaxValue
 
 #if STREAM_SPAN_API
-            var buf = new UnmanagedList<byte>(capacity);
+            var buf = new UnmanagedBuffer(capacity);
+            var length = 0;
             try
             {
-                var length = 0;
                 while (true)
                 {
-                    var readlen = stream.Read(buf.Extend(4096, false));
+                    const int LengthToRead = 4096;
+                    if(buf.Length < length + LengthToRead)
+                    {
+                        var tmp = new UnmanagedBuffer(checked(length + LengthToRead));
+                        buf.AsSpan(0, length).CopyTo(tmp.AsSpan());
+                        buf.Dispose();
+                        buf = tmp;
+                    }
+                    var readlen = stream.Read(buf.AsSpan(length));
                     length += readlen;
                     if (readlen == 0) { break; }
                 }
-                // Remove utf-8 bom
-                var offset = buf.AsSpan(0, 3).SequenceEqual(XmlParser.Utf8BOM) ? 3 : 0;
-                var rawString = new RawString((byte*)buf.Ptr + offset, length - offset);
-                return (buf, rawString);
+                return (buf, length);
             }
             catch
             {
@@ -42,21 +46,23 @@ namespace U8Xml.Internal
                 throw;
             }
 #else
-            int bufSize = (int)Math.Min(fileSizeHint, 1024 * 1024);     // 1024 * 1024 is max length of pooled array
+            const int LengthToRead = 4096;
+            int bufSize = Math.Min(fileSizeHint, LengthToRead);
             var rentArray = ArrayPool<byte>.Shared.Rent(bufSize);
-            var buf = new UnmanagedList<byte>(0);
+            var buf = new UnmanagedBuffer(fileSizeHint);
             try
             {
                 while (true)
                 {
                     var readlen = stream!.Read(rentArray, 0, rentArray.Length);
                     if (readlen == 0) { break; }
-                    buf.AddRange(rentArray.AsSpan(0, readlen));
+                    var tmp = new UnmanagedBuffer(checked(buf.Length + readlen));
+                    buf.AsSpan().CopyTo(tmp.AsSpan());
+                    rentArray.CopyTo(tmp.AsSpan(buf.Length));
+                    buf.Dispose();
+                    buf = tmp;
                 }
-                // Remove utf-8 bom
-                var offset = buf.AsSpan(0, 3).SequenceEqual(XmlParser.Utf8BOM) ? 3 : 0;
-                var rawString = new RawString((byte*)buf.Ptr + offset, buf.Count - offset);
-                return (buf, rawString);
+                return (buf, buf.Length);
             }
             catch
             {

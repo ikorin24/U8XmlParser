@@ -3,7 +3,6 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using UnmanageUtility;
 using U8Xml.Internal;
 
 namespace U8Xml
@@ -19,11 +18,16 @@ namespace U8Xml
         /// <returns>xml object</returns>
         public static XmlObject Parse(ReadOnlySpan<byte> utf8String)
         {
-            var buf = utf8String.ToUnmanagedList();
-            // Remove utf-8 bom
-            var offset = buf.AsSpan(0, 3).SequenceEqual(Utf8BOM) ? 3 : 0;
-            var rawString = new RawString((byte*)buf.Ptr + offset, buf.Count - offset);
-            return ParseCore(buf, rawString);
+            var buf = new UnmanagedBuffer(utf8String);
+            try
+            {
+                return ParseCore(ref buf, utf8String.Length);
+            }
+            catch
+            {
+                buf.Dispose();
+                throw;
+            }
         }
 
         /// <summary>Parse xml file encoded as UTF8.</summary>
@@ -31,7 +35,7 @@ namespace U8Xml
         /// <returns>xml object</returns>
         public static XmlObject Parse(Stream stream)
         {
-            var fileSizeHint = stream.CanSeek ? stream.Length : 1024 * 1024;
+            var fileSizeHint = stream.CanSeek ? (int)stream.Length : 1024 * 1024;
             return Parse(stream, fileSizeHint);
         }
 
@@ -39,26 +43,37 @@ namespace U8Xml
         /// <param name="stream">stream to read</param>
         /// <param name="fileSizeHint">file size hint which is used for optimizing memory</param>
         /// <returns>xml object</returns>
-        public static XmlObject Parse(Stream stream, long fileSizeHint)
+        public static XmlObject Parse(Stream stream, int fileSizeHint)
         {
             if (stream is null) { ThrowHelper.ThrowNullArg(nameof(stream)); }
-            var (buf, rawString) = stream!.ReadAllToUnmanaged(fileSizeHint);
-            return ParseCore(buf, rawString);
+            var (buf, length) = stream!.ReadAllToUnmanaged(fileSizeHint);
+            try
+            {
+                return ParseCore(ref buf, length);
+            }
+            catch
+            {
+                buf.Dispose();
+                throw;
+            }
         }
 
-        private static XmlObject ParseCore(UnmanagedList<byte> buf, RawString rawString)
+        private static XmlObject ParseCore(ref UnmanagedBuffer buf, int length)
         {
+            // Remove utf-8 bom
+            var offset = buf.AsSpan(0, 3).SequenceEqual(Utf8BOM) ? 3 : 0;
+            var rawString = new RawString((byte*)buf.Ptr + offset, length - offset);
+
             var nodes = CustomList<XmlNode>.Create();
             var attrs = CustomList<XmlAttribute>.Create();
             try
             {
                 StartStateMachine(rawString, nodes, attrs);
                 AllocationSafety.Ensure();
-                return new XmlObject(buf, nodes, attrs);
+                return new XmlObject(ref buf, offset, nodes, attrs);
             }
             catch
             {
-                buf.Dispose();
                 nodes.Dispose();
                 attrs.Dispose();
                 throw;
