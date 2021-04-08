@@ -64,7 +64,6 @@ namespace U8Xml
             var attrs = CustomList<XmlAttribute>.Create();
             try {
                 StartStateMachine(rawString, nodes, attrs);
-                AllocationSafety.Ensure();
                 return new XmlObject(ref buf, offset, nodes, attrs);
             }
             catch {
