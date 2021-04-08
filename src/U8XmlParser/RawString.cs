@@ -33,7 +33,7 @@ namespace U8Xml
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                if ((uint)index >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(index)); }
+                if((uint)index >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(index)); }
                 return ref ((byte*)_ptr)[index];
             }
         }
@@ -55,7 +55,7 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString Slice(int start)
         {
-            if ((uint)start >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
+            if((uint)start >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
             return new RawString((byte*)_ptr + start, _length - start);
         }
 
@@ -66,8 +66,8 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString Slice(int start, int length)
         {
-            if ((uint)start >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
-            if ((uint)length > (uint)(_length - start)) { ThrowHelper.ThrowArgOutOfRange(nameof(length)); }
+            if((uint)start >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
+            if((uint)length > (uint)(_length - start)) { ThrowHelper.ThrowArgOutOfRange(nameof(length)); }
             return new RawString((byte*)_ptr + start, length);
         }
 
@@ -75,11 +75,9 @@ namespace U8Xml
         /// <returns>trimmed string</returns>
         public RawString TrimEnd()
         {
-            for (int i = Length - 1; i >= 0; i--)
-            {
+            for(int i = Length - 1; i >= 0; i--) {
                 ref var p = ref ((byte*)_ptr)[i];
-                if (p != ' ' && p != '\t' && p != '\r' && p != '\n')
-                {
+                if(p != ' ' && p != '\t' && p != '\r' && p != '\n') {
                     return SliceUnsafe(0, i + 1);
                 }
             }
@@ -95,7 +93,7 @@ namespace U8Xml
         {
             // This method is same as this[index], but no boundary check.
 #if DEBUG
-            if ((uint)index >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(index)); }
+            if((uint)index >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(index)); }
 #endif
             return ref ((byte*)_ptr)[index];
         }
@@ -109,8 +107,8 @@ namespace U8Xml
         internal RawString SliceUnsafe(int start, int length)
         {
 #if DEBUG
-            if ((uint)start >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
-            if ((uint)length > (uint)(_length - start)) { ThrowHelper.ThrowArgOutOfRange(nameof(length)); }
+            if((uint)start >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
+            if((uint)length > (uint)(_length - start)) { ThrowHelper.ThrowArgOutOfRange(nameof(length)); }
 #endif
             return new RawString((byte*)_ptr + start, length);
         }

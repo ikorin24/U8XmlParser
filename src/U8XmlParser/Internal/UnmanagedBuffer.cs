@@ -18,8 +18,7 @@ namespace U8Xml.Internal
 
         public UnmanagedBuffer(int length)
         {
-            if(length == 0)
-            {
+            if(length == 0) {
                 this = default;
                 return;
             }
@@ -30,8 +29,7 @@ namespace U8Xml.Internal
 
         public UnmanagedBuffer(ReadOnlySpan<byte> source)
         {
-            if (source.IsEmpty)
-            {
+            if(source.IsEmpty) {
                 this = default;
                 return;
             }

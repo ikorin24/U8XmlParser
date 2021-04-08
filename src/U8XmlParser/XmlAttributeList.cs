@@ -24,10 +24,8 @@ namespace U8Xml
         {
             get
             {
-                for (int i = 0; i < Count; i++)
-                {
-                    if (((XmlAttribute*)_ptr)->Name.AsSpan().SequenceEqual(name))
-                    {
+                for(int i = 0; i < Count; i++) {
+                    if(((XmlAttribute*)_ptr)->Name.AsSpan().SequenceEqual(name)) {
                         return ref Unsafe.AsRef<XmlAttribute>((XmlAttribute*)_ptr);
                     }
                 }
@@ -44,7 +42,7 @@ namespace U8Xml
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                if ((uint)index >= (uint)Count) { ThrowHelper.ThrowArgOutOfRange(nameof(index)); }
+                if((uint)index >= (uint)Count) { ThrowHelper.ThrowArgOutOfRange(nameof(index)); }
                 return ref ((XmlAttribute*)_ptr)[index];
             }
         }

@@ -43,7 +43,7 @@ namespace U8Xml
 
             public bool MoveNext()
             {
-                if (_next == IntPtr.Zero) { return false; }
+                if(_next == IntPtr.Zero) { return false; }
                 _current = _next;
                 _next = ((XmlNode*)_next)->Sibling;
                 return true;

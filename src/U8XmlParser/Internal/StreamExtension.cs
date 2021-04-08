@@ -21,13 +21,10 @@ namespace U8Xml.Internal
 #if STREAM_SPAN_API
             var buf = new UnmanagedBuffer(capacity);
             var length = 0;
-            try
-            {
-                while (true)
-                {
+            try {
+                while(true) {
                     const int LengthToRead = 4096;
-                    if(buf.Length < length + LengthToRead)
-                    {
+                    if(buf.Length < length + LengthToRead) {
                         var tmp = new UnmanagedBuffer(checked(length + LengthToRead));
                         buf.AsSpan(0, length).CopyTo(tmp.AsSpan());
                         buf.Dispose();
@@ -35,12 +32,11 @@ namespace U8Xml.Internal
                     }
                     var readlen = stream.Read(buf.AsSpan(length));
                     length += readlen;
-                    if (readlen == 0) { break; }
+                    if(readlen == 0) { break; }
                 }
                 return (buf, length);
             }
-            catch
-            {
+            catch {
                 buf.Dispose();
                 throw;
             }
@@ -49,12 +45,10 @@ namespace U8Xml.Internal
             int bufSize = Math.Min(fileSizeHint, LengthToRead);
             var rentArray = ArrayPool<byte>.Shared.Rent(bufSize);
             var buf = new UnmanagedBuffer(fileSizeHint);
-            try
-            {
-                while (true)
-                {
+            try {
+                while(true) {
                     var readlen = stream!.Read(rentArray, 0, rentArray.Length);
-                    if (readlen == 0) { break; }
+                    if(readlen == 0) { break; }
                     var tmp = new UnmanagedBuffer(checked(buf.Length + readlen));
                     buf.AsSpan().CopyTo(tmp.AsSpan());
                     rentArray.CopyTo(tmp.AsSpan(buf.Length));
@@ -63,13 +57,11 @@ namespace U8Xml.Internal
                 }
                 return (buf, buf.Length);
             }
-            catch
-            {
+            catch {
                 buf.Dispose();
                 throw;
             }
-            finally
-            {
+            finally {
                 ArrayPool<byte>.Shared.Return(rentArray);
             }
 #endif

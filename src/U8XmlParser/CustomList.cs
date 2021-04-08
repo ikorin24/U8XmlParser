@@ -65,8 +65,7 @@ namespace U8Xml.Internal
         static CustomList()
         {
             _lineCapacity = new int[ListInfo.BucketCount];
-            for (int i = 0; i < _lineCapacity.Length; i++)
-            {
+            for(int i = 0; i < _lineCapacity.Length; i++) {
                 _lineCapacity[i] = (1 << (i + 4));
             }
         }
@@ -81,8 +80,7 @@ namespace U8Xml.Internal
             var listInfo = (ListInfo*)Marshal.AllocHGlobal(ListInfo.GetSizeToAllocate());
             listInfo->CurrentLineNum = -1;
             listInfo->Count = 0;
-            for (int i = 0; i < ListInfo.BucketCount; i++)
-            {
+            for(int i = 0; i < ListInfo.BucketCount; i++) {
                 (&listInfo->L0)[i] = null;      // must be null
             }
             NewLine(listInfo);
@@ -93,10 +91,9 @@ namespace U8Xml.Internal
         public T* Add(T item)
         {
             Debug.Assert(Info != null);     // I don't check it because CustomList<T> is internal.
-            if (Info->Count >= ListInfo.MaxItemCount) { ThrowHelper.ThrowInvalidOperation("Can not add any more."); }
+            if(Info->Count >= ListInfo.MaxItemCount) { ThrowHelper.ThrowInvalidOperation("Can not add any more."); }
             var currentLine = Info->CurrentLine;
-            if (currentLine->Count == currentLine->Capacity)
-            {
+            if(currentLine->Count == currentLine->Capacity) {
                 currentLine = NewLine(Info);
             }
             var addr = &currentLine->FirstItem + currentLine->Count;
@@ -108,8 +105,7 @@ namespace U8Xml.Internal
 
         public void Dispose()
         {
-            for (int i = 0; i < ListInfo.BucketCount; i++)
-            {
+            for(int i = 0; i < ListInfo.BucketCount; i++) {
                 Marshal.FreeHGlobal((IntPtr)((&Info->L0)[i]));
             }
             Marshal.FreeHGlobal((IntPtr)Info);
@@ -201,10 +197,9 @@ namespace U8Xml.Internal
 
         public bool MoveNext()
         {
-            if (_i >= _count) { return false; }
+            if(_i >= _count) { return false; }
             _pos = _i - _offset;
-            if (_pos >= _line->Capacity)
-            {
+            if(_pos >= _line->Capacity) {
                 NextLine();
             }
             _i++;
@@ -262,10 +257,9 @@ namespace U8Xml.Internal
 
         public bool MoveNext()
         {
-            if (_i >= _count) { return false; }
+            if(_i >= _count) { return false; }
             _pos = _i - _offset;
-            if (_pos >= _line->Capacity)
-            {
+            if(_pos >= _line->Capacity) {
                 NextLine();
             }
             _i++;

@@ -30,8 +30,7 @@ namespace U8Xml.Internal
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Push(XmlNode* value)
         {
-            if (_capacity == _count)
-            {
+            if(_capacity == _count) {
                 GrowUp();
             }
             Debug.Assert(_capacity > _count);
@@ -42,7 +41,7 @@ namespace U8Xml.Internal
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode* Pop()
         {
-            if (_count == 0) { ThrowHelper.ThrowInvalidOperation("Stack has no items."); }
+            if(_count == 0) { ThrowHelper.ThrowInvalidOperation("Stack has no items."); }
             _count--;
             return _ptr[_count];
         }
@@ -50,7 +49,7 @@ namespace U8Xml.Internal
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode* Peek()
         {
-            if (_count == 0) { ThrowHelper.ThrowInvalidOperation("Stack has no items."); }
+            if(_count == 0) { ThrowHelper.ThrowInvalidOperation("Stack has no items."); }
             return _ptr[_count - 1];
         }
 
@@ -69,16 +68,14 @@ namespace U8Xml.Internal
             var newCapacity = Math.Max(4, _capacity * 2);
             var ptr = (XmlNode**)Marshal.AllocHGlobal(newCapacity * sizeof(XmlNode*));
             AllocationSafety.Add(newCapacity * sizeof(XmlNode*));
-            try
-            {
+            try {
                 SpanHelper.CreateSpan<IntPtr>(_ptr, _count).CopyTo(SpanHelper.CreateSpan<IntPtr>(ptr, newCapacity));
                 Marshal.FreeHGlobal((IntPtr)_ptr);
                 AllocationSafety.Remove(_capacity * sizeof(XmlNode*));
                 _ptr = ptr;
                 _capacity = newCapacity;
             }
-            catch
-            {
+            catch {
                 Marshal.FreeHGlobal((IntPtr)ptr);
                 AllocationSafety.Remove(newCapacity * sizeof(XmlNode*));
                 throw;
@@ -97,8 +94,7 @@ namespace U8Xml.Internal
                 get
                 {
                     var array = new XmlNode*[_entity.Count];
-                    for (int i = 0; i < array.Length; i++)
-                    {
+                    for(int i = 0; i < array.Length; i++) {
                         array[i] = _entity._ptr[i];
                     }
                     return array;

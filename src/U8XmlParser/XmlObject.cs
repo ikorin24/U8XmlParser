@@ -32,8 +32,7 @@ namespace U8Xml
         public void Dispose()
         {
             var data = Interlocked.Exchange(ref _rawByteData, default);
-            if (data != IntPtr.Zero)
-            {
+            if(data != IntPtr.Zero) {
                 AllocationSafety.Remove(_byteLength);
                 Marshal.FreeHGlobal(_rawByteData);
                 _rawByteData = IntPtr.Zero;
