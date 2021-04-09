@@ -12,7 +12,7 @@ namespace UnitTest
     {
         [Utf8(
 @"<?xml version=""1.0"" encoding=""UTF-8""?>
-<あいうえお>
+<あいうえお ほげ=""3"">
     <かきくけこ/>
 </あいうえお>")]
         private static partial ReadOnlySpan<byte> Xml1();
@@ -24,6 +24,7 @@ namespace UnitTest
                 Assert.NotNull(obj);
                 ref readonly var root = ref obj.Root;
                 Assert.True(root.Name == "あいうえお");
+                Assert.True(root.Attributes.First().Name == "ほげ");
                 Assert.True(root.HasChildren);
                 Assert.True(root.Children.First().Name == "かきくけこ");
             }

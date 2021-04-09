@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Diagnostics;
-using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
@@ -38,7 +37,7 @@ namespace U8Xml.Internal
     //                          |  Capacity |  Count  |  [0]  | ........... |  [31]  |
     //                          +-----------+---------+-------+-------------+--------+
 
-    internal unsafe readonly struct CustomList<T> : IEnumerable<T>, IDisposable where T : unmanaged
+    internal unsafe readonly struct CustomList<T> : IDisposable where T : unmanaged
     {
         private static readonly int[] _lineCapacity;
         private readonly IntPtr _p;     // ListInfo*
@@ -112,13 +111,19 @@ namespace U8Xml.Internal
             Unsafe.AsRef(_p) = IntPtr.Zero;
         }
 
-        public CustomListEnumerator<T> GetEnumerator() => new CustomListEnumerator<T>(Info);
+        public Enumerator<T> GetEnumerator() => new Enumerator<T>(Info, 0, Count);
 
-        internal CustomListEnumeratorClass<T> GetEnumeratorClass() => new CustomListEnumeratorClass<T>(Info);
+        public Enumerator<T> GetEnumerator(int start, int count) => new Enumerator<T>(Info, start, count);
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => new CustomListEnumeratorClass<T>(Info);
+        private static (int lineNum, int index) GetLineNumAndIndex(int i)
+        {
+            // This formula is correct, but the following is the same. I confirmed that.
+            //var l = Math.Log2(index / 16 + 1);
 
-        IEnumerator IEnumerable.GetEnumerator() => new CustomListEnumeratorClass<T>(Info);
+            var l = BitOperationHelper.Log2((uint)((i >> 4) + 1));
+            var offset = (1 << (l + 4)) - 16;
+            return (l, i - offset);
+        }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static Line* NewLine(ListInfo* listInfo)
@@ -163,125 +168,55 @@ namespace U8Xml.Internal
                 return sizeof(int) + sizeof(int) + sizeof(T) * capacity;
             }
         }
-    }
 
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public unsafe struct CustomListEnumerator<T> : IEnumerator<T> where T : unmanaged
-    {
-        private readonly CustomList<T>.ListInfo* _listInfo;
-        private readonly int _count;
-        private int _lineNum;
-        private CustomList<T>.Line* _line;
-        private int _offset;
-        private int _pos;
-        private int _i;
-
-        public T Current => (&_line->FirstItem)[_pos];
-
-        object IEnumerator.Current => Current;
-
-        internal CustomListEnumerator(CustomList<T>.ListInfo* listInfo)
+        internal struct Enumerator<T> : IEnumerator<T> where T : unmanaged
         {
-            _listInfo = listInfo;
-            _count = listInfo->Count;
-            _lineNum = 0;
-            _line = _listInfo->L0;
-            _offset = 0;
-            _pos = 0;
-            _i = 0;
-        }
+            private readonly CustomList<T>.ListInfo* _listInfo;
+            private readonly int _count;
+            private int _i;
+            private int _lineNum;
+            private CustomList<T>.Line* _line;
+            private T* _current;
+            private int _posInLine;
 
-        public void Dispose()
-        {
-        }
-
-        public bool MoveNext()
-        {
-            if(_i >= _count) { return false; }
-            _pos = _i - _offset;
-            if(_pos >= _line->Capacity) {
-                NextLine();
+            internal Enumerator(CustomList<T>.ListInfo* listInfo, int start, int count)
+            {
+                _listInfo = listInfo;
+                _count = count;
+                _i = 0;
+                (_lineNum, _posInLine) = GetLineNumAndIndex(start);
+                _line = (&_listInfo->L0)[_lineNum];
+                _current = null;
             }
-            _i++;
-            return true;
-        }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        void NextLine()
-        {
-            _offset = _i;
-            _lineNum++;
-            _line = (&_listInfo->L0)[_lineNum];
-            _pos = _i - _offset;
-        }
+            public T Current => *_current;
 
-        public void Reset()
-        {
-            _lineNum = 0;
-            _line = _listInfo->L0;
-            _offset = 0;
-            _pos = 0;
-            _i = 0;
-        }
-    }
+            object IEnumerator.Current => Current;
 
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed unsafe class CustomListEnumeratorClass<T> : IEnumerator<T> where T : unmanaged
-    {
-        private readonly CustomList<T>.ListInfo* _listInfo;
-        private readonly int _count;
-        private int _lineNum;
-        private CustomList<T>.Line* _line;
-        private int _offset;
-        private int _pos;
-        private int _i;
+            public void Dispose() { }
 
-        public T Current => (&_line->FirstItem)[_pos];
-
-        object IEnumerator.Current => Current;
-
-        internal CustomListEnumeratorClass(CustomList<T>.ListInfo* listInfo)
-        {
-            _listInfo = listInfo;
-            _count = listInfo->Count;
-            _lineNum = 0;
-            _line = _listInfo->L0;
-            _offset = 0;
-            _pos = 0;
-            _i = 0;
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public bool MoveNext()
-        {
-            if(_i >= _count) { return false; }
-            _pos = _i - _offset;
-            if(_pos >= _line->Capacity) {
-                NextLine();
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool MoveNext()
+            {
+                if(_i >= _count) { return false; }
+                _current = &(&_line->FirstItem)[_posInLine];
+                _posInLine++;
+                _i++;
+                if(_posInLine >= _line->Capacity) {
+                    NewLine();
+                }
+                return true;
             }
-            _i++;
-            return true;
-        }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        void NextLine()
-        {
-            _offset = _i;
-            _lineNum++;
-            _line = (&_listInfo->L0)[_lineNum];
-            _pos = _i - _offset;
-        }
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private void NewLine()
+            {
+                _posInLine = 0;
+                _lineNum++;
+                _line = (&_listInfo->L0)[_lineNum];
+            }
 
-        public void Reset()
-        {
-            _lineNum = 0;
-            _line = _listInfo->L0;
-            _offset = 0;
-            _pos = 0;
-            _i = 0;
+            public void Reset() => throw new NotSupportedException();
         }
     }
 }

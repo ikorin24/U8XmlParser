@@ -24,8 +24,7 @@ namespace U8Xml
 
         public bool HasChildren => FirstChild != IntPtr.Zero;
 
-        //public XmlAttributeList Attributes => new XmlAttributeList(AttributesInternal, AttrCount);
-        public XmlAttributeList Attributes => throw new NotImplementedException();
+        public XmlAttributeList Attributes => new XmlAttributeList(_wholeAttrs, AttrIndex, AttrCount);
 
         public XmlNodeList Children => new XmlNodeList(FirstChild);
 
