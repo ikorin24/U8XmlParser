@@ -10,7 +10,7 @@ namespace U8Xml
     public readonly unsafe struct XmlNode
     {
         public readonly RawString Name;
-        public readonly RawString Content;
+        public readonly RawString InnerText;
 
         internal readonly IntPtr FirstChild;    // XmlNode*
         internal readonly IntPtr LastChild;     // XmlNode*
@@ -32,7 +32,7 @@ namespace U8Xml
         internal XmlNode(RawString name, CustomList<XmlAttribute> wholeAttrs)
         {
             Name = name;
-            Content = RawString.Empty;
+            InnerText = RawString.Empty;
             FirstChild = IntPtr.Zero;
             LastChild = IntPtr.Zero;
             Sibling = IntPtr.Zero;

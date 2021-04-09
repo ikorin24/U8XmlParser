@@ -98,13 +98,13 @@ namespace U8Xml
                         goto NodeHead;
                     }
                 }
-                else { goto InlineContent; }
+                else { goto InnerText; }
             }
 
-        InlineContent:
+        InnerText:
             {
                 var node = nodeStack.Peek();
-                Unsafe.AsRef(node->Content) = GetInlineContent(data, ref i);
+                Unsafe.AsRef(node->InnerText) = GetInnerText(data, ref i);
                 goto None;
             }
 
@@ -244,7 +244,7 @@ namespace U8Xml
             }
         }
 
-        private static RawString GetInlineContent(RawString data, ref int i)
+        private static RawString GetInnerText(RawString data, ref int i)
         {
             var start = i;
             while(true) {
