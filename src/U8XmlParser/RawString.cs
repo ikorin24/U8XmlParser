@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.ComponentModel;
 using U8Xml.Internal;
+using System.Buffers;
 
 namespace U8Xml
 {
@@ -139,8 +140,34 @@ namespace U8Xml
 
         public static bool operator !=(RawString left, RawString right) => !(left == right);
 
+        public static bool operator ==(RawString left, string right)
+        {
+            if(right is null) { return left.IsEmpty; }
+            var utf8 = Encoding.UTF8;
+            var byteLen = utf8.GetByteCount(right);
+            if(byteLen != left.Length) { return false; }
+            if(byteLen <= 128) {
+                byte* buf = stackalloc byte[byteLen];
+                fixed(char* ptr = right) {
+                    utf8.GetBytes(ptr, right.Length, buf, byteLen);
+                }
+                return SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen).SequenceEqual(left.AsSpan());
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = right) {
+                        utf8.GetBytes(ptr, right.Length, buf, byteLen);
+                        return SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen).SequenceEqual(left.AsSpan());
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
 
-        public static bool operator ==(RawString left, string right) => left.ToString() == right;
         public static bool operator !=(RawString left, string right) => !(left == right);
     }
 
