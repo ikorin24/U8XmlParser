@@ -60,7 +60,7 @@ namespace U8Xml
             var offset = buf.AsSpan(0, 3).SequenceEqual(Utf8BOM) ? 3 : 0;
             var rawString = new RawString((byte*)buf.Ptr + offset, length - offset);
 
-            var nodes = CustomList<XmlNode>.Create();
+            var nodes = CustomList<XmlNode_>.Create();
             var attrs = CustomList<XmlAttribute>.Create();
             try {
                 StartStateMachine(rawString, nodes, attrs);
@@ -73,7 +73,7 @@ namespace U8Xml
             }
         }
 
-        private static void StartStateMachine(RawString data, CustomList<XmlNode> nodes, CustomList<XmlAttribute> attrs)
+        private static void StartStateMachine(RawString data, CustomList<XmlNode_> nodes, CustomList<XmlAttribute> attrs)
         {
             // Encoding assumes utf-8 without bom. Others are not supported.
             // Parse format by using a state machine. (It's very primitive but fastest.)
@@ -128,11 +128,11 @@ namespace U8Xml
                     else { throw NewFormatException(); }
                 }
                 else {
-                    var node = nodes.Add(new XmlNode(GetNodeName(data, ref i), attrs));
+                    var node = nodes.Add(new XmlNode_(GetNodeName(data, ref i), attrs));
                     while(true) {
                         if(data.At(i) == '>') {
                             if(nodeStack.Count > 0) {
-                                XmlNode.AddChild(nodeStack.Peek(), node);
+                                XmlNode_.AddChild(nodeStack.Peek(), node);
                             }
                             nodeStack.Push(node);
                             i++;
@@ -141,7 +141,7 @@ namespace U8Xml
                         }
                         else if((i + 1 < data.Length) && data.At(i) == '/' && data.At(i + 1) == '>') {
                             if(nodeStack.Count > 0) {
-                                XmlNode.AddChild(nodeStack.Peek(), node);
+                                XmlNode_.AddChild(nodeStack.Peek(), node);
                             }
                             i += 2;
                             goto None;

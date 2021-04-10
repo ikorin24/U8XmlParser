@@ -22,7 +22,7 @@ namespace UnitTest
         {
             using(var obj = XmlParser.Parse(Xml1())) {
                 Assert.NotNull(obj);
-                ref readonly var root = ref obj.Root;
+                var root = obj.Root;
                 Assert.True(root.Name == "あいうえお");
                 Assert.True(root.Attributes.First().Name == "ほげ");
                 Assert.True(root.HasChildren);

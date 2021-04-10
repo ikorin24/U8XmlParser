@@ -27,8 +27,8 @@ namespace U8Xml
 
         public struct Enumerator : IEnumerator<XmlNode>
         {
-            private IntPtr _current;    // XmlNode*
-            private IntPtr _next;       // XmlNode*
+            private IntPtr _current;    // XmlNode_*
+            private IntPtr _next;       // XmlNode_*
 
             internal Enumerator(IntPtr firstChild)
             {
@@ -36,7 +36,7 @@ namespace U8Xml
                 _current = default;
             }
 
-            public XmlNode Current => *(XmlNode*)_current;
+            public XmlNode Current => new XmlNode((XmlNode_*)_current);
 
             object IEnumerator.Current => Current;
 
@@ -47,7 +47,7 @@ namespace U8Xml
             {
                 if(_next == IntPtr.Zero) { return false; }
                 _current = _next;
-                _next = ((XmlNode*)_next)->Sibling;
+                _next = ((XmlNode_*)_next)->Sibling;
                 return true;
             }
 

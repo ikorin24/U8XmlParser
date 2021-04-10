@@ -7,14 +7,37 @@ using U8Xml.Internal;
 namespace U8Xml
 {
     [DebuggerDisplay("{ToString(),nq}")]
-    public readonly unsafe struct XmlNode
+    public readonly unsafe struct XmlNode : IEquatable<XmlNode>
+    {
+        private readonly IntPtr _node;
+
+        public RawString Name => ((XmlNode_*)_node)->Name;
+        public RawString InnerText => ((XmlNode_*)_node)->InnerText;
+        public bool HasAttribute => ((XmlNode_*)_node)->HasAttribute;
+        public XmlAttributeList Attributes => ((XmlNode_*)_node)->Attributes;
+        public bool HasChildren => ((XmlNode_*)_node)->HasChildren;
+        public XmlNodeList Children => ((XmlNode_*)_node)->Children;
+
+        internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
+
+        public override bool Equals(object? obj) => obj is XmlNode node && Equals(node);
+
+        public bool Equals(XmlNode other) => _node == other._node;
+
+        public override int GetHashCode() => _node.GetHashCode();
+
+        public override string ToString() => _node != IntPtr.Zero ? ((XmlNode_*)_node)->Name.ToString() : "";
+    }
+
+    [DebuggerDisplay("{ToString(),nq}")]
+    internal readonly unsafe struct XmlNode_
     {
         public readonly RawString Name;
         public readonly RawString InnerText;
 
-        internal readonly IntPtr FirstChild;    // XmlNode*
-        internal readonly IntPtr LastChild;     // XmlNode*
-        internal readonly IntPtr Sibling;       // XmlNode*
+        internal readonly IntPtr FirstChild;    // XmlNode_*
+        internal readonly IntPtr LastChild;     // XmlNode_*
+        internal readonly IntPtr Sibling;       // XmlNode_*
 
         internal readonly int AttrIndex;
         internal readonly int AttrCount;
@@ -29,7 +52,7 @@ namespace U8Xml
         public XmlNodeList Children => new XmlNodeList(FirstChild);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal XmlNode(RawString name, CustomList<XmlAttribute> wholeAttrs)
+        internal XmlNode_(RawString name, CustomList<XmlAttribute> wholeAttrs)
         {
             Name = name;
             InnerText = RawString.Empty;
@@ -47,10 +70,10 @@ namespace U8Xml
         }
 
 
-        internal static void AddChild(XmlNode* parent, XmlNode* child)
+        internal static void AddChild(XmlNode_* parent, XmlNode_* child)
         {
             if(parent->HasChildren) {
-                Unsafe.AsRef(((XmlNode*)parent->LastChild)->Sibling) = (IntPtr)child;
+                Unsafe.AsRef(((XmlNode_*)parent->LastChild)->Sibling) = (IntPtr)child;
             }
             else {
                 Unsafe.AsRef(parent->FirstChild) = (IntPtr)child;

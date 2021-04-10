@@ -111,9 +111,9 @@ namespace U8Xml.Internal
             Unsafe.AsRef(_p) = IntPtr.Zero;
         }
 
-        public Enumerator<T> GetEnumerator() => new Enumerator<T>(Info, 0, Count);
+        public Enumerator GetEnumerator() => new Enumerator(Info, 0, Count);
 
-        public Enumerator<T> GetEnumerator(int start, int count) => new Enumerator<T>(Info, start, count);
+        public Enumerator GetEnumerator(int start, int count) => new Enumerator(Info, start, count);
 
         private static (int lineNum, int index) GetLineNumAndIndex(int i)
         {
@@ -169,7 +169,7 @@ namespace U8Xml.Internal
             }
         }
 
-        internal struct Enumerator<T> : IEnumerator<T> where T : unmanaged
+        internal struct Enumerator : IEnumerator<T>
         {
             private readonly CustomList<T>.ListInfo* _listInfo;
             private readonly int _count;

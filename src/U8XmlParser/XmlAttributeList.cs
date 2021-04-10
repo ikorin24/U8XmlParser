@@ -48,13 +48,13 @@ namespace U8Xml
 
         public struct Enumerator : IEnumerator<XmlAttribute>
         {
-            private CustomList<XmlAttribute>.Enumerator<XmlAttribute> _enumerator;
+            private CustomList<XmlAttribute>.Enumerator _enumerator;
 
             public XmlAttribute Current => _enumerator.Current;
 
             object IEnumerator.Current => _enumerator.Current;
 
-            internal Enumerator(in CustomList<XmlAttribute>.Enumerator<XmlAttribute> enumerator)
+            internal Enumerator(in CustomList<XmlAttribute>.Enumerator enumerator)
             {
                 _enumerator = enumerator;
             }
