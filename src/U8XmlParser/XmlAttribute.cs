@@ -10,6 +10,7 @@ namespace U8Xml
     [DebuggerDisplay("{ToString(),nq}")]
     public unsafe readonly struct XmlAttribute : IEquatable<XmlAttribute>
     {
+        // Don't add any other fields. The layout must be same as IntPtr.
         private readonly IntPtr _attr;  // XmlAttribute_*
 
         /// <summary>Get attribute name</summary>

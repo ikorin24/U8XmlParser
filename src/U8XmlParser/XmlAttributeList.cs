@@ -5,11 +5,13 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Collections;
 using U8Xml.Internal;
+using System.Runtime.InteropServices;
 
 namespace U8Xml
 {
     /// <summary>Provides list of <see cref="XmlAttribute"/></summary>
     [DebuggerDisplay("XmlAttribute[{_length}]")]
+    [DebuggerTypeProxy(typeof(XmlAttributeListTypeProxy))]
     public unsafe readonly struct XmlAttributeList : IEnumerable<XmlAttribute>, ICollection<XmlAttribute>
     {
         private readonly CustomList<XmlAttribute_> _list;
@@ -35,9 +37,19 @@ namespace U8Xml
 
         bool ICollection<XmlAttribute>.Contains(XmlAttribute item) => throw new NotImplementedException();          // TODO:
 
-        void ICollection<XmlAttribute>.CopyTo(XmlAttribute[] array, int arrayIndex) => throw new NotImplementedException();     // TODO:
+        void ICollection<XmlAttribute>.CopyTo(XmlAttribute[] array, int arrayIndex) => throw new NotSupportedException();
 
         bool ICollection<XmlAttribute>.Remove(XmlAttribute item) => throw new NotSupportedException();
+
+        internal void CopyTo(Span<XmlAttribute> span)
+        {
+            // Only for debugger
+
+            var dest = MemoryMarshal.Cast<XmlAttribute, IntPtr>(span);
+            fixed(IntPtr* buf = dest) {
+                _list.CopyItemsPointer((XmlAttribute_**)buf, dest.Length, _start, _length);
+            }
+        }
 
         public Enumerator GetEnumerator() => new Enumerator(_list.GetEnumerator(_start, _length));
 
@@ -83,6 +95,28 @@ namespace U8Xml
             public bool MoveNext() => _enumerator.MoveNext();
 
             public void Reset() => _enumerator.Reset();
+        }
+
+        private class XmlAttributeListTypeProxy
+        {
+            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+            private XmlAttributeList _entity;
+
+            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+            public XmlAttribute[] Items
+            {
+                get
+                {
+                    var array = new XmlAttribute[_entity.Count];
+                    _entity.CopyTo(array);
+                    return array;
+                }
+            }
+
+            public XmlAttributeListTypeProxy(XmlAttributeList entity)
+            {
+                _entity = entity;
+            }
         }
     }
 }

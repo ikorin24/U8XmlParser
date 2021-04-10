@@ -100,6 +100,21 @@ namespace U8Xml.Internal
             return addr;
         }
 
+        public void CopyItemsPointer(T** buf, int bufLen, int start, int length)
+        {
+            if(bufLen < length) { ThrowHelper.ThrowArg($"{nameof(bufLen)} is too short to copy to."); }
+            var count = Count;
+            if((uint)start >= (uint)count) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
+            if((uint)length > (uint)(count - start)) { ThrowHelper.ThrowArgOutOfRange(nameof(length)); }
+            if(length == 0) { return; }
+
+            var enumerator = GetEnumerator(start, length);
+            var i = 0;
+            while(enumerator.MoveNext()) {
+                buf[i] = enumerator.Current;
+            }
+        }
+
         public void Dispose()
         {
             for(int i = 0; i < ListInfo.BucketCount; i++) {
