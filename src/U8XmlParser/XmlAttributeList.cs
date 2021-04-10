@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Collections;
 using U8Xml.Internal;
@@ -8,9 +9,10 @@ using U8Xml.Internal;
 namespace U8Xml
 {
     /// <summary>Provides list of <see cref="XmlAttribute"/></summary>
+    [DebuggerDisplay("XmlAttribute[{_length}]")]
     public unsafe readonly struct XmlAttributeList : IEnumerable<XmlAttribute>, ICollection<XmlAttribute>
     {
-        private readonly CustomList<XmlAttribute> _list;
+        private readonly CustomList<XmlAttribute_> _list;
         private readonly int _start;
         private readonly int _length;
 
@@ -20,7 +22,7 @@ namespace U8Xml
         bool ICollection<XmlAttribute>.IsReadOnly => true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal XmlAttributeList(CustomList<XmlAttribute> list, int start, int length)
+        internal XmlAttributeList(CustomList<XmlAttribute_> list, int start, int length)
         {
             _list = list;
             _start = start;
@@ -48,13 +50,13 @@ namespace U8Xml
 
         public struct Enumerator : IEnumerator<XmlAttribute>
         {
-            private CustomList<XmlAttribute>.Enumerator _enumerator;
+            private CustomList<XmlAttribute_>.Enumerator _enumerator;       // mutable object, don't make it readonly
 
-            public XmlAttribute Current => _enumerator.Current;
+            public XmlAttribute Current => new XmlAttribute(_enumerator.Current);
 
-            object IEnumerator.Current => _enumerator.Current;
+            object IEnumerator.Current => *_enumerator.Current;
 
-            internal Enumerator(in CustomList<XmlAttribute>.Enumerator enumerator)
+            internal Enumerator(in CustomList<XmlAttribute_>.Enumerator enumerator)
             {
                 _enumerator = enumerator;
             }

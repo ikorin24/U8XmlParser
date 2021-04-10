@@ -13,13 +13,13 @@ namespace U8Xml
         private int _byteLength;
         private int _offset;        // 0 or 3 (3 is UTF-8 BOM)
         private CustomList<XmlNode_> _nodes;
-        private CustomList<XmlAttribute> _attributes;
+        private CustomList<XmlAttribute_> _attributes;
 
         public bool IsDisposed => _rawByteData == IntPtr.Zero;
 
         public XmlNode Root => new XmlNode(_nodes.FirstItem);
 
-        internal XmlObject(ref UnmanagedBuffer buffer, int offset, CustomList<XmlNode_> nodes, CustomList<XmlAttribute> attributes)
+        internal XmlObject(ref UnmanagedBuffer buffer, int offset, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attributes)
         {
             buffer.TransferMemoryOwnership(out _rawByteData, out _byteLength);
             _offset = offset;

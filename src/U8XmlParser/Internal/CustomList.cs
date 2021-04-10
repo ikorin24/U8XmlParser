@@ -3,8 +3,6 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Collections.Generic;
-using System.Collections;
 
 namespace U8Xml.Internal
 {
@@ -169,7 +167,7 @@ namespace U8Xml.Internal
             }
         }
 
-        internal struct Enumerator : IEnumerator<T>
+        internal struct Enumerator
         {
             private readonly CustomList<T>.ListInfo* _listInfo;
             private readonly int _count;
@@ -189,9 +187,7 @@ namespace U8Xml.Internal
                 _current = null;
             }
 
-            public T Current => *_current;
-
-            object IEnumerator.Current => Current;
+            public T* Current => _current;
 
             public void Dispose() { }
 

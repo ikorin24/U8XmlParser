@@ -61,7 +61,7 @@ namespace U8Xml
             var rawString = new RawString((byte*)buf.Ptr + offset, length - offset);
 
             var nodes = CustomList<XmlNode_>.Create();
-            var attrs = CustomList<XmlAttribute>.Create();
+            var attrs = CustomList<XmlAttribute_>.Create();
             try {
                 StartStateMachine(rawString, nodes, attrs);
                 return new XmlObject(ref buf, offset, nodes, attrs);
@@ -73,7 +73,7 @@ namespace U8Xml
             }
         }
 
-        private static void StartStateMachine(RawString data, CustomList<XmlNode_> nodes, CustomList<XmlAttribute> attrs)
+        private static void StartStateMachine(RawString data, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attrs)
         {
             // Encoding assumes utf-8 without bom. Others are not supported.
             // Parse format by using a state machine. (It's very primitive but fastest.)
@@ -271,7 +271,7 @@ namespace U8Xml
             return name;
         }
 
-        private static XmlAttribute GetAttr(RawString data, ref int i)
+        private static XmlAttribute_ GetAttr(RawString data, ref int i)
         {
             // Get attribute name
             var nameStart = i;
@@ -298,7 +298,7 @@ namespace U8Xml
             var value = data.Slice(valueStart, i - valueStart);
             i++;
             if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
-            return new XmlAttribute(name, value);
+            return new XmlAttribute_(name, value);
         }
 
         private static FormatException NewFormatException(string? message = null) => new FormatException(message);
