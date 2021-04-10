@@ -8,6 +8,7 @@ using System.Diagnostics;
 namespace U8Xml
 {
     [DebuggerDisplay("{DebugDisplay,nq}")]
+    [DebuggerTypeProxy(typeof(XmlNodeListTypeProxy))]
     public unsafe readonly struct XmlNodeList : IEnumerable<XmlNode>, ICollection<XmlNode>
     {
         private readonly XmlNode_* _parent;
@@ -41,6 +42,19 @@ namespace U8Xml
         void ICollection<XmlNode>.CopyTo(XmlNode[] array, int arrayIndex) => throw new NotSupportedException();
 
         bool ICollection<XmlNode>.Remove(XmlNode item) => throw new NotSupportedException();
+
+        private XmlNode[] ToArray()
+        {
+            // only for debugger
+            if(_parent == null || IsEmpty) { return Array.Empty<XmlNode>(); }
+            var array = new XmlNode[Count];
+            var i = 0;
+            foreach(var item in this) {
+                array[i] = item;
+                i++;
+            }
+            return array;
+        }
 
         public struct Enumerator : IEnumerator<XmlNode>
         {
@@ -90,6 +104,20 @@ namespace U8Xml
             public bool MoveNext() => _enumerator.MoveNext();
 
             public void Reset() => _enumerator.Reset();
+        }
+
+        private sealed class XmlNodeListTypeProxy
+        {
+            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+            private XmlNodeList _entity;
+
+            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+            public unsafe XmlNode[] Items => _entity.ToArray();
+
+            public XmlNodeListTypeProxy(XmlNodeList entity)
+            {
+                _entity = entity;
+            }
         }
     }
 }
