@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using U8Xml.Internal;
 
 namespace U8Xml
@@ -104,7 +103,7 @@ namespace U8Xml
         InnerText:
             {
                 var node = nodeStack.Peek();
-                Unsafe.AsRef(node->InnerText) = GetInnerText(data, ref i);
+                GetInnerText(data, ref i, out node->InnerText);
                 goto None;
             }
 
@@ -128,7 +127,8 @@ namespace U8Xml
                     else { throw NewFormatException(); }
                 }
                 else {
-                    var node = nodes.Add(new XmlNode_(GetNodeName(data, ref i), attrs));
+                    GetNodeName(data, ref i, out var name);
+                    var node = nodes.Add(new XmlNode_(name, attrs));
                     while(true) {
                         if(data.At(i) == '>') {
                             if(nodeStack.Count > 0) {
@@ -149,9 +149,9 @@ namespace U8Xml
                         else {
                             var attr = attrs.Add(GetAttr(data, ref i));
                             if(node->HasAttribute == false) {
-                                Unsafe.AsRef(node->AttrIndex) = attrs.Count - 1;
+                                node->AttrIndex = attrs.Count - 1;
                             }
-                            Unsafe.AsRef(node->AttrCount)++;
+                            node->AttrCount++;
                         }
                     }
                 }
@@ -159,7 +159,7 @@ namespace U8Xml
 
         NodeTail:
             {
-                var name = GetNodeName(data, ref i);
+                GetNodeName(data, ref i, out var name);
                 if(nodeStack.Pop()->Name.SequenceEqual(name) == false) { throw NewFormatException(); }
                 if(data.At(i) == '>') {
                     i++;
@@ -244,7 +244,7 @@ namespace U8Xml
             }
         }
 
-        private static RawString GetInnerText(RawString data, ref int i)
+        private static void GetInnerText(RawString data, ref int i, out RawString innerText)
         {
             var start = i;
             while(true) {
@@ -253,11 +253,10 @@ namespace U8Xml
                 i++;
                 if(next == '<') { break; }
             }
-            var content = data.Slice(start, i - start).TrimEnd();
-            return content;
+            innerText = data.Slice(start, i - start).TrimEnd();
         }
 
-        private static RawString GetNodeName(RawString data, ref int i)
+        private static void GetNodeName(RawString data, ref int i, out RawString name)
         {
             var nameStart = i;
             while(true) {
@@ -266,9 +265,8 @@ namespace U8Xml
                 i++;
                 if(next == ' ' || next == '\t' || next == '\r' || next == '\n' || next == '/' || next == '>') { break; }
             }
-            var name = data.Slice(nameStart, i - nameStart);
+            name = data.Slice(nameStart, i - nameStart);
             if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
-            return name;
         }
 
         private static XmlAttribute_ GetAttr(RawString data, ref int i)

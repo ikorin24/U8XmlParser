@@ -16,7 +16,7 @@ namespace U8Xml
         public bool HasAttribute => ((XmlNode_*)_node)->HasAttribute;
         public XmlAttributeList Attributes => ((XmlNode_*)_node)->Attributes;
         public bool HasChildren => ((XmlNode_*)_node)->HasChildren;
-        public XmlNodeList Children => ((XmlNode_*)_node)->Children;
+        public XmlNodeList Children => new XmlNodeList((XmlNode_*)_node);
 
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
@@ -30,35 +30,39 @@ namespace U8Xml
     }
 
     [DebuggerDisplay("{ToString(),nq}")]
-    internal readonly unsafe struct XmlNode_
+    internal unsafe struct XmlNode_
     {
         public readonly RawString Name;
-        public readonly RawString InnerText;
+        public RawString InnerText;
 
-        internal readonly IntPtr FirstChild;    // XmlNode_*
-        internal readonly IntPtr LastChild;     // XmlNode_*
-        internal readonly IntPtr Sibling;       // XmlNode_*
+        public XmlNode_* FirstChild;    // XmlNode_*
+        public XmlNode_* LastChild;     // XmlNode_*
+        public XmlNode_* Sibling;       // XmlNode_*
+        public int ChildCount;
 
-        internal readonly int AttrIndex;
-        internal readonly int AttrCount;
+        public int AttrIndex;
+        public int AttrCount;
         private readonly CustomList<XmlAttribute_> _wholeAttrs;
 
         public bool HasAttribute => AttrCount > 0;
 
-        public bool HasChildren => FirstChild != IntPtr.Zero;
+        public bool HasChildren => FirstChild != null;
 
-        public XmlAttributeList Attributes => new XmlAttributeList(_wholeAttrs, AttrIndex, AttrCount);
-
-        public XmlNodeList Children => new XmlNodeList(FirstChild);
+        public XmlAttributeList Attributes
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new XmlAttributeList(_wholeAttrs, AttrIndex, AttrCount);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode_(RawString name, CustomList<XmlAttribute_> wholeAttrs)
         {
             Name = name;
             InnerText = RawString.Empty;
-            FirstChild = IntPtr.Zero;
-            LastChild = IntPtr.Zero;
-            Sibling = IntPtr.Zero;
+            FirstChild = null;
+            LastChild = null;
+            Sibling = null;
+            ChildCount = 0;
             AttrIndex = 0;
             AttrCount = 0;
             _wholeAttrs = wholeAttrs;
@@ -69,16 +73,17 @@ namespace U8Xml
             return Name.ToString();
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void AddChild(XmlNode_* parent, XmlNode_* child)
         {
-            if(parent->HasChildren) {
-                Unsafe.AsRef(((XmlNode_*)parent->LastChild)->Sibling) = (IntPtr)child;
+            if(parent->FirstChild == null) {
+                parent->FirstChild = child;
             }
             else {
-                Unsafe.AsRef(parent->FirstChild) = (IntPtr)child;
+                parent->LastChild->Sibling = child;
             }
-            Unsafe.AsRef(parent->LastChild) = (IntPtr)child;
+            parent->LastChild = child;
+            parent->ChildCount++;
         }
     }
 }

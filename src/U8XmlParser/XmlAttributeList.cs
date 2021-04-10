@@ -39,14 +39,11 @@ namespace U8Xml
 
         bool ICollection<XmlAttribute>.Remove(XmlAttribute item) => throw new NotSupportedException();
 
-        public Enumerator GetEnumerator()
-        {
-            return new Enumerator(_list.GetEnumerator(_start, _length));
-        }
+        public Enumerator GetEnumerator() => new Enumerator(_list.GetEnumerator(_start, _length));
 
-        IEnumerator<XmlAttribute> IEnumerable<XmlAttribute>.GetEnumerator() => GetEnumerator();
+        IEnumerator<XmlAttribute> IEnumerable<XmlAttribute>.GetEnumerator() => new EnumeratorClass(_list.GetEnumerator(_start, _length));
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_list.GetEnumerator(_start, _length));
 
         public struct Enumerator : IEnumerator<XmlAttribute>
         {
@@ -57,6 +54,26 @@ namespace U8Xml
             object IEnumerator.Current => *_enumerator.Current;
 
             internal Enumerator(in CustomList<XmlAttribute_>.Enumerator enumerator)
+            {
+                _enumerator = enumerator;
+            }
+
+            public void Dispose() => _enumerator.Dispose();
+
+            public bool MoveNext() => _enumerator.MoveNext();
+
+            public void Reset() => _enumerator.Reset();
+        }
+
+        private sealed class EnumeratorClass : IEnumerator<XmlAttribute>
+        {
+            private CustomList<XmlAttribute_>.Enumerator _enumerator;       // mutable object, don't make it readonly
+
+            public XmlAttribute Current => new XmlAttribute(_enumerator.Current);
+
+            object IEnumerator.Current => *_enumerator.Current;
+
+            internal EnumeratorClass(in CustomList<XmlAttribute_>.Enumerator enumerator)
             {
                 _enumerator = enumerator;
             }

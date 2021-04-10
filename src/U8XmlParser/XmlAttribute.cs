@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.ComponentModel;
 
 namespace U8Xml
 {
@@ -18,6 +19,13 @@ namespace U8Xml
 
         internal XmlAttribute(XmlAttribute_* attr) => _attr = (IntPtr)attr;
 
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void Deconstruct(out RawString name, out RawString value)
+        {
+            name = Name;
+            value = Value;
+        }
+
         public override bool Equals(object? obj) => obj is XmlAttribute attribute && Equals(attribute);
 
         public bool Equals(XmlAttribute other) => _attr == other._attr;
@@ -25,10 +33,22 @@ namespace U8Xml
         public override int GetHashCode() => _attr.GetHashCode();
 
         public override string ToString() => _attr == IntPtr.Zero ? "" : ((XmlAttribute_*)_attr)->ToString();
+
+        public static implicit operator ValueTuple<RawString, RawString>(XmlAttribute attr) => (attr.Name, attr.Value);
+
+        public static bool operator ==(XmlAttribute attr, ValueTuple<RawString, RawString> pair) => attr.Name == pair.Item1 && attr.Value == pair.Item2;
+        public static bool operator !=(XmlAttribute attr, ValueTuple<RawString, RawString> pair) => !(attr == pair);
+        public static bool operator ==(ValueTuple<RawString, RawString> pair, XmlAttribute attr) => attr == pair;
+        public static bool operator !=(ValueTuple<RawString, RawString> pair, XmlAttribute attr) => !(attr == pair);
+
+        public static bool operator ==(XmlAttribute attr, ValueTuple<string, string> pair) => attr.Name == pair.Item1 && attr.Value == pair.Item2;
+        public static bool operator !=(XmlAttribute attr, ValueTuple<string, string> pair) => !(attr == pair);
+        public static bool operator ==(ValueTuple<string, string> pair, XmlAttribute attr) => attr == pair;
+        public static bool operator !=(ValueTuple<string, string> pair, XmlAttribute attr) => !(attr == pair);
     }
 
     [DebuggerDisplay("{ToString(),nq}")]
-    internal unsafe readonly struct XmlAttribute_ : IEquatable<XmlAttribute_>
+    internal unsafe readonly struct XmlAttribute_
     {
         /// <summary>Attribute name</summary>
         public readonly RawString Name;
@@ -43,11 +63,5 @@ namespace U8Xml
         }
 
         public override string ToString() => $"{Name.ToString()}=\"{Value.ToString()}\"";
-
-        public override bool Equals(object? obj) => obj is XmlAttribute_ attribute && Equals(attribute);
-
-        public bool Equals(XmlAttribute_ other) => Name.Equals(other.Name) && Value.Equals(other.Value);
-
-        public override int GetHashCode() => HashCode.Combine(Name, Value);
     }
 }

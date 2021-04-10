@@ -3,40 +3,57 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace U8Xml
 {
-    public unsafe readonly struct XmlNodeList : IEnumerable<XmlNode>
+    [DebuggerDisplay("{DebugDisplay,nq}")]
+    public unsafe readonly struct XmlNodeList : IEnumerable<XmlNode>, ICollection<XmlNode>
     {
-        private readonly IntPtr _firstChild;
+        private readonly XmlNode_* _parent;
 
-        public static XmlNodeList Empty => default;
+        public bool IsEmpty => _parent->FirstChild == null;
 
-        public bool IsEmpty => _firstChild == IntPtr.Zero;
+        public int Count => _parent->ChildCount;
 
-        internal XmlNodeList(IntPtr firstChild)
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private string DebugDisplay => _parent != null ? $"{nameof(XmlNode)}[{Count}]" : $"{nameof(XmlNode)} (invalid instance)";
+
+        bool ICollection<XmlNode>.IsReadOnly => false;
+
+        internal XmlNodeList(XmlNode_* parent)
         {
-            _firstChild = firstChild;
+            _parent = parent;
         }
 
-        public Enumerator GetEnumerator() => new Enumerator(_firstChild);
+        public Enumerator GetEnumerator() => new Enumerator(_parent->FirstChild);
 
-        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => GetEnumerator();
+        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent->FirstChild);
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent->FirstChild);
+
+        void ICollection<XmlNode>.Add(XmlNode item) => throw new NotSupportedException();
+
+        void ICollection<XmlNode>.Clear() => throw new NotSupportedException();
+
+        bool ICollection<XmlNode>.Contains(XmlNode item) => throw new NotImplementedException();        // TODO:
+
+        void ICollection<XmlNode>.CopyTo(XmlNode[] array, int arrayIndex) => throw new NotImplementedException();   // TODO:
+
+        bool ICollection<XmlNode>.Remove(XmlNode item) => throw new NotSupportedException();
 
         public struct Enumerator : IEnumerator<XmlNode>
         {
-            private IntPtr _current;    // XmlNode_*
-            private IntPtr _next;       // XmlNode_*
+            private XmlNode_* _current;
+            private XmlNode_* _next;
 
-            internal Enumerator(IntPtr firstChild)
+            internal Enumerator(XmlNode_* firstChild)
             {
                 _next = firstChild;
-                _current = default;
+                _current = null;
             }
 
-            public XmlNode Current => new XmlNode((XmlNode_*)_current);
+            public XmlNode Current => new XmlNode(_current);
 
             object IEnumerator.Current => Current;
 
@@ -45,13 +62,34 @@ namespace U8Xml
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
             {
-                if(_next == IntPtr.Zero) { return false; }
+                if(_next == null) { return false; }
                 _current = _next;
-                _next = ((XmlNode_*)_next)->Sibling;
+                _next = _next->Sibling;
                 return true;
             }
 
             public void Reset() => throw new NotSupportedException("Reset() is not supported.");
+        }
+
+        private sealed class EnumeratorClass : IEnumerator<XmlNode>
+        {
+            private Enumerator _enumerator;     // mutable object, don't make it readonly.
+
+            public XmlNode Current => _enumerator.Current;
+
+            object IEnumerator.Current => Current;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal EnumeratorClass(XmlNode_* firstChild)
+            {
+                _enumerator = new Enumerator(firstChild);
+            }
+
+            public void Dispose() => _enumerator.Dispose();
+
+            public bool MoveNext() => _enumerator.MoveNext();
+
+            public void Reset() => _enumerator.Reset();
         }
     }
 }

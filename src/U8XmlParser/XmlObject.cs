@@ -41,6 +41,7 @@ namespace U8Xml
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString AsRawString() => new RawString((byte*)_rawByteData + _offset, _byteLength - _offset);
     }
 }
