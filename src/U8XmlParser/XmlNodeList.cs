@@ -36,9 +36,9 @@ namespace U8Xml
 
         void ICollection<XmlNode>.Clear() => throw new NotSupportedException();
 
-        bool ICollection<XmlNode>.Contains(XmlNode item) => throw new NotImplementedException();        // TODO:
+        bool ICollection<XmlNode>.Contains(XmlNode item) => throw new NotSupportedException();
 
-        void ICollection<XmlNode>.CopyTo(XmlNode[] array, int arrayIndex) => throw new NotImplementedException();   // TODO:
+        void ICollection<XmlNode>.CopyTo(XmlNode[] array, int arrayIndex) => throw new NotSupportedException();
 
         bool ICollection<XmlNode>.Remove(XmlNode item) => throw new NotSupportedException();
 

@@ -35,7 +35,7 @@ namespace U8Xml
 
         void ICollection<XmlAttribute>.Clear() => throw new NotSupportedException();
 
-        bool ICollection<XmlAttribute>.Contains(XmlAttribute item) => throw new NotImplementedException();          // TODO:
+        bool ICollection<XmlAttribute>.Contains(XmlAttribute item) => throw new NotSupportedException();
 
         void ICollection<XmlAttribute>.CopyTo(XmlAttribute[] array, int arrayIndex) => throw new NotSupportedException();
 
