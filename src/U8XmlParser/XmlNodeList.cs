@@ -19,7 +19,7 @@ namespace U8Xml
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebugDisplay => _parent != null ? $"{nameof(XmlNode)}[{Count}]" : $"{nameof(XmlNode)} (invalid instance)";
 
-        bool ICollection<XmlNode>.IsReadOnly => false;
+        bool ICollection<XmlNode>.IsReadOnly => true;
 
         internal XmlNodeList(XmlNode_* parent)
         {
