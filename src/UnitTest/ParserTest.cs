@@ -57,5 +57,33 @@ namespace UnitTest
             }
             AllocationSafety.Ensure();
         }
+
+        [Fact]
+        public void TreeTest()
+        {
+            var ans = new NodeInfo("きらら", "", new[] { ("出版社", "芳文社") },
+                new NodeInfo("まんがタイムきららMAX", "", null,
+                    new NodeInfo("ご注文はうさぎですか？", "",  new[] { ("作者", "Koi") },
+                        new NodeInfo("ラビットハウス", "", new[] { ("種類", "カフェ") },
+                            new NodeInfo("香風智乃", "", new[] { ("age", "13"), ("tall", "144") }),
+                            new NodeInfo("保登心愛", "", new[] { ("age", "15"), ("tall", "154") })
+                        )
+                    )
+                ),
+                new NodeInfo("まんがタイムきららキャラット", "", null,
+                    new NodeInfo("まちカドまぞく", "", new[] { ("作者", "伊藤いづも") },
+                        new NodeInfo("多魔市", "", null,
+                            new NodeInfo("吉田優子", "これで勝ったと思うなよぉ", new[] { ("愛称", "シャミ子") }),
+                            new NodeInfo("千代田桃", "シャミ子が悪いんだよ", new[] { ("愛称", "モモ") })
+                        )
+                    )
+                )
+            );
+            using(var xml = XmlParser.Parse(Data.Sample2)) {
+                var tree = new NodeInfo(xml.Root);
+                Assert.True(NodeInfoComparer.Default.Equals(tree, ans));
+            }
+            AllocationSafety.Ensure();
+        }
     }
 }
