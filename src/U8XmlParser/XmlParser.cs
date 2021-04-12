@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using U8Xml.Internal;
+using System.Text;
 
 namespace U8Xml
 {
@@ -11,6 +12,25 @@ namespace U8Xml
     {
         /// <summary>Byte Order Mark of utf-8 with bom</summary>
         internal static ReadOnlySpan<byte> Utf8BOM => new byte[] { 0xEF, 0xBB, 0xBF };   // Bytes are embedded in dll, so there are no heap allocation.
+
+        public static XmlObject Parse(string text) => Parse(text.AsSpan());
+
+        public static XmlObject Parse(ReadOnlySpan<char> text)
+        {
+            var buf = default(UnmanagedBuffer);
+            try {
+                fixed(char* ptr = text) {
+                    var byteLen = Encoding.UTF8.GetByteCount(ptr, text.Length);
+                    buf = new UnmanagedBuffer(byteLen);
+                    Encoding.UTF8.GetBytes(ptr, text.Length, (byte*)buf.Ptr, buf.Length);
+                }
+                return ParseCore(ref buf, buf.Length);
+            }
+            catch {
+                buf.Dispose();
+                throw;
+            }
+        }
 
         /// <summary>Parse xml file encoded as UTF8.</summary>
         /// <param name="utf8String">utf-8 byte span data</param>

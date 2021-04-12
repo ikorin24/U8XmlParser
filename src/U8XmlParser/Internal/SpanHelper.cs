@@ -48,5 +48,15 @@ namespace U8Xml.Internal
             return new Span<T>(ptr, length);
 #endif
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref readonly byte At(this ReadOnlySpan<byte> span, int index)
+        {
+#if FAST_SPAN
+            return ref Unsafe.Add(ref MemoryMarshal.GetReference(span), index);
+#else
+            return ref span[index];
+#endif
+        }
     }
 }

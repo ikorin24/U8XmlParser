@@ -27,10 +27,19 @@ namespace U8Xml
             _attributes = attributes;
         }
 
+        ~XmlObject() => DisposePrivate();
+
         public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+            DisposePrivate();
+        }
+
+        private void DisposePrivate()
         {
             var data = Interlocked.Exchange(ref _rawByteData, default);
             if(data != IntPtr.Zero) {
+                GC.SuppressFinalize(this);
                 AllocationSafety.Remove(_byteLength);
                 Marshal.FreeHGlobal(_rawByteData);
                 _rawByteData = IntPtr.Zero;

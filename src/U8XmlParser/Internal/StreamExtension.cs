@@ -44,14 +44,14 @@ namespace U8Xml.Internal
             const int LengthToRead = 4096;
             int bufSize = Math.Min(fileSizeHint, LengthToRead);
             var rentArray = ArrayPool<byte>.Shared.Rent(bufSize);
-            var buf = new UnmanagedBuffer(fileSizeHint);
+            var buf = new UnmanagedBuffer(0);
             try {
                 while(true) {
-                    var readlen = stream!.Read(rentArray, 0, rentArray.Length);
+                    var readlen = stream!.Read(rentArray, 0, bufSize);
                     if(readlen == 0) { break; }
                     var tmp = new UnmanagedBuffer(checked(buf.Length + readlen));
                     buf.AsSpan().CopyTo(tmp.AsSpan());
-                    rentArray.CopyTo(tmp.AsSpan(buf.Length));
+                    rentArray.AsSpan(0, readlen).CopyTo(tmp.AsSpan(buf.Length));
                     buf.Dispose();
                     buf = tmp;
                 }

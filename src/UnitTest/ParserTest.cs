@@ -1,19 +1,43 @@
 #nullable enable
+using System;
 using System.Linq;
+using System.IO;
 using Xunit;
 using U8Xml;
 using U8Xml.Internal;
+using System.Text;
 
 namespace UnitTest
 {
-    public partial class ParserTest
+    public class ParserTest
     {
         [Fact]
         public void Parse()
         {
-            using(var obj = XmlParser.Parse(Data.Sample1)) {
-                Assert.NotNull(obj);
-                var root = obj.Root;
+            var tests = new Func<XmlObject>[]
+            {
+                // from ReadOnlySpan<byte>
+                () => XmlParser.Parse(Data.Sample1),
+                // from string
+                () => XmlParser.Parse(Encoding.UTF8.GetString(Data.Sample1.ToArray())),
+                // from ReadOnlySpan<char>
+                () => XmlParser.Parse(Encoding.UTF8.GetString(Data.Sample1.ToArray()).AsSpan()),
+                // from Stream
+                () => XmlParser.Parse(new MemoryStream(Data.Sample1.ToArray())),
+            };
+
+            foreach(var func in tests) {
+                using(var xml = func()) {
+                    TestXml(xml);
+                }
+                AllocationSafety.Ensure();
+            }
+            return;
+
+            static void TestXml(XmlObject xml)
+            {
+                Assert.NotNull(xml);
+                var root = xml.Root;
                 Assert.True(root.Name == "あいうえお");
                 Assert.True(root.InnerText.IsEmpty);
                 Assert.True(root.HasAttribute);
@@ -55,7 +79,6 @@ namespace UnitTest
                     break;
                 }
             }
-            AllocationSafety.Ensure();
         }
 
         [Fact]

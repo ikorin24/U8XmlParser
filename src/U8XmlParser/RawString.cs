@@ -12,7 +12,7 @@ namespace U8Xml
     /// <summary>Provides raw byte array of utf8, which is compatible <see cref="Span{T}"/> of <see langword="byte"/>.</summary>
     [DebuggerTypeProxy(typeof(RawStringDebuggerTypeProxy))]
     [DebuggerDisplay("{ToString()}")]
-    public readonly unsafe struct RawString : IEquatable<RawString>
+    public readonly unsafe partial struct RawString : IEquatable<RawString>
     {
         private readonly IntPtr _ptr;
         private readonly int _length;
@@ -56,7 +56,7 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString Slice(int start)
         {
-            if((uint)start >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
+            if((uint)start > (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
             return new RawString((byte*)_ptr + start, _length - start);
         }
 
@@ -67,9 +67,29 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString Slice(int start, int length)
         {
-            if((uint)start >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
+            if((uint)start > (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
             if((uint)length > (uint)(_length - start)) { ThrowHelper.ThrowArgOutOfRange(nameof(length)); }
             return new RawString((byte*)_ptr + start, length);
+        }
+
+        /// <summary>Trim invisible charactors. (whitespace, '\t', '\r', and '\n')</summary>
+        /// <returns>trimmed string</returns>
+        public RawString Trim()
+        {
+            return TrimStart().TrimEnd();
+        }
+
+        /// <summary>Trim invisible charactors of start. (whitespace, '\t', '\r', and '\n')</summary>
+        /// <returns>trimmed string</returns>
+        public RawString TrimStart()
+        {
+            for(int i = 0; i < _length; i++) {
+                ref var p = ref ((byte*)_ptr)[i];
+                if(p != ' ' && p != '\t' && p != '\r' && p != '\n') {
+                    return SliceUnsafe(i, _length - i);
+                }
+            }
+            return Empty;
         }
 
         /// <summary>Trim invisible charactors of end. (whitespace, '\t', '\r' and '\n')</summary>
@@ -108,7 +128,7 @@ namespace U8Xml
         internal RawString SliceUnsafe(int start, int length)
         {
 #if DEBUG
-            if((uint)start >= (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
+            if((uint)start > (uint)_length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
             if((uint)length > (uint)(_length - start)) { ThrowHelper.ThrowArgOutOfRange(nameof(length)); }
 #endif
             return new RawString((byte*)_ptr + start, length);
@@ -169,6 +189,12 @@ namespace U8Xml
         }
 
         public static bool operator !=(RawString left, string right) => !(left == right);
+
+        public static bool operator ==(string left, RawString right) => right == left;
+
+        public static bool operator !=(string left, RawString right) => !(right == left);
+
+        public static implicit operator ReadOnlySpan<byte>(RawString rawString) => rawString.AsSpan();
     }
 
     internal sealed class RawStringDebuggerTypeProxy
