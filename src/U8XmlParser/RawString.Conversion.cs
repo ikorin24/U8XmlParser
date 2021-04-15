@@ -10,33 +10,123 @@ namespace U8Xml
         private const string InvalidFormatMessage = "Invalid format";
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryToInt(out int value)
+        public bool TryToInt32(out int value)
 		{
-            return Utf8SpanHelper.TryParseInt(AsSpan(), out value);
+            return Utf8SpanHelper.TryParseInt32(AsSpan(), out value);
 		}
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int ToInt()
+        public int ToInt32()
 		{
-            if(Utf8SpanHelper.TryParseInt(AsSpan(), out var result) == false) {
+            if(Utf8SpanHelper.TryParseInt32(AsSpan(), out var result) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
 			return result;
 		}
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryToUInt(out uint value)
+        public bool TryToUInt32(out uint value)
         {
-            return Utf8SpanHelper.TryParseUInt(AsSpan(), out value);
+            return Utf8SpanHelper.TryParseUInt32(AsSpan(), out value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public uint ToUInt()
+        public uint ToUInt32()
         {
-            if(Utf8SpanHelper.TryParseUInt(AsSpan(), out var result) == false) {
+            if(Utf8SpanHelper.TryParseUInt32(AsSpan(), out var result) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
             return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryToInt64(out long value)
+        {
+            return Utf8SpanHelper.TryParseInt64(AsSpan(), out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public long ToInt64()
+        {
+            if(Utf8SpanHelper.TryParseInt64(AsSpan(), out var result) == false) {
+                ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
+            }
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryToUInt64(out ulong value)
+        {
+            return Utf8SpanHelper.TryParseUInt64(AsSpan(), out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ulong ToUInt64()
+        {
+            if(Utf8SpanHelper.TryParseUInt64(AsSpan(), out var result) == false) {
+                ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
+            }
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryToInt16(out short value)
+        {
+            return Utf8SpanHelper.TryParseInt16(AsSpan(), out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public short ToInt16()
+        {
+            if(TryToInt16(out var value) == false) {
+                ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
+            }
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryToUInt16(out ushort value)
+        {
+            return Utf8SpanHelper.TryParseUInt16(AsSpan(), out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ushort ToUInt16()
+        {
+            if(TryToUInt16(out var value) == false) {
+                ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
+            }
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryToInt8(out sbyte value)
+        {
+            return Utf8SpanHelper.TryParseInt8(AsSpan(), out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public sbyte ToInt8()
+        {
+            if(TryToInt8(out var value) == false) {
+                ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
+            }
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryToUInt8(out byte value)
+        {
+            return Utf8SpanHelper.TryParseUInt8(AsSpan(), out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public byte ToUInt8()
+        {
+            if(TryToUInt8(out var value) == false) {
+                ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
+            }
+            return value;
         }
 
         public (RawString, RawString) Split2(byte separator)
