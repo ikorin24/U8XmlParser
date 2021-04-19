@@ -10,6 +10,21 @@ namespace U8Xml
         private const string InvalidFormatMessage = "Invalid format";
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryToFloat32(out float value)
+        {
+            return Utf8SpanHelper.TryParseFloat32(AsSpan(), out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float ToFloat32()
+        {
+            if(Utf8SpanHelper.TryParseFloat32(AsSpan(), out var result) == false) {
+                ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
+            }
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToInt32(out int value)
 		{
             return Utf8SpanHelper.TryParseInt32(AsSpan(), out value);

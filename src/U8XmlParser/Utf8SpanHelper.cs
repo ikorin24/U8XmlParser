@@ -7,6 +7,9 @@ namespace U8Xml
 {
     public static class Utf8SpanHelper
     {
+        /// <summary>utf-8 bytes of "∞"</summary>
+        private static ReadOnlySpan<byte> InfinityUtf8Str => new byte[] { 0xE2, 0x88, 0x9E };
+
         public static bool TryParseInt32(ReadOnlySpan<byte> utf8String, out int result)
         {
             // Regex
@@ -251,7 +254,7 @@ namespace U8Xml
             // Regex (nan)
             // ^(-|\+)?(N|n)(A|a)(N|n)$
             // Regex (infinity)
-            // ^(-|\+)?∞$       // TODO:
+            // ^(-|\+)?∞$
 
             int i = 0;
             int sign;
@@ -262,13 +265,25 @@ namespace U8Xml
             // (-|\+)?
             if(TryParseSign(utf8String, ref i, out sign) == false) { return Error(out result); }
 
-            // (N|n)(A|a)(N|n)
             if(i >= utf8String.Length) { return Error(out result); }
+
+            // (N|n)(A|a)(N|n)
             if(utf8String.At(i) == 'N' || utf8String.At(i) == 'n') {
                 if((i + 2 < utf8String.Length) &&
                     (utf8String.At(i + 1) == 'a' || utf8String.At(i + 1) == 'A') &&
                     (utf8String.At(i + 2) == 'N' || utf8String.At(i + 2) == 'n')) {
                     result = float.NaN;
+                    return true;
+                }
+                return Error(out result);
+            }
+
+            // ∞
+            if(utf8String.At(i) == InfinityUtf8Str[0]) {
+                if((i + 2 < utf8String.Length) &&
+                   (utf8String.At(i + 1) == InfinityUtf8Str[1]) &&
+                   (utf8String.At(i + 2) == InfinityUtf8Str[2])) {
+                    result = sign == 1 ? float.PositiveInfinity : float.NegativeInfinity;
                     return true;
                 }
                 return Error(out result);
@@ -292,7 +307,7 @@ namespace U8Xml
                 if(i != utf8String.Length) { return Error(out result); }
             }
 
-            result = sign * frac * (float)Math.Pow(10, expSign * exp);    // TODO:
+            result = sign * frac * MathHelper.FloatPow10(expSign * exp);
             return true;
 
 
@@ -330,7 +345,7 @@ namespace U8Xml
                     i++;
                     // \d+
                     if(TryParseNumbers(utf8String, ref i, out var num, out var len, false)) {
-                        value = num * (float)Math.Pow(10, -len);    // TODO: use a table
+                        value = num * MathHelper.FloatPow10(-len);
                         return true;
                     }
                     else {
@@ -343,7 +358,7 @@ namespace U8Xml
                     if(utf8String.At(i) == '.') {
                         i++;
                         if(TryParseNumbers(utf8String, ref i, out var num2, out var len2, true)) {
-                            value = num1 + (float)Math.Pow(10, -len2) * num2;
+                            value = num1 + MathHelper.FloatPow10(-len2) * num2;
                             return true;
                         }
                         else {

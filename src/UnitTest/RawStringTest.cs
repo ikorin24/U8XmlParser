@@ -184,8 +184,9 @@ namespace UnitTest
         [Fact]
         public void Float()
         {
-            var utf8String = Encoding.UTF8.GetBytes("1.5E3").AsSpan();
-            Utf8SpanHelper.TryParseFloat32(utf8String, out var result);
+            Assert.True(float.IsNegativeInfinity(RawStringSource.Get("-∞").ToFloat32()));
+            Assert.True(float.IsPositiveInfinity(RawStringSource.Get("+∞").ToFloat32()));
+            Assert.True(float.IsPositiveInfinity(RawStringSource.Get("∞").ToFloat32()));
             return;
         }
 
@@ -238,6 +239,23 @@ namespace UnitTest
             {
                 var foo = RawStringSource.Get(" \r\n\t foo \r\n\t ");
                 Assert.True(foo.Trim() == "foo");
+            }
+        }
+
+        [Fact]
+        public void MathHelperMethods()
+        {
+            for(int i = -40; i < 39; i++) {
+                var ans = (float)Math.Pow(10, i);
+                var value = U8Xml.Internal.MathHelper.FloatPow10(i);
+                AssertFloatEqual(ans, value);
+            }
+
+            static void AssertFloatEqual(float expected, float actual)
+            {
+                var diff = expected - actual;
+                diff = diff >= 0 ? diff : -diff;
+                Assert.True(diff <= expected * 0.0001f);
             }
         }
 
@@ -306,6 +324,12 @@ namespace UnitTest
         private static partial ReadOnlySpan<byte> Str24();
         [Utf8("255")]
         private static partial ReadOnlySpan<byte> Str25();
+        [Utf8("∞")]
+        private static partial ReadOnlySpan<byte> Str26();
+        [Utf8("+∞")]
+        private static partial ReadOnlySpan<byte> Str27();
+        [Utf8("-∞")]
+        private static partial ReadOnlySpan<byte> Str28();
 
         static RawStringSource()
         {
@@ -335,6 +359,9 @@ namespace UnitTest
             Register(Str23());
             Register(Str24());
             Register(Str25());
+            Register(Str26());
+            Register(Str27());
+            Register(Str28());
 
             static unsafe void Register(ReadOnlySpan<byte> s)
             {
