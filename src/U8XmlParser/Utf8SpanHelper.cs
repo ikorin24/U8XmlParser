@@ -244,60 +244,200 @@ namespace U8Xml
         }
 
 
+        public static bool TryParseFloat32(ReadOnlySpan<byte> utf8String, out float result)
+        {
+            // Regex
+            // ^(-|\+)?((\d+\.?\d*)|(\.\d+))((E|e)(-|\+)?\d+)?$
+            // Regex (nan)
+            // ^(-|\+)?(N|n)(A|a)(N|n)$
+            // Regex (infinity)
+            // ^(-|\+)?∞$       // TODO:
+
+            int i = 0;
+            int sign;
+            float frac;
+            int expSign = 1;
+            int exp = 0;
+
+            // (-|\+)?
+            if(TryParseSign(utf8String, ref i, out sign) == false) { return Error(out result); }
+
+            // (N|n)(A|a)(N|n)
+            if(i >= utf8String.Length) { return Error(out result); }
+            if(utf8String.At(i) == 'N' || utf8String.At(i) == 'n') {
+                if((i + 2 < utf8String.Length) &&
+                    (utf8String.At(i + 1) == 'a' || utf8String.At(i + 1) == 'A') &&
+                    (utf8String.At(i + 2) == 'N' || utf8String.At(i + 2) == 'n')) {
+                    result = float.NaN;
+                    return true;
+                }
+                return Error(out result);
+            }
+
+            // ((\d+\.?\d*)|(\.\d+))
+            if(TryParseDecimals(utf8String, ref i, out frac) == false) {
+                return Error(out result);
+            }
+
+            // ((E|e)(-|\+)?\d+)?$
+            if(i < utf8String.Length) {
+                var current = utf8String.At(i++);
+                if(current != 'E' && current != 'e') { return Error(out result); }
+
+                // (-|\+)?
+                if(TryParseSign(utf8String, ref i, out expSign) == false) { return Error(out result); }
+
+                // \d+$
+                if(TryParseNumbers(utf8String, ref i, out exp, out _, false) == false) { return Error(out result); }
+                if(i != utf8String.Length) { return Error(out result); }
+            }
+
+            result = sign * frac * (float)Math.Pow(10, expSign * exp);    // TODO:
+            return true;
+
+
+            static bool TryParseNumbers(in ReadOnlySpan<byte> utf8String, ref int i, out int num, out int numLength, bool isOptional)
+            {
+                // isOptional
+                // true  : \d*
+                // false : \d+
+
+                num = 0;
+                numLength = 0;
+                if(isOptional == false) {
+                    if(i >= utf8String.Length) { return false; }
+                    if(Atoi(utf8String.At(i++), out num) == false) { return false; }
+                    numLength++;
+                }
+                while(true) {
+                    if(i >= utf8String.Length) { break; }
+                    if(Atoi(utf8String.At(i), out int a) == false) { break; }
+                    i++;
+                    num = checked(num * 10 + a);
+                    numLength++;
+                }
+                return true;
+            }
+
+            static bool TryParseDecimals(in ReadOnlySpan<byte> utf8String, ref int i, out float value)
+            {
+                // Check number
+                // ((\d+\.?\d*)|(\.\d+))
+                value = 0f;
+
+                if(i >= utf8String.Length) { return false; }
+                if(utf8String.At(i) == '.') {
+                    i++;
+                    // \d+
+                    if(TryParseNumbers(utf8String, ref i, out var num, out var len, false)) {
+                        value = num * (float)Math.Pow(10, -len);    // TODO: use a table
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                else {
+                    // \d+\.?\d*
+                    if(TryParseNumbers(utf8String, ref i, out var num1, out var len1, false) == false) { return false; }
+                    if(utf8String.At(i) == '.') {
+                        i++;
+                        if(TryParseNumbers(utf8String, ref i, out var num2, out var len2, true)) {
+                            value = num1 + (float)Math.Pow(10, -len2) * num2;
+                            return true;
+                        }
+                        else {
+                            return false;
+                        }
+                    }
+                    else {
+                        value = num1;
+                        return true;
+                    }
+                }
+            }
+
+            static bool TryParseSign(in ReadOnlySpan<byte> utf8String, ref int i, out int sign)
+            {
+                if(i >= utf8String.Length) {
+                    sign = default;
+                    return false;
+                }
+                if(utf8String.At(i) == '-') {
+                    sign = -1;
+                    i++;
+                }
+                else if(utf8String.At(i) == '+') {
+                    sign = 1;
+                    i++;
+                }
+                else {
+                    sign = 1;
+                }
+                return true;
+            }
+
+            static bool Error(out float result)
+            {
+                result = 0;
+                return false;
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool Atoi(byte a, out int i)
         {
             i = a - '0';
-            return i <= '9';
+            return (uint)i <= 9;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool Atoi(byte a, out uint i)
         {
             i = (uint)(a - '0');
-            return i <= '9';
+            return i <= 9;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool Atoi(byte a, out long i)
         {
             i = (long)(a - '0');
-            return i <= '9';
+            return (ulong)i <= 9;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool Atoi(byte a, out ulong i)
         {
             i = (ulong)(a - '0');
-            return i <= '9';
+            return i <= 9;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool Atoi(byte a, out short i)
         {
             i = (short)(a - '0');
-            return i <= '9';
+            return (ushort)i <= 9;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool Atoi(byte a, out ushort i)
         {
             i = (ushort)(a - '0');
-            return i <= '9';
+            return i <= 9;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool Atoi(byte a, out sbyte i)
         {
             i = (sbyte)(a - '0');
-            return i <= '9';
+            return (byte)i <= 9;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool Atoi(byte a, out byte i)
         {
             i = (byte)(a - '0');
-            return i <= '9';
+            return i <= 9;
         }
     }
 }

@@ -182,6 +182,14 @@ namespace UnitTest
         }
 
         [Fact]
+        public void Float()
+        {
+            var utf8String = Encoding.UTF8.GetBytes("1.5E3").AsSpan();
+            Utf8SpanHelper.TryParseFloat32(utf8String, out var result);
+            return;
+        }
+
+        [Fact]
         public void Slice()
         {
             var hoge = RawStringSource.Get("hoge");
