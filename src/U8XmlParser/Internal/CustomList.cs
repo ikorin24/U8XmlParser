@@ -84,8 +84,7 @@ namespace U8Xml.Internal
             return new CustomList<T>(listInfo);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public T* Add(T item)
+        public T* GetPointerToAdd()
         {
             Debug.Assert(Info != null);     // I don't check it because CustomList<T> is internal.
             if(Info->Count >= ListInfo.MaxItemCount) { ThrowHelper.ThrowInvalidOperation("Can not add any more."); }
@@ -94,7 +93,6 @@ namespace U8Xml.Internal
                 currentLine = NewLine(Info);
             }
             var addr = &currentLine->FirstItem + currentLine->Count;
-            *addr = item;
             currentLine->Count++;
             Info->Count++;
             return addr;

@@ -53,7 +53,6 @@ namespace U8Xml.Internal
             return _ptr[_count - 1];
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
             Marshal.FreeHGlobal((IntPtr)_ptr);

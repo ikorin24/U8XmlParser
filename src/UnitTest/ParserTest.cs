@@ -37,6 +37,13 @@ namespace UnitTest
             static void TestXml(XmlObject xml)
             {
                 Assert.NotNull(xml);
+                var declaration = xml.Declaration;
+                Assert.True(declaration.AsRawString() == @"<?xml version=""1.0"" encoding=""UTF-8""?>");
+                Assert.True(declaration.Version.Name == "version");
+                Assert.True(declaration.Version.Value == "1.0");
+                Assert.True(declaration.Encoding.Name == "encoding");
+                Assert.True(declaration.Encoding.Value == "UTF-8");
+
                 var root = xml.Root;
                 Assert.True(root.Name == "あいうえお");
                 Assert.True(root.InnerText.IsEmpty);

@@ -81,23 +81,25 @@ namespace U8Xml
 
             var nodes = CustomList<XmlNode_>.Create();
             var attrs = CustomList<XmlAttribute_>.Create();
+            var optional = OptionalNodeList.Create();
             try {
-                StartStateMachine(rawString, nodes, attrs);
-                return new XmlObject(ref buf, offset, nodes, attrs);
+                StartStateMachine(rawString, nodes, attrs, optional);
+                return new XmlObject(ref buf, offset, nodes, attrs, optional);
             }
             catch {
                 nodes.Dispose();
                 attrs.Dispose();
+                optional.Dispose();
                 throw;
             }
         }
 
-        private static void StartStateMachine(RawString data, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attrs)
+        private static void StartStateMachine(RawString data, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attrs, OptionalNodeList optional)
         {
             // Encoding assumes utf-8 without bom. Others are not supported.
             // Parse format by using a state machine. (It's very primitive but fastest.)
             int i = 0;
-            using var nodeStack = new NodeStack(capacity: 32);
+            using var nodeStack = new NodeStack(32);
 
         None:   // Out of xml node
             {
@@ -141,14 +143,15 @@ namespace U8Xml
                 else if(data.At(i) == '?') {
                     if(i + 4 < data.Length && data.At(i + 1) == 'x' && data.At(i + 2) == 'm' && data.At(i + 3) == 'l' && data.At(i + 4) == ' ') // Start with "<?xml "
                     {
-                        if(SkipXmlDeclaration(data, ref i) == false) { throw NewFormatException(); }   // Skip <?xml version="1.0" encoding="UTF-8"?>
+                        if(GetXmlDeclaration(data, ref i, attrs, optional) == false) { throw NewFormatException(); }   // <?xml version="1.0" encoding="UTF-8"?>
                         goto None;
                     }
                     else { throw NewFormatException(); }
                 }
                 else {
                     GetNodeName(data, ref i, out var name);
-                    var node = nodes.Add(new XmlNode_(name, attrs));
+                    var node = nodes.GetPointerToAdd();
+                    *node = new XmlNode_(name, attrs);
                     while(true) {
                         if(data.At(i) == '>') {
                             if(nodeStack.Count > 0) {
@@ -167,7 +170,8 @@ namespace U8Xml
                             goto None;
                         }
                         else {
-                            var attr = attrs.Add(GetAttr(data, ref i));
+                            var attr = attrs.GetPointerToAdd();
+                            *attr = GetAttr(data, ref i);
                             if(node->HasAttribute == false) {
                                 node->AttrIndex = attrs.Count - 1;
                             }
@@ -242,13 +246,17 @@ namespace U8Xml
             }
         }
 
-        private static bool SkipXmlDeclaration(RawString data, ref int i)
+        private static bool GetXmlDeclaration(RawString data, ref int i, CustomList<XmlAttribute_> attrs, OptionalNodeList optional)
         {
-            // Skip <?xml version="1.0" encoding="UTF-8"?>
+            // Parse <?xml version="1.0" encoding="UTF-8"?>
             // Current data[i] == '?'
             // return false if end of data, otherwise true
 
             Debug.Assert(data.Slice(i, 5).ToString() == "?xml ");
+            Debug.Assert(i - 1 >= 0);
+
+            var declaration = optional.Declaration;
+            var start = i - 1;
             i += 5;
             while(true) {
                 if(i + 1 >= data.Length) {
@@ -258,9 +266,28 @@ namespace U8Xml
                 if(data.At(i) == '?' && data.At(i + 1) == '>')   // end with "?>"
                 {
                     i += 2;
+                    declaration->Body = data.SliceUnsafe(start, i - start);
                     return true;
                 }
-                i++;
+                else {
+                    var attr = attrs.GetPointerToAdd();
+                    *attr = GetAttr(data, ref i);
+
+                    // const utf-8 string. They are embedded in the dll.
+                    ReadOnlySpan<byte> version = new byte[] { (byte)'v', (byte)'e', (byte)'r', (byte)'s', (byte)'i', (byte)'o', (byte)'n' };
+                    ReadOnlySpan<byte> v1_0 = new byte[] { (byte)'1', (byte)'.', (byte)'0' };
+                    ReadOnlySpan<byte> encoding = new byte[] { (byte)'e', (byte)'n', (byte)'c', (byte)'o', (byte)'d', (byte)'i', (byte)'n', (byte)'g' };
+
+                    if(attr->Name.SequenceEqual(version)) {
+                        if(attr->Value.SequenceEqual(v1_0) == false) {
+                            throw NewFormatException("Invalid xml version. it must be '1.0'");
+                        }
+                        declaration->Version = attr;
+                    }
+                    if(attr->Name.SequenceEqual(encoding)) {
+                        declaration->Encoding = attr;
+                    }
+                }
             }
         }
 

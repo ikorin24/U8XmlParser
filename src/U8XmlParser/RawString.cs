@@ -194,7 +194,7 @@ namespace U8Xml
 
         public static bool operator !=(string left, RawString right) => !(right == left);
 
-        public static implicit operator ReadOnlySpan<byte>(RawString rawString) => rawString.AsSpan();
+        //public static implicit operator ReadOnlySpan<byte>(RawString rawString) => rawString.AsSpan();
     }
 
     internal sealed class RawStringDebuggerTypeProxy
