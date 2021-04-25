@@ -10,6 +10,9 @@ namespace UnitTest
 @"<?xml version=""1.0"" encoding=""UTF-8""?>
 <あいうえお ほげ=""3"">
     <かきくけこ>さしすせそ</かきくけこ>
+    <abc>
+        <![CDATA[15 / 3 > A && -3 < B]]>
+    </abc>
 </あいうえお>")]
         private static partial ReadOnlySpan<byte> Xml1();
         public static ReadOnlySpan<byte> Sample1 => Xml1();

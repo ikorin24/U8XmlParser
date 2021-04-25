@@ -36,7 +36,7 @@ namespace U8Xml.Internal
 #endif
         public static void ThrowArgOutOfRange(string? message = null)
         {
-            throw new FormatException(message);
+            throw new ArgumentOutOfRangeException(message);
         }
 
 #if CODE_ANALYTICS
@@ -52,7 +52,7 @@ namespace U8Xml.Internal
 #endif
         public static void ThrowInvalidOperation(string? message = null)
         {
-            throw new ArgumentException(message);
+            throw new InvalidOperationException(message);
         }
 
 #if CODE_ANALYTICS

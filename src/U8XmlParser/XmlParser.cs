@@ -138,7 +138,10 @@ namespace U8Xml
                         if(SkipComment(data, ref i) == false) { throw NewFormatException(); }
                         goto None;
                     }
-                    else { goto ExtraNode; }    // extra node. ex)  <!ENTITY st3 "font-family:'Arial';">
+                    else {
+                        i++;
+                        goto ExtraNode; // extra node. ex)  <!ENTITY st3 "font-family:'Arial';">
+                    }
                 }
                 else if(data.At(i) == '?') {
                     if(i + 4 < data.Length && data.At(i + 1) == 'x' && data.At(i + 2) == 'm' && data.At(i + 3) == 'l' && data.At(i + 4) == ' ') // Start with "<?xml "
@@ -194,23 +197,7 @@ namespace U8Xml
 
         ExtraNode:  // Current data[i] is next char to "<!". (except comment out)
             {
-                if(i + 6 < data.Length && data.At(i) == '[' && data.At(i + 1) == 'C' && data.At(i + 2) == 'D' && 
-                   data.At(i + 3) == 'A' && data.At(i + 4) == 'T' && data.At(i + 5) == 'A' && data.At(i + 6) == '[') {
-                    // <![CDATA[...]]>
-                    i += 7;
-                    var start = i;
-                    while(true) {
-                        if(i + 2 >= data.Length) { throw NewFormatException(); }
-                        if(data.At(i) == ']' && data.At(i + 1) == ']' && data.At(i + 2) == '>') {
-                            i += 3;
-                            break;
-                        }
-                        else {
-                            i++;
-                        }
-                    }
-                    var node = nodeStack.Peek();
-                    node->InnerText = data.SliceUnsafe(start, start - i - 4);
+                if(TryParseCDATA(data, ref i, nodeStack)) {
                     goto None;
                 }
                 else {
@@ -233,6 +220,32 @@ namespace U8Xml
             {
                 Debug.Assert(nodeStack.Count == 0);
                 return;
+            }
+        }
+
+        private static bool TryParseCDATA(RawString data, ref int i, in NodeStack nodeStack)
+        {
+            if(i + 6 < data.Length && data.At(i) == '[' && data.At(i + 1) == 'C' && data.At(i + 2) == 'D' &&
+               data.At(i + 3) == 'A' && data.At(i + 4) == 'T' && data.At(i + 5) == 'A' && data.At(i + 6) == '[') {
+                // <![CDATA[...]]>
+                i += 7;
+                var start = i;
+                while(true) {
+                    if(i + 2 >= data.Length) { throw NewFormatException(); }
+                    if(data.At(i) == ']' && data.At(i + 1) == ']' && data.At(i + 2) == '>') {
+                        i += 3;
+                        break;
+                    }
+                    else {
+                        i++;
+                    }
+                }
+                var node = nodeStack.Peek();
+                node->InnerText = data.SliceUnsafe(start, i - start - 3);
+                return true;
+            }
+            else {
+                return false;
             }
         }
 

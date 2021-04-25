@@ -50,7 +50,7 @@ namespace UnitTest
                 Assert.True(root.HasAttribute);
                 Assert.True(root.Attributes.Count == 1);
                 Assert.True(root.HasChildren);
-                Assert.True(root.Children.Count == 1);
+                Assert.True(root.Children.Count == 2);
 
                 // Test attributus enumeration via interface
                 Assert.True(root.Attributes.First().Name == "ほげ");
@@ -68,22 +68,46 @@ namespace UnitTest
                 }
 
                 // Test children enumeration via interface
-                Assert.True(root.Children.First().Name == "かきくけこ");
-                Assert.True(root.Children.First().InnerText == "さしすせそ");
-                Assert.True(root.Children.First().HasAttribute == false);
-                Assert.True(root.Children.First().Attributes.Count == 0);
-                Assert.True(root.Children.First().HasChildren == false);
-                Assert.True(root.Children.First().Children.Count == 0);
+                {
+                    var first = root.Children.First();
+                    Assert.True(first.Name == "かきくけこ");
+                    Assert.True(first.InnerText == "さしすせそ");
+                    Assert.True(first.HasAttribute == false);
+                    Assert.True(first.Attributes.Count == 0);
+                    Assert.True(first.HasChildren == false);
+                    Assert.True(first.Children.Count == 0);
+
+                    var second = root.Children.ElementAt(1);
+                    Assert.True(second.Name == "abc");
+                    Assert.True(second.InnerText == "15 / 3 > A && -3 < B");
+                    Assert.True(second.HasAttribute == false);
+                    Assert.True(second.Attributes.Count == 0);
+                    Assert.True(second.HasChildren == false);
+                    Assert.True(second.Children.Count == 0);
+                }
 
                 // Test children enumeration directly
-                foreach(var child in root.Children) {
-                    Assert.True(child.Name == "かきくけこ");
-                    Assert.True(child.InnerText == "さしすせそ");
-                    Assert.True(child.HasAttribute == false);
-                    Assert.True(child.Attributes.Count == 0);
-                    Assert.True(child.HasChildren == false);
-                    Assert.True(child.Children.Count == 0);
-                    break;
+                {
+                    int i = 0;
+                    foreach(var child in root.Children) {
+                        if(i == 0) {
+                            Assert.True(child.Name == "かきくけこ");
+                            Assert.True(child.InnerText == "さしすせそ");
+                            Assert.True(child.HasAttribute == false);
+                            Assert.True(child.Attributes.Count == 0);
+                            Assert.True(child.HasChildren == false);
+                            Assert.True(child.Children.Count == 0);
+                        }
+                        else if(i == 1) {
+                            Assert.True(child.Name == "abc");
+                            Assert.True(child.InnerText == "15 / 3 > A && -3 < B");
+                            Assert.True(child.HasAttribute == false);
+                            Assert.True(child.Attributes.Count == 0);
+                            Assert.True(child.HasChildren == false);
+                            Assert.True(child.Children.Count == 0);
+                        }
+                        i++;
+                    }
                 }
             }
         }
