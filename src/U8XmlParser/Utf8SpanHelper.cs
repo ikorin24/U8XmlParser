@@ -15,6 +15,7 @@ namespace U8Xml
             // Regex
             // ^(-|\+)?[0-9]+$
 
+            utf8String = utf8String.Trim();
             int i = 0;
             int sign = 1;
             if(i >= utf8String.Length) { return Error(out result); }
@@ -48,6 +49,7 @@ namespace U8Xml
             // Regex
             // ^\+?[0-9]+$
 
+            utf8String = utf8String.Trim();
             int i = 0;
             if(i >= utf8String.Length) { return Error(out result); }
             if(utf8String.At(i) == '+') {
@@ -74,6 +76,7 @@ namespace U8Xml
             // Regex
             // ^(-|\+)?[0-9]+$
 
+            utf8String = utf8String.Trim();
             int i = 0;
             int sign = 1;
             if(i >= utf8String.Length) { return Error(out result); }
@@ -107,6 +110,7 @@ namespace U8Xml
             // Regex
             // ^\+?[0-9]+$
 
+            utf8String = utf8String.Trim();
             int i = 0;
             if(i >= utf8String.Length) { return Error(out result); }
             if(utf8String.At(i) == '+') {
@@ -133,6 +137,7 @@ namespace U8Xml
             // Regex
             // ^(-|\+)?[0-9]+$
 
+            utf8String = utf8String.Trim();
             int i = 0;
             short sign = 1;
             if(i >= utf8String.Length) { return Error(out result); }
@@ -166,6 +171,7 @@ namespace U8Xml
             // Regex
             // ^\+?[0-9]+$
 
+            utf8String = utf8String.Trim();
             int i = 0;
             if(i >= utf8String.Length) { return Error(out result); }
             if(utf8String.At(i) == '+') {
@@ -192,6 +198,7 @@ namespace U8Xml
             // Regex
             // ^(-|\+)?[0-9]+$
 
+            utf8String = utf8String.Trim();
             int i = 0;
             sbyte sign = 1;
             if(i >= utf8String.Length) { return Error(out result); }
@@ -225,6 +232,7 @@ namespace U8Xml
             // Regex
             // ^\+?[0-9]+$
 
+            utf8String = utf8String.Trim();
             int i = 0;
             if(i >= utf8String.Length) { return Error(out result); }
             if(utf8String.At(i) == '+') {
@@ -261,6 +269,8 @@ namespace U8Xml
             float frac;
             int expSign = 1;
             int exp = 0;
+
+            utf8String = utf8String.Trim();
 
             // (-|\+)?
             if(TryParseSign(utf8String, ref i, out sign) == false) { return Error(out result); }

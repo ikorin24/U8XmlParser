@@ -194,18 +194,39 @@ namespace U8Xml
 
         ExtraNode:  // Current data[i] is next char to "<!". (except comment out)
             {
-                var bracketCount = 0;
-                while(true) {
-                    if(i >= data.Length) { throw NewFormatException(); }
-                    if(data.At(i) == '<') { bracketCount++; }
-                    else if(data.At(i) == '>') {
-                        if(bracketCount == 0) { break; }
-                        bracketCount--;
+                if(i + 6 < data.Length && data.At(i) == '[' && data.At(i + 1) == 'C' && data.At(i + 2) == 'D' && 
+                   data.At(i + 3) == 'A' && data.At(i + 4) == 'T' && data.At(i + 5) == 'A' && data.At(i + 6) == '[') {
+                    // <![CDATA[...]]>
+                    i += 7;
+                    var start = i;
+                    while(true) {
+                        if(i + 2 >= data.Length) { throw NewFormatException(); }
+                        if(data.At(i) == ']' && data.At(i + 1) == ']' && data.At(i + 2) == '>') {
+                            i += 3;
+                            break;
+                        }
+                        else {
+                            i++;
+                        }
+                    }
+                    var node = nodeStack.Peek();
+                    node->InnerText = data.SliceUnsafe(start, start - i - 4);
+                    goto None;
+                }
+                else {
+                    var bracketCount = 0;
+                    while(true) {
+                        if(i >= data.Length) { throw NewFormatException(); }
+                        if(data.At(i) == '<') { bracketCount++; }
+                        else if(data.At(i) == '>') {
+                            if(bracketCount == 0) { break; }
+                            bracketCount--;
+                        }
+                        i++;
                     }
                     i++;
+                    goto None;
                 }
-                i++;
-                goto None;
             }
 
         End:

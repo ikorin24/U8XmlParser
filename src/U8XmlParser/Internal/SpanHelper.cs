@@ -58,5 +58,53 @@ namespace U8Xml.Internal
             return ref span[index];
 #endif
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static ReadOnlySpan<byte> SliceUnsafe(this ReadOnlySpan<byte> span, int start, int length)
+        {
+#if DEBUG
+            if((uint)start > (uint)span.Length) { ThrowHelper.ThrowArgOutOfRange(nameof(start)); }
+            if((uint)length > (uint)(span.Length - start)) { ThrowHelper.ThrowArgOutOfRange(nameof(length)); }
+#endif
+
+#if FAST_SPAN
+            return MemoryMarshal.CreateReadOnlySpan(ref Unsafe.Add(ref MemoryMarshal.GetReference(span), start), length);
+#else
+            return span.Slice(start, length);
+#endif
+        }
+
+        /// <summary>Trim invisible charactors. (whitespace, '\t', '\r', and '\n')</summary>
+        /// <returns>trimmed string</returns>
+        internal static ReadOnlySpan<byte> Trim(this ReadOnlySpan<byte> span)
+        {
+            return span.TrimStart().TrimEnd();
+        }
+
+        /// <summary>Trim invisible charactors of start. (whitespace, '\t', '\r', and '\n')</summary>
+        /// <returns>trimmed string</returns>
+        internal static ReadOnlySpan<byte> TrimStart(this ReadOnlySpan<byte> span)
+        {
+            for(int i = 0; i < span.Length; i++) {
+                ref readonly var p = ref span.At(i);
+                if(p != ' ' && p != '\t' && p != '\r' && p != '\n') {
+                    return span.SliceUnsafe(i, span.Length - i);
+                }
+            }
+            return ReadOnlySpan<byte>.Empty;
+        }
+
+        /// <summary>Trim invisible charactors of end. (whitespace, '\t', '\r' and '\n')</summary>
+        /// <returns>trimmed string</returns>
+        internal static ReadOnlySpan<byte> TrimEnd(this ReadOnlySpan<byte> span)
+        {
+            for(int i = span.Length - 1; i >= 0; i--) {
+                ref readonly var p = ref span.At(i);
+                if(p != ' ' && p != '\t' && p != '\r' && p != '\n') {
+                    return span.SliceUnsafe(0, i + 1);
+                }
+            }
+            return span;
+        }
     }
 }
