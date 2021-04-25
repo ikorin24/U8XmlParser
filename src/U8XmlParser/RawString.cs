@@ -23,7 +23,7 @@ namespace U8Xml
         /// <summary>Get whether the byte array is empty or not.</summary>
         public bool IsEmpty => _length == 0;
 
-        /// <summary>Get length of the byte array</summary>
+        /// <summary>Get length of the byte array. (NOT length of utf-8 string)</summary>
         public int Length => _length;
 
         /// <summary>Get or set an item with specified index</summary>
@@ -47,8 +47,14 @@ namespace U8Xml
             _length = length;
         }
 
+        /// <summary>Get read-only bytes data</summary>
+        /// <returns><see cref="ReadOnlySpan{T}"/> of type <see langword="byte"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<byte> AsSpan() => SpanHelper.CreateReadOnlySpan<byte>(_ptr.ToPointer(), _length);
+
+        /// <summary>Copy the bytes to a new byte array.</summary>
+        /// <returns>new array</returns>
+        public byte[] ToArray() => AsSpan().ToArray();
 
         /// <summary>Get slice of the array</summary>
         /// <param name="start">start index to slice</param>
@@ -203,7 +209,7 @@ namespace U8Xml
         private readonly RawString _entity;
 
         [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public byte[] Items => _entity.AsSpan().ToArray();
+        public byte[] Items => _entity.ToArray();
 
 
         public RawStringDebuggerTypeProxy(RawString entity)
