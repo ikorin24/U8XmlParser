@@ -203,6 +203,12 @@ namespace UnitTest
             foreach(var (input, expected) in testCases) {
                 Assert.True(expected.SequenceEqual(input.ToUpper()));
             }
+
+            foreach(var (input, expected) in testCases) {
+                var buf = new byte[input.Length];
+                input.ToUpper(buf);
+                Assert.True(expected.SequenceEqual(buf));
+            }
         }
 
         [Fact]
@@ -217,6 +223,12 @@ namespace UnitTest
 
             foreach(var (input, expected) in testCases) {
                 Assert.True(expected.SequenceEqual(input.ToLower()));
+            }
+
+            foreach(var (input, expected) in testCases) {
+                var buf = new byte[input.Length];
+                input.ToLower(buf);
+                Assert.True(expected.SequenceEqual(buf));
             }
         }
 
