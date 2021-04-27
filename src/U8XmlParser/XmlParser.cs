@@ -4,6 +4,7 @@ using System.IO;
 using System.Diagnostics;
 using U8Xml.Internal;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace U8Xml
 {
@@ -11,10 +12,18 @@ namespace U8Xml
     public static unsafe class XmlParser
     {
         /// <summary>Byte Order Mark of utf-8 with bom</summary>
-        internal static ReadOnlySpan<byte> Utf8BOM => new byte[] { 0xEF, 0xBB, 0xBF };   // Bytes are embedded in dll, so there are no heap allocation.
+        private static ReadOnlySpan<byte> Utf8BOM => new byte[] { 0xEF, 0xBB, 0xBF };   // Bytes are embedded in dll, so there are no heap allocation.
+        private static ReadOnlySpan<byte> Utf16LEBOM => new byte[] { 0xFF, 0xFE };
 
+
+        /// <summary>Parse xml of <see langword="string"/></summary>
+        /// <param name="text">text of xml</param>
+        /// <returns>xml object</returns>
         public static XmlObject Parse(string text) => Parse(text.AsSpan());
 
+        /// <summary>Parse xml of <see cref="ReadOnlySpan{char}"/></summary>
+        /// <param name="text">text of xml</param>
+        /// <returns>xml object</returns>
         public static XmlObject Parse(ReadOnlySpan<char> text)
         {
             var buf = default(UnmanagedBuffer);
@@ -32,14 +41,14 @@ namespace U8Xml
             }
         }
 
-        /// <summary>Parse xml file encoded as UTF8.</summary>
-        /// <param name="utf8String">utf-8 byte span data</param>
+        /// <summary>Parse xml encoded as UTF8 (both with and without BOM).</summary>
+        /// <param name="utf8Text">utf-8 byte span data</param>
         /// <returns>xml object</returns>
-        public static XmlObject Parse(ReadOnlySpan<byte> utf8String)
+        public static XmlObject Parse(ReadOnlySpan<byte> utf8Text)
         {
-            var buf = new UnmanagedBuffer(utf8String);
+            var buf = new UnmanagedBuffer(utf8Text);
             try {
-                return ParseCore(ref buf, utf8String.Length);
+                return ParseCore(ref buf, utf8Text.Length);
             }
             catch {
                 buf.Dispose();
@@ -47,7 +56,7 @@ namespace U8Xml
             }
         }
 
-        /// <summary>Parse xml file encoded as UTF8.</summary>
+        /// <summary>Parse xml file encoded as UTF8 (both with and without BOM).</summary>
         /// <param name="stream">stream to read</param>
         /// <returns>xml object</returns>
         public static XmlObject Parse(Stream stream)
@@ -56,7 +65,7 @@ namespace U8Xml
             return Parse(stream, fileSizeHint);
         }
 
-        /// <summary>Parse xml file</summary>
+        /// <summary>Parse xml file encoded as UTF8 (both with and without BOM).</summary>
         /// <param name="stream">stream to read</param>
         /// <param name="fileSizeHint">file size hint which is used for optimizing memory</param>
         /// <returns>xml object</returns>
@@ -73,18 +82,73 @@ namespace U8Xml
             }
         }
 
-        private static XmlObject ParseCore(ref UnmanagedBuffer buf, int length)
+        /// <summary>Parse xml file encoded as specified encoding.</summary>
+        /// <param name="stream">stream to read</param>
+        /// <param name="encoding">encoding of <paramref name="stream"/></param>
+        /// <returns>xml object</returns>
+        public static XmlObject Parse(Stream stream, Encoding encoding)
+        {
+            var fileSizeHint = stream.CanSeek ? (int)stream.Length : 1024 * 1024;
+            return Parse(stream, encoding, fileSizeHint);
+        }
+
+        /// <summary>Parse xml file encoded as specified encoding.</summary>
+        /// <param name="stream">stream to read</param>
+        /// <param name="encoding">encoding of <paramref name="stream"/></param>
+        /// <returns>xml object</returns>
+        public static XmlObject Parse(Stream stream, Encoding encoding, int fileSizeHint)
+        {
+            if(stream is null) { ThrowHelper.ThrowNullArg(nameof(stream)); }
+            if(encoding is null) { ThrowHelper.ThrowNullArg(nameof(encoding)); }
+            if(encoding is UTF8Encoding || encoding is ASCIIEncoding) {
+                return Parse(stream);
+            }
+            else if(encoding.Equals(Encoding.Unicode) && BitConverter.IsLittleEndian) {
+                // The runtime is little endian and the encoding is utf-16 LE with BOM
+                var (utf16LEBuf, utf16ByteLength) = stream!.ReadAllToUnmanaged(fileSizeHint);
+                using(utf16LEBuf) {
+                    var utf16LESpan = SpanHelper.CreateReadOnlySpan<char>((void*)utf16LEBuf.Ptr, utf16ByteLength / sizeof(char));
+                    // Remove BOM
+                    if(MemoryMarshal.AsBytes(utf16LESpan).StartsWith(Utf16LEBOM)) {
+                        utf16LESpan = utf16LESpan.Slice(2);
+                    }
+                    return Parse(utf16LESpan);
+                }
+            }
+            else {
+                var (buf, byteLength) = stream!.ReadAllToUnmanaged(fileSizeHint);
+                UnmanagedBuffer charBuf = default;
+                ReadOnlySpan<char> charSpan = default;
+                try {
+                    try {
+                        var charCount = encoding.GetCharCount((byte*)buf.Ptr, byteLength);
+                        charBuf = new UnmanagedBuffer(charCount * sizeof(char));
+                        encoding.GetChars((byte*)buf.Ptr, byteLength, (char*)charBuf.Ptr, charCount);
+                        charSpan = SpanHelper.CreateReadOnlySpan<char>((void*)charBuf.Ptr, charCount);
+                    }
+                    finally {
+                        buf.Dispose();
+                    }
+                    return Parse(charSpan);
+                }
+                finally {
+                    charBuf.Dispose();
+                }
+            }
+        }
+
+        private static XmlObject ParseCore(ref UnmanagedBuffer utf8Buf, int length)
         {
             // Remove utf-8 bom
-            var offset = buf.AsSpan(0, 3).SequenceEqual(Utf8BOM) ? 3 : 0;
-            var rawString = new RawString((byte*)buf.Ptr + offset, length - offset);
+            var offset = utf8Buf.AsSpan(0, 3).SequenceEqual(Utf8BOM) ? 3 : 0;
+            var rawString = new RawString((byte*)utf8Buf.Ptr + offset, length - offset);
 
             var nodes = CustomList<XmlNode_>.Create();
             var attrs = CustomList<XmlAttribute_>.Create();
             var optional = OptionalNodeList.Create();
             try {
                 StartStateMachine(rawString, nodes, attrs, optional);
-                return new XmlObject(ref buf, offset, nodes, attrs, optional);
+                return new XmlObject(ref utf8Buf, offset, nodes, attrs, optional);
             }
             catch {
                 nodes.Dispose();

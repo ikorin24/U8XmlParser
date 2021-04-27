@@ -14,6 +14,13 @@ namespace UnitTest
         [Fact]
         public void Parse()
         {
+            static Func<XmlObject> EncodingTest(Encoding encoding)
+            {
+                var bytes = Encoding.Convert(Encoding.UTF8, encoding, Data.Sample1.ToArray());
+                var ms = new MemoryStream(bytes);
+                return () => XmlParser.Parse(ms, encoding);
+            }
+
             var tests = new Func<XmlObject>[]
             {
                 // from ReadOnlySpan<byte>
@@ -24,6 +31,17 @@ namespace UnitTest
                 () => XmlParser.Parse(Encoding.UTF8.GetString(Data.Sample1.ToArray()).AsSpan()),
                 // from Stream
                 () => XmlParser.Parse(new MemoryStream(Data.Sample1.ToArray())),
+                // from Stream, fileSizeHint
+                () =>
+                {
+                    var ms = new MemoryStream(Data.Sample1.ToArray());
+                    return XmlParser.Parse(ms, (int)ms.Length);
+                },
+                // from Stream, Encoding
+                EncodingTest(Encoding.UTF8),
+                EncodingTest(Encoding.Unicode),
+                EncodingTest(Encoding.BigEndianUnicode),
+                EncodingTest(Encoding.UTF32),
             };
 
             foreach(var func in tests) {
