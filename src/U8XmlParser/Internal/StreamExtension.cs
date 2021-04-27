@@ -32,6 +32,7 @@ namespace U8Xml.Internal
                     }
                     var readlen = stream.Read(buf.AsSpan(length));
                     length += readlen;
+                    if(stream.CanSeek && stream.Position == stream.Length) { break; }
                     if(readlen == 0) { break; }
                 }
                 return (buf, length);
@@ -54,6 +55,7 @@ namespace U8Xml.Internal
                     rentArray.AsSpan(0, readlen).CopyTo(tmp.AsSpan(buf.Length));
                     buf.Dispose();
                     buf = tmp;
+                    if(stream.CanSeek && stream.Position == stream.Length) { break; }
                 }
                 return (buf, buf.Length);
             }
