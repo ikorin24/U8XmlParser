@@ -10,6 +10,30 @@ namespace U8Xml
         private const string InvalidFormatMessage = "Invalid format";
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ToUpper(Span<byte> buffer)
+        {
+            Utf8SpanHelper.ToUpper(AsSpan(), buffer);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public byte[] ToUpper()
+        {
+            return Utf8SpanHelper.ToUpper(AsSpan());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ToLower(Span<byte> buffer)
+        {
+            Utf8SpanHelper.ToLower(AsSpan(), buffer);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public byte[] ToLower()
+        {
+            return Utf8SpanHelper.ToLower(AsSpan());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToFloat32(out float value)
         {
             return Utf8SpanHelper.TryParseFloat32(AsSpan(), out value);

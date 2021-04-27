@@ -60,6 +60,16 @@ namespace U8Xml.Internal
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ref byte At(this Span<byte> span, int index)
+        {
+#if FAST_SPAN
+            return ref Unsafe.Add(ref MemoryMarshal.GetReference(span), index);
+#else
+            return ref span[index];
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static ReadOnlySpan<byte> SliceUnsafe(this ReadOnlySpan<byte> span, int start, int length)
         {
 #if DEBUG

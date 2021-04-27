@@ -191,6 +191,36 @@ namespace UnitTest
         }
 
         [Fact]
+        public void ToUpper()
+        {
+            var testCases = new (RawString input, RawString expected)[]
+            {
+                (RawStringSource.Get("あいうえお"), RawStringSource.Get("あいうえお")),
+                (RawStringSource.Get("あa0"), RawStringSource.Get("あA0")),
+                (RawStringSource.Get("abcde"), RawStringSource.Get("ABCDE")),
+            };
+
+            foreach(var (input, expected) in testCases) {
+                Assert.True(expected.SequenceEqual(input.ToUpper()));
+            }
+        }
+
+        [Fact]
+        public void ToLower()
+        {
+            var testCases = new (RawString input, RawString expected)[]
+            {
+                (RawStringSource.Get("あいうえお"), RawStringSource.Get("あいうえお")),
+                (RawStringSource.Get("あA0"), RawStringSource.Get("あa0")),
+                (RawStringSource.Get("ABCDE"), RawStringSource.Get("abcde")),
+            };
+
+            foreach(var (input, expected) in testCases) {
+                Assert.True(expected.SequenceEqual(input.ToLower()));
+            }
+        }
+
+        [Fact]
         public void Slice()
         {
             var hoge = RawStringSource.Get("hoge");
@@ -331,6 +361,17 @@ namespace UnitTest
         [Utf8("-∞")]
         private static partial ReadOnlySpan<byte> Str28();
 
+        [Utf8("あいうえお")]
+        private static partial ReadOnlySpan<byte> Str29();
+        [Utf8("あa0")]
+        private static partial ReadOnlySpan<byte> Str30();
+        [Utf8("あA0")]
+        private static partial ReadOnlySpan<byte> Str31();
+        [Utf8("abcde")]
+        private static partial ReadOnlySpan<byte> Str32();
+        [Utf8("ABCDE")]
+        private static partial ReadOnlySpan<byte> Str33();
+
         static RawStringSource()
         {
             _dic = new Dictionary<string, RawString>();
@@ -362,6 +403,11 @@ namespace UnitTest
             Register(Str26());
             Register(Str27());
             Register(Str28());
+            Register(Str29());
+            Register(Str30());
+            Register(Str31());
+            Register(Str32());
+            Register(Str33());
 
             static unsafe void Register(ReadOnlySpan<byte> s)
             {

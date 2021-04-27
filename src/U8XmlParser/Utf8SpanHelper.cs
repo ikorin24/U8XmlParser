@@ -10,6 +10,86 @@ namespace U8Xml
         /// <summary>utf-8 bytes of "∞"</summary>
         private static ReadOnlySpan<byte> InfinityUtf8Str => new byte[] { 0xE2, 0x88, 0x9E };
 
+        /// <summary>Copy utf-8 data to the specified buffer with converting lowercase alphabet into uppercase.</summary>
+        /// <param name="utf8Data">source utf-8 data</param>
+        /// <param name="buffer">buffer to copy</param>
+        public static void ToUpper(ReadOnlySpan<byte> utf8Data, Span<byte> buffer)
+        {
+            if(buffer.Length < utf8Data.Length) { ThrowHelper.ThrowArg("buffer is too short."); }
+
+            const uint offset = (uint)'z' - (uint)'a';
+            for(int i = 0; i < utf8Data.Length; i++) {
+                if(utf8Data[i] - (uint)'a' <= offset) {
+                    buffer.At(i) = (byte)(utf8Data[i] - 32);
+                }
+                else {
+                    buffer.At(i) = utf8Data[i];
+                }
+            }
+        }
+
+        /// <summary>Copy utf-8 data with converting lowercase alphabet into uppercase.</summary>
+        /// <param name="utf8Data">source utf-8 data</param>
+        /// <returns>copied utf-8 data</returns>
+        public static byte[] ToUpper(ReadOnlySpan<byte> utf8Data)
+        {
+            var buffer = new byte[utf8Data.Length];
+            ToUpper(utf8Data, buffer);
+            return buffer;
+        }
+
+        /// <summary>Copy utf-8 data to the specified buffer with converting uppercase alphabet into lowercase.</summary>
+        /// <param name="utf8Data">source utf-8 data</param>
+        /// <param name="buffer">buffer to copy</param>
+        public static void ToLower(ReadOnlySpan<byte> utf8Data, Span<byte> buffer)
+        {
+            if(buffer.Length < utf8Data.Length) { ThrowHelper.ThrowArg("buffer is too short."); }
+
+            const uint offset = (uint)'Z' - (uint)'A';
+            for(int i = 0; i < utf8Data.Length; i++) {
+                if((utf8Data[i] - (uint)'A' <= offset)) {
+                    buffer.At(i) = (byte)(utf8Data[i] + 32);
+                }
+                else {
+                    buffer.At(i) = utf8Data[i];
+                }
+            }
+        }
+
+        /// <summary>Copy utf-8 data with converting uppercase alphabet into lowercase.</summary>
+        /// <param name="utf8Data">source utf-8 data</param>
+        /// <returns>copied utf-8 data</returns>
+        public static byte[] ToLower(ReadOnlySpan<byte> utf8Data)
+        {
+            var buffer = new byte[utf8Data.Length];
+            ToLower(utf8Data, buffer);
+            return buffer;
+        }
+
+        public static int DecodeEscape(ReadOnlySpan<byte> utf8Data, Span<byte> buffer)
+        {
+            throw new NotImplementedException();
+            // &#\d+;
+            // &#x[0-9a-fA-F]+;
+            // &lt;
+            // &gt;
+            // &amp;
+            // &quot;
+            // &apos;
+
+
+            // https://www.ipentec.com/document/xml-character-escape
+            // https://gorogoronyan.web.fc2.com/htmlsample/html5_crlf1.html
+            int i = 0;
+            for(int j = 0; j < utf8Data.Length; j++) {
+                if(utf8Data.At(j) == '&') {
+                }
+                if((uint)i >= buffer.Length) { ThrowHelper.ThrowArgOutOfRange("buffer is too short"); }
+                buffer.At(i++) = utf8Data.At(j);
+            }
+            return i;
+        }
+
         public static bool TryParseInt32(ReadOnlySpan<byte> utf8String, out int result)
         {
             // Regex
@@ -253,7 +333,6 @@ namespace U8Xml
                 return false;
             }
         }
-
 
         public static bool TryParseFloat32(ReadOnlySpan<byte> utf8String, out float result)
         {

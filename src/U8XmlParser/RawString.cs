@@ -9,7 +9,7 @@ using System.Buffers;
 
 namespace U8Xml
 {
-    /// <summary>Provides raw byte array of utf8, which is compatible <see cref="Span{T}"/> of <see langword="byte"/>.</summary>
+    /// <summary>Provides raw byte array of utf8, which is compatible <see cref="ReadOnlySpan{T}"/> of <see langword="byte"/>.</summary>
     [DebuggerTypeProxy(typeof(RawStringDebuggerTypeProxy))]
     [DebuggerDisplay("{ToString()}")]
     public readonly unsafe partial struct RawString : IEquatable<RawString>
