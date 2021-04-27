@@ -102,9 +102,9 @@ namespace U8Xml
             if(stream is null) { ThrowHelper.ThrowNullArg(nameof(stream)); }
             if(encoding is null) { ThrowHelper.ThrowNullArg(nameof(encoding)); }
             if(encoding is UTF8Encoding || encoding is ASCIIEncoding) {
-                return Parse(stream);
+                return Parse(stream!);
             }
-            else if(encoding.Equals(Encoding.Unicode) && BitConverter.IsLittleEndian) {
+            else if(encoding!.Equals(Encoding.Unicode) && BitConverter.IsLittleEndian) {
                 // The runtime is little endian and the encoding is utf-16 LE with BOM
                 var (utf16LEBuf, utf16ByteLength) = stream!.ReadAllToUnmanaged(fileSizeHint);
                 using(utf16LEBuf) {

@@ -10,7 +10,7 @@ namespace U8Xml.Internal
 #if !NETCOREAPP3_1
             Unsafe.SkipInit(out value);
 #else
-            value = default;
+            value = default!;
 #endif
         }
     }
