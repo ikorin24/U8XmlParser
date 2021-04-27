@@ -11,8 +11,9 @@ namespace U8Xml
     /// <summary>Parser for xml file</summary>
     public static unsafe class XmlParser
     {
-        /// <summary>Byte Order Mark of utf-8 with bom</summary>
+        /// <summary>Byte Order Mark of utf-8</summary>
         private static ReadOnlySpan<byte> Utf8BOM => new byte[] { 0xEF, 0xBB, 0xBF };   // Bytes are embedded in dll, so there are no heap allocation.
+        /// <summary>Byte Order Mark of utf-16 little endian</summary>
         private static ReadOnlySpan<byte> Utf16LEBOM => new byte[] { 0xFF, 0xFE };
 
 
