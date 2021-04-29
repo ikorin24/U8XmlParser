@@ -22,7 +22,7 @@ namespace U8Xml
         /// <param name="utf8Text">utf-8 string to parse</param>
         /// <returns>xml object</returns>
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static XmlObjectUnsafe Parse(ReadOnlySpan<byte> utf8Text)
+        public static XmlObjectUnsafe ParseUnsafe(ReadOnlySpan<byte> utf8Text)
         {
             var buf = new UnmanagedBuffer(utf8Text);
             try {
