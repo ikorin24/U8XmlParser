@@ -34,7 +34,7 @@ namespace U8Xml
                     buf = new UnmanagedBuffer(byteLen);
                     Encoding.UTF8.GetBytes(ptr, text.Length, (byte*)buf.Ptr, buf.Length);
                 }
-                return ParseCore(ref buf, buf.Length);
+                return new XmlObject(ParseCore(ref buf, buf.Length));
             }
             catch {
                 buf.Dispose();
@@ -49,7 +49,7 @@ namespace U8Xml
         {
             var buf = new UnmanagedBuffer(utf8Text);
             try {
-                return ParseCore(ref buf, utf8Text.Length);
+                return new XmlObject(ParseCore(ref buf, utf8Text.Length));
             }
             catch {
                 buf.Dispose();
@@ -75,7 +75,7 @@ namespace U8Xml
             if(stream is null) { ThrowHelper.ThrowNullArg(nameof(stream)); }
             var (buf, length) = stream!.ReadAllToUnmanaged(fileSizeHint);
             try {
-                return ParseCore(ref buf, length);
+                return new XmlObject(ParseCore(ref buf, length));
             }
             catch {
                 buf.Dispose();
@@ -138,7 +138,7 @@ namespace U8Xml
             }
         }
 
-        private static XmlObject ParseCore(ref UnmanagedBuffer utf8Buf, int length)
+        internal static XmlObjectCore ParseCore(ref UnmanagedBuffer utf8Buf, int length)
         {
             // Remove utf-8 bom
             var offset = utf8Buf.AsSpan(0, 3).SequenceEqual(Utf8BOM) ? 3 : 0;
@@ -149,7 +149,7 @@ namespace U8Xml
             var optional = OptionalNodeList.Create();
             try {
                 StartStateMachine(rawString, nodes, attrs, optional);
-                return new XmlObject(ref utf8Buf, offset, nodes, attrs, optional);
+                return new XmlObjectCore(ref utf8Buf, offset, nodes, attrs, optional);
             }
             catch {
                 nodes.Dispose();
