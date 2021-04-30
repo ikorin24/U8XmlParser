@@ -21,7 +21,6 @@ namespace U8Xml
         /// </summary>
         /// <param name="utf8Text">utf-8 string to parse</param>
         /// <returns>xml object</returns>
-        [EditorBrowsable(EditorBrowsableState.Never)]
         public static XmlObjectUnsafe ParseUnsafe(ReadOnlySpan<byte> utf8Text)
         {
             var buf = new UnmanagedBuffer(utf8Text);
@@ -41,7 +40,6 @@ namespace U8Xml
         /// </summary>
         /// <param name="stream">stream to parse</param>
         /// <returns>xml object</returns>
-        [EditorBrowsable(EditorBrowsableState.Never)]
         public static XmlObjectUnsafe ParseUnsafe(Stream stream)
         {
             var fileSizeHint = stream.CanSeek ? (int)stream.Length : 1024 * 1024;
@@ -56,7 +54,6 @@ namespace U8Xml
         /// <param name="stream">stream to parse</param>
         /// <param name="fileSizeHint">file size hint</param>
         /// <returns>xml object</returns>
-        [EditorBrowsable(EditorBrowsableState.Never)]
         public static XmlObjectUnsafe ParseUnsafe(Stream stream, int fileSizeHint)
         {
             if(stream is null) { ThrowHelper.ThrowNullArg(nameof(stream)); }
