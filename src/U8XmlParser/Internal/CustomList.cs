@@ -74,7 +74,9 @@ namespace U8Xml.Internal
 
         public static CustomList<T> Create()
         {
-            var listInfo = (ListInfo*)Marshal.AllocHGlobal(ListInfo.GetSizeToAllocate());
+            var allocSize = ListInfo.GetSizeToAllocate();
+            var listInfo = (ListInfo*)Marshal.AllocHGlobal(allocSize);
+            AllocationSafety.Add(allocSize);
             listInfo->CurrentLineNum = -1;
             listInfo->Count = 0;
             for(int i = 0; i < ListInfo.BucketCount; i++) {
@@ -116,9 +118,16 @@ namespace U8Xml.Internal
         public void Dispose()
         {
             for(int i = 0; i < ListInfo.BucketCount; i++) {
-                Marshal.FreeHGlobal((IntPtr)((&Info->L0)[i]));
+                var ptr = (IntPtr)((&Info->L0)[i]);
+                Marshal.FreeHGlobal(ptr);
+#if DEBUG
+                if(ptr != IntPtr.Zero) {
+                    AllocationSafety.Remove(Line.GetLineSizeToAllocate(_lineCapacity[i]));
+                }
+#endif
             }
             Marshal.FreeHGlobal((IntPtr)Info);
+            AllocationSafety.Remove(ListInfo.GetSizeToAllocate());
             Unsafe.AsRef(_p) = IntPtr.Zero;
         }
 
@@ -142,7 +151,9 @@ namespace U8Xml.Internal
             int* newLineNum = &listInfo->CurrentLineNum;
             *newLineNum = *newLineNum + 1;
             var lineCapacity = _lineCapacity[*newLineNum];
-            var line = (Line*)Marshal.AllocHGlobal(Line.GetLineSizeToAllocate(lineCapacity));
+            var allocSize = Line.GetLineSizeToAllocate(lineCapacity);
+            var line = (Line*)Marshal.AllocHGlobal(allocSize);
+            AllocationSafety.Add(allocSize);
             line->Count = 0;
             line->Capacity = lineCapacity;
 
