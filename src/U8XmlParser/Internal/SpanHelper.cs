@@ -53,6 +53,9 @@ namespace U8Xml.Internal
         public static ref readonly byte At(this ReadOnlySpan<byte> span, int index)
         {
 #if FAST_SPAN
+#if DEBUG
+            if((uint)index >= (uint)span.Length) { throw new IndexOutOfRangeException(); }
+#endif
             return ref Unsafe.Add(ref MemoryMarshal.GetReference(span), index);
 #else
             return ref span[index];
@@ -63,6 +66,9 @@ namespace U8Xml.Internal
         public static ref byte At(this Span<byte> span, int index)
         {
 #if FAST_SPAN
+#if DEBUG
+            if((uint)index >= (uint)span.Length) { throw new IndexOutOfRangeException(); }
+#endif
             return ref Unsafe.Add(ref MemoryMarshal.GetReference(span), index);
 #else
             return ref span[index];

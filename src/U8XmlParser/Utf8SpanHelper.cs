@@ -396,7 +396,8 @@ namespace U8Xml
                 if(i != utf8String.Length) { return Error(out result); }
             }
 
-            result = sign * frac * MathHelper.FloatPow10(expSign * exp);
+            if(MathHelper.TryFloatPow10(expSign * exp, out var pow) == false) { return Error(out result); }
+            result = sign * frac * pow;
             return true;
 
 
@@ -434,7 +435,8 @@ namespace U8Xml
                     i++;
                     // \d+
                     if(TryParseNumbers(utf8String, ref i, out var num, out var len, false)) {
-                        value = num * MathHelper.FloatPow10(-len);
+                        if(MathHelper.TryFloatPow10(-len, out var pow) == false) { return false; }
+                        value = num * pow;
                         return true;
                     }
                     else {
@@ -444,10 +446,15 @@ namespace U8Xml
                 else {
                     // \d+\.?\d*
                     if(TryParseNumbers(utf8String, ref i, out var num1, out var len1, false) == false) { return false; }
+                    if(i == utf8String.Length) {
+                        value = num1;
+                        return true;
+                    }
                     if(utf8String.At(i) == '.') {
                         i++;
                         if(TryParseNumbers(utf8String, ref i, out var num2, out var len2, true)) {
-                            value = num1 + MathHelper.FloatPow10(-len2) * num2;
+                            if(MathHelper.TryFloatPow10(-len2, out var pow) == false) { return false; }
+                            value = num1 + pow * num2;
                             return true;
                         }
                         else {

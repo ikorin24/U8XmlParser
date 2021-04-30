@@ -187,6 +187,27 @@ namespace UnitTest
             Assert.True(float.IsNegativeInfinity(RawStringSource.Get("-∞").ToFloat32()));
             Assert.True(float.IsPositiveInfinity(RawStringSource.Get("+∞").ToFloat32()));
             Assert.True(float.IsPositiveInfinity(RawStringSource.Get("∞").ToFloat32()));
+
+            var checks = new Check<float>[]
+            {
+                new(1, RawStringSource.Get("1")),
+                new(-1, RawStringSource.Get("-1")),
+                new(0, RawStringSource.Get("0")),
+                new(0, RawStringSource.Get("000")),
+                new(0, RawStringSource.Get("-0")),
+                new(-3, RawStringSource.Get("-03")),
+                new(1234, RawStringSource.Get("1234")),
+                new(-1234, RawStringSource.Get("-1234")),
+                //new(long.MaxValue, RawStringSource.Get("9223372036854775807")),
+                //new(long.MinValue, RawStringSource.Get("-9223372036854775808")),
+                new(95, RawStringSource.Get("+95")),
+            };
+            foreach(var (ans, input) in checks) {
+                Assert.True(input.TryToFloat32(out var result));
+                Assert.Equal(ans, result, 3);
+                Assert.Equal(ans, input.ToFloat32(), 3);
+            }
+
             return;
         }
 
@@ -281,23 +302,6 @@ namespace UnitTest
             {
                 var foo = RawStringSource.Get(" \r\n\t foo \r\n\t ");
                 Assert.True(foo.Trim() == "foo");
-            }
-        }
-
-        [Fact]
-        public void MathHelperMethods()
-        {
-            for(int i = -40; i < 39; i++) {
-                var ans = (float)Math.Pow(10, i);
-                var value = U8Xml.Internal.MathHelper.FloatPow10(i);
-                AssertFloatEqual(ans, value);
-            }
-
-            static void AssertFloatEqual(float expected, float actual)
-            {
-                var diff = expected - actual;
-                diff = diff >= 0 ? diff : -diff;
-                Assert.True(diff <= expected * 0.0001f);
             }
         }
 
