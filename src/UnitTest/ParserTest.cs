@@ -14,40 +14,63 @@ namespace UnitTest
         [Fact]
         public void Parse()
         {
-            static Func<XmlObject> EncodingTest(Encoding encoding)
+            static Func<XmlObject> EncodingTest(ReadOnlySpan<byte> xml, Encoding encoding)
             {
-                var bytes = Encoding.Convert(Encoding.UTF8, encoding, Data.Sample1.ToArray());
+                var bytes = Encoding.Convert(Encoding.UTF8, encoding, xml.ToArray());
                 var ms = new MemoryStream(bytes);
                 return () => XmlParser.Parse(ms, encoding);
             }
 
-            var tests = new Func<XmlObject>[]
+            static Func<XmlObject>[] GetTestCases(ReadOnlySpan<byte> xml)
             {
-                // from ReadOnlySpan<byte>
-                () => XmlParser.Parse(Data.Sample1),
-                // from string
-                () => XmlParser.Parse(Encoding.UTF8.GetString(Data.Sample1.ToArray())),
-                // from ReadOnlySpan<char>
-                () => XmlParser.Parse(Encoding.UTF8.GetString(Data.Sample1.ToArray()).AsSpan()),
-                // from Stream
-                () => XmlParser.Parse(new MemoryStream(Data.Sample1.ToArray())),
-                // from Stream, fileSizeHint
-                () =>
+                var xmlBytes = xml.ToArray();
+                return new Func<XmlObject>[]
                 {
-                    var ms = new MemoryStream(Data.Sample1.ToArray());
-                    return XmlParser.Parse(ms, (int)ms.Length);
-                },
-                // from Stream, Encoding
-                EncodingTest(Encoding.UTF8),
-                EncodingTest(Encoding.Unicode),
-                EncodingTest(Encoding.BigEndianUnicode),
-                EncodingTest(Encoding.UTF32),
-            };
+                    // from ReadOnlySpan<byte>
+                    () => XmlParser.Parse(xmlBytes.ToArray()),
+                    // from string
+                    () => XmlParser.Parse(Encoding.UTF8.GetString(xmlBytes.ToArray())),
+                    // from ReadOnlySpan<char>
+                    () => XmlParser.Parse(Encoding.UTF8.GetString(xmlBytes.ToArray()).AsSpan()),
+                    // from Stream
+                    () => XmlParser.Parse(new MemoryStream(xmlBytes.ToArray())),
+                    // from Stream, fileSizeHint
+                    () =>
+                    {
+                        var ms = new MemoryStream(xmlBytes.ToArray());
+                        return XmlParser.Parse(ms, (int)ms.Length);
+                    },
+                    // from Stream, Encoding
+                    EncodingTest(xmlBytes.ToArray(), Encoding.UTF8),
+                    EncodingTest(xmlBytes.ToArray(), Encoding.Unicode),
+                    EncodingTest(xmlBytes.ToArray(), Encoding.BigEndianUnicode),
+                    EncodingTest(xmlBytes.ToArray(), Encoding.UTF32),
+                };
+            }
 
-            foreach(var func in tests) {
+            foreach(var func in GetTestCases(Data.Sample1)) {
                 using(var xml = func()) {
                     TestXml(xml);
                 }
+                AllocationSafety.Ensure();
+            }
+
+            foreach(var func in GetTestCases(Data.ErrorSample1)) {
+                Assert.Throws<FormatException>(() =>
+                {
+                    using(var xml = func()) {
+                        TestXml(xml);
+                    }
+                });
+                AllocationSafety.Ensure();
+            }
+            foreach(var func in GetTestCases(Data.ErrorSample2)) {
+                Assert.Throws<FormatException>(() =>
+                {
+                    using(var xml = func()) {
+                        TestXml(xml);
+                    }
+                });
                 AllocationSafety.Ensure();
             }
             return;
@@ -135,7 +158,7 @@ namespace UnitTest
         {
             var ans = new NodeInfo("きらら", "", new[] { ("出版社", "芳文社") },
                 new NodeInfo("まんがタイムきららMAX", "", null,
-                    new NodeInfo("ご注文はうさぎですか？", "",  new[] { ("作者", "Koi") },
+                    new NodeInfo("ご注文はうさぎですか？", "", new[] { ("作者", "Koi") },
                         new NodeInfo("ラビットハウス", "", new[] { ("種類", "カフェ") },
                             new NodeInfo("香風智乃", "", new[] { ("age", "13"), ("tall", "144") }),
                             new NodeInfo("保登心愛", "", new[] { ("age", "15"), ("tall", "154") })

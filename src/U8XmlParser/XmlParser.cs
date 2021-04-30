@@ -175,6 +175,9 @@ namespace U8Xml
 
                 // Must be '<', otherwise error.
                 if(data.At(i) == '<') {
+                    if(nodeStack.Count == 0 && nodes.Count > 0) {
+                        throw NewFormatException("Xml does not have multiple root nodes.");
+                    }
                     if(i + 1 < data.Length && data.At(i + 1) == '/') {
                         i += 2;
                         goto NodeTail;
@@ -283,6 +286,9 @@ namespace U8Xml
 
         End:
             {
+                if(nodes.Count == 0) {
+                    throw NewFormatException("Xml must have at least one node.");
+                }
                 Debug.Assert(nodeStack.Count == 0);
                 return;
             }

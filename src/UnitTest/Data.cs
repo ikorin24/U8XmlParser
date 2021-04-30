@@ -40,5 +40,13 @@ namespace UnitTest
 </きらら>")]
         private static partial ReadOnlySpan<byte> Xml2();
         public static ReadOnlySpan<byte> Sample2 => Xml2();
+
+        [Utf8(@"<?xml version=""1.0"" encoding=""UTF-8""?>")]
+        private static partial ReadOnlySpan<byte> ErrorXml1();
+        public static ReadOnlySpan<byte> ErrorSample1 => ErrorXml1();
+
+        [Utf8(@"<?xml version=""1.0"" encoding=""UTF-8""?><a></a><a></a>")]
+        private static partial ReadOnlySpan<byte> ErrorXml2();
+        public static ReadOnlySpan<byte> ErrorSample2 => ErrorXml2();
     }
 }
