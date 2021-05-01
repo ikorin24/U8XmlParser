@@ -11,6 +11,8 @@ namespace U8Xml.Internal
 
         public XmlDeclaration_* Declaration => &((OptionalNodeList_*)_list)->Declaration;
 
+        public XmlDocumentType_* DocumentType => &((OptionalNodeList_*)_list)->DocumentType;
+
         private OptionalNodeList(IntPtr list)
         {
             _list = list;
@@ -35,6 +37,7 @@ namespace U8Xml.Internal
         private struct OptionalNodeList_
         {
             public XmlDeclaration_ Declaration;
+            public XmlDocumentType_ DocumentType;
         }
     }
 }

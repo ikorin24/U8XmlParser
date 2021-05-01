@@ -21,6 +21,8 @@ namespace U8Xml.Internal
 
         public XmlDeclaration Declaration => new XmlDeclaration(_optional.Declaration);
 
+        public XmlDocumentType DocumentType => new XmlDocumentType(_optional.DocumentType);
+
         internal XmlObjectCore(ref UnmanagedBuffer buffer, int offset, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attributes, OptionalNodeList optional)
         {
             buffer.TransferMemoryOwnership(out _rawByteData, out _byteLength);

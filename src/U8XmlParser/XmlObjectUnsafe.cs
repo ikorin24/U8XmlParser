@@ -29,6 +29,8 @@ namespace U8Xml
 
         public XmlDeclaration Declaration => ((XmlObjectCore*)_core)->Declaration;
 
+        public XmlDocumentType DocumentType => ((XmlObjectCore*)_core)->DocumentType;
+
         public RawString AsRawString() => ((XmlObjectCore*)_core)->AsRawString();
 
         public void Dispose()

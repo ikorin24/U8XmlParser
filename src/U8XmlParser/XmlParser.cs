@@ -268,6 +268,9 @@ namespace U8Xml
                 if(TryParseCDATA(data, ref i, nodeStack)) {
                     goto None;
                 }
+                else if(TryParseDocType(data, ref i, nodes.Count > 0, optional)) {
+                    goto None;
+                }
                 else {
                     var bracketCount = 0;
                     while(true) {
@@ -291,6 +294,46 @@ namespace U8Xml
                 }
                 Debug.Assert(nodeStack.Count == 0);
                 return;
+            }
+        }
+
+        private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional)
+        {
+            var bodyStart = i - 2;
+            ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
+
+            if(data.Slice(i).StartWith(DocTypeStr) == false) { return false; }
+            if(hasNode) {
+                ThrowHelper.ThrowFormatException("DTD must be defined before the document root element.");
+            }
+            if(optional.DocumentType->Body.IsEmpty == false) {
+                ThrowHelper.ThrowFormatException("Cannot have multiple DTDs.");
+            }
+
+            var docType = optional.DocumentType;
+            i += DocTypeStr.Length;
+            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+
+            var nameStart = i;
+            while(true) {
+                if(i + 1 >= data.Length) { throw NewFormatException(); }
+                var next = data.At(i + 1);
+                i++;
+                if(next == '[') { break; }
+            }
+            docType->Name = data.Slice(nameStart, i - nameStart).TrimEnd();
+            i += 2;
+            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+
+            ParseDocTypeContents(data, ref i);
+
+            docType->Body = data.Slice(bodyStart, i - bodyStart);
+            return true;
+
+
+            static void ParseDocTypeContents(RawString data, ref int i)
+            {
+                throw new NotImplementedException();
             }
         }
 

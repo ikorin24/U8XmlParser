@@ -8,6 +8,7 @@ namespace U8Xml.Internal
         bool IsDisposed { get; }
         XmlNode Root { get; }
         XmlDeclaration Declaration { get; }
+        XmlDocumentType DocumentType { get; }
         RawString AsRawString();
     }
 }

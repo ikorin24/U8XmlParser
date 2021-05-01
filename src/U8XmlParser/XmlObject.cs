@@ -21,6 +21,9 @@ namespace U8Xml
         /// <summary>Get xml declaration</summary>
         public XmlDeclaration Declaration => _core.Declaration;
 
+        /// <summary>Get xml document type declaration</summary>
+        public XmlDocumentType DocumentType => _core.DocumentType;
+
         internal XmlObject(in XmlObjectCore core)
         {
             _core = core;
