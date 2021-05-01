@@ -3,7 +3,7 @@
     "displayName": "U8XmlParser",
     "version": "1.0.0",
     "unity": "2018.4",
-    "description": "Provides a fastest xml parser.",
+    "description": "Provides the fastest xml parser.",
     "keywords": [ "xml", "parser", "XmlParser", "U8XmlParser" ],
     "dependencies": {},
     "author": {
