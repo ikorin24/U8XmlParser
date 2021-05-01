@@ -197,11 +197,33 @@ namespace UnitTest
                 new(long.MaxValue, RawStringSource.Get("9223372036854775807")),
                 new(long.MinValue, RawStringSource.Get("-9223372036854775808")),
                 new(95, RawStringSource.Get("+95")),
+                new(-4.8e-9f, RawStringSource.Get("-4.8e-9")),
+                new(+0.4E+9f, RawStringSource.Get("+0.4E+9")),
+                new(-0e0f, RawStringSource.Get("-0e0")),
+                new(03e008f, RawStringSource.Get("03e008")),
+                new(03e-008f, RawStringSource.Get("03e-008")),
+                new(1E-45f, RawStringSource.Get("1E-45")),
+                new(0.34E+39f, RawStringSource.Get("0.34E+39")),
+                new(4e9f, RawStringSource.Get("4e9")),
             };
+
             foreach(var (ans, input) in checks) {
                 Assert.True(input.TryToFloat32(out var result));
                 Assert.Equal(ans, result, 3);
                 Assert.Equal(ans, input.ToFloat32(), 3);
+            }
+
+            var nanCases = new Check<float>[]
+            {
+                new(float.NaN, RawStringSource.Get("nan")),
+                new(-float.NaN, RawStringSource.Get("-NAN")),
+                new(float.NaN, RawStringSource.Get("+NaN")),
+            };
+            foreach(var (ans, input) in nanCases) {
+                Assert.True(input.TryToFloat32(out var result));
+                var a = float.IsNaN(result);
+                Assert.True(float.IsNaN(result));
+                Assert.True(float.IsNaN(input.ToFloat32()));
             }
 
             return;
@@ -383,6 +405,28 @@ namespace UnitTest
         private static partial ReadOnlySpan<byte> Str32();
         [Utf8("ABCDE")]
         private static partial ReadOnlySpan<byte> Str33();
+        [Utf8("-4.8e-9")]
+        private static partial ReadOnlySpan<byte> Str34();
+        [Utf8("+0.4E+9")]
+        private static partial ReadOnlySpan<byte> Str35();
+        [Utf8("-0e0")]
+        private static partial ReadOnlySpan<byte> Str36();
+        [Utf8("03e008")]
+        private static partial ReadOnlySpan<byte> Str37();
+        [Utf8("03e-008")]
+        private static partial ReadOnlySpan<byte> Str38();
+        [Utf8("1E-45")]
+        private static partial ReadOnlySpan<byte> Str39();
+        [Utf8("0.34E+39")]
+        private static partial ReadOnlySpan<byte> Str40();
+        [Utf8("4e9")]
+        private static partial ReadOnlySpan<byte> Str41();
+        [Utf8("nan")]
+        private static partial ReadOnlySpan<byte> Str42();
+        [Utf8("-NAN")]
+        private static partial ReadOnlySpan<byte> Str43();
+        [Utf8("+NaN")]
+        private static partial ReadOnlySpan<byte> Str44();
 
         static RawStringSource()
         {
@@ -420,6 +464,17 @@ namespace UnitTest
             Register(Str31());
             Register(Str32());
             Register(Str33());
+            Register(Str34());
+            Register(Str35());
+            Register(Str36());
+            Register(Str37());
+            Register(Str38());
+            Register(Str39());
+            Register(Str40());
+            Register(Str41());
+            Register(Str42());
+            Register(Str43());
+            Register(Str44());
 
             static unsafe void Register(ReadOnlySpan<byte> s)
             {
