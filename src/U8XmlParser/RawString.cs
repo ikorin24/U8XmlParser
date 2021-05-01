@@ -160,6 +160,28 @@ namespace U8Xml
 
         public bool SequenceEqual(ReadOnlySpan<byte> other) => AsSpan().SequenceEqual(other);
 
+        public bool StartWith(RawString other)
+        {
+            if(_length < other.Length) { return false; }
+            for(int i = 0; i < other.Length; i++) {
+                if(At(i) != other.At(i)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public bool StartWith(ReadOnlySpan<byte> other)
+        {
+            if(_length < other.Length) { return false; }
+            for(int i = 0; i < other.Length; i++) {
+                if(At(i) != other.At(i)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public override int GetHashCode() => HashCode.Combine(_ptr, _length);
 
         public static bool operator ==(RawString left, RawString right) => left.Equals(right);
