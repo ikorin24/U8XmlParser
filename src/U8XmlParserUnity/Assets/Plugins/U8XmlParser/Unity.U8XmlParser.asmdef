@@ -11,7 +11,7 @@
         "System.Memory.dll",
         "System.Runtime.CompilerServices.Unsafe.dll"
     ],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": true
