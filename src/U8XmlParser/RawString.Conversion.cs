@@ -85,6 +85,27 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryToFloat64(out double value)
+        {
+            if(Utf8Parser.TryParse(AsSpan(), out value, out _)) {
+                return true;
+            }
+            return DoubleFallback(AsSpan(), out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public double ToFloat64()
+        {
+            if(Utf8Parser.TryParse(AsSpan(), out double value, out _)) {
+                return value;
+            }
+            if(DoubleFallback(AsSpan(), out value) == false) {
+                ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
+            }
+            return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToInt32(out int value)
 		{
             return Utf8Parser.TryParse(AsSpan(), out value, out _);
@@ -225,11 +246,11 @@ namespace U8Xml
             }
             if(span.At(0) == '+') {
                 var slice = span.Slice(1);
-                if(IsInf(slice)) {
+                if(IsInfSpan(slice)) {
                     value = float.PositiveInfinity;
                     return true;
                 }
-                else if(IsNan(slice)) {
+                else if(IsNanSpan(slice)) {
                     value = float.NaN;
                     return true;
                 }
@@ -238,41 +259,86 @@ namespace U8Xml
             }
             if(span.At(0) == '-') {
                 var slice = span.Slice(1);
-                if(IsInf(slice)) {
+                if(IsInfSpan(slice)) {
                     value = float.NegativeInfinity;
                     return true;
                 }
-                else if(IsNan(slice)) {
+                else if(IsNanSpan(slice)) {
                     value = -float.NaN;
                     return true;
                 }
                 value = 0;
                 return false;
             }
-            if(IsInf(span)) {
+            if(IsInfSpan(span)) {
                 value = float.PositiveInfinity;
                 return true;
             }
-            else if(IsNan(span)) {
+            else if(IsNanSpan(span)) {
                 value = float.NaN;
                 return true;
             }
             value = 0;
             return false;
-
-            // return true if span is "∞"
-            static bool IsInf(ReadOnlySpan<byte> span)
-                => span.Length == 3 &&
-                   span.At(0) == InfUtf8Str[0] &&
-                   span.At(1) == InfUtf8Str[1] &&
-                   span.At(2) == InfUtf8Str[2];
-
-            static bool IsNan(ReadOnlySpan<byte> span)
-                => span.Length == 3 &&
-                   (span.At(0) == (byte)'N' || span.At(0) == (byte)'n') &&
-                   (span.At(1) == (byte)'a' || span.At(1) == (byte)'A') &&
-                   (span.At(2) == (byte)'N' || span.At(2) == (byte)'n');
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool DoubleFallback(ReadOnlySpan<byte> span, out double value)
+        {
+            span = span.Trim();
+            if(span.Length == 0) {
+                value = 0;
+                return false;
+            }
+            if(span.At(0) == '+') {
+                var slice = span.Slice(1);
+                if(IsInfSpan(slice)) {
+                    value = double.PositiveInfinity;
+                    return true;
+                }
+                else if(IsNanSpan(slice)) {
+                    value = double.NaN;
+                    return true;
+                }
+                value = 0;
+                return false;
+            }
+            if(span.At(0) == '-') {
+                var slice = span.Slice(1);
+                if(IsInfSpan(slice)) {
+                    value = double.NegativeInfinity;
+                    return true;
+                }
+                else if(IsNanSpan(slice)) {
+                    value = -double.NaN;
+                    return true;
+                }
+                value = 0;
+                return false;
+            }
+            if(IsInfSpan(span)) {
+                value = double.PositiveInfinity;
+                return true;
+            }
+            else if(IsNanSpan(span)) {
+                value = double.NaN;
+                return true;
+            }
+            value = 0;
+            return false;
+        }
+
+        private static bool IsInfSpan(ReadOnlySpan<byte> span)
+            => span.Length == 3 &&
+               span.At(0) == InfUtf8Str[0] &&
+               span.At(1) == InfUtf8Str[1] &&
+               span.At(2) == InfUtf8Str[2];
+
+        private static bool IsNanSpan(ReadOnlySpan<byte> span)
+            => span.Length == 3 &&
+               (span.At(0) == (byte)'N' || span.At(0) == (byte)'n') &&
+               (span.At(1) == (byte)'a' || span.At(1) == (byte)'A') &&
+               (span.At(2) == (byte)'N' || span.At(2) == (byte)'n');
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte[] NewUninitializedByteArrayIfPossible(int length)

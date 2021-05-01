@@ -205,25 +205,58 @@ namespace UnitTest
                 new(1E-45f, RawStringSource.Get("1E-45")),
                 new(0.34E+39f, RawStringSource.Get("0.34E+39")),
                 new(4e9f, RawStringSource.Get("4e9")),
-            };
-
-            foreach(var (ans, input) in checks) {
-                Assert.True(input.TryToFloat32(out var result));
-                Assert.Equal(ans, result, 3);
-                Assert.Equal(ans, input.ToFloat32(), 3);
-            }
-
-            var nanCases = new Check<float>[]
-            {
                 new(float.NaN, RawStringSource.Get("nan")),
                 new(-float.NaN, RawStringSource.Get("-NAN")),
                 new(float.NaN, RawStringSource.Get("+NaN")),
             };
-            foreach(var (ans, input) in nanCases) {
+
+            foreach(var (ans, input) in checks) {
                 Assert.True(input.TryToFloat32(out var result));
-                var a = float.IsNaN(result);
-                Assert.True(float.IsNaN(result));
-                Assert.True(float.IsNaN(input.ToFloat32()));
+                Assert.Equal(ans, result, 5);
+                Assert.Equal(ans, input.ToFloat32(), 5);
+            }
+
+            return;
+        }
+
+        [Fact]
+        public void Double()
+        {
+            Assert.True(double.IsNegativeInfinity(RawStringSource.Get("-∞").ToFloat32()));
+            Assert.True(double.IsPositiveInfinity(RawStringSource.Get("+∞").ToFloat32()));
+            Assert.True(double.IsPositiveInfinity(RawStringSource.Get("∞").ToFloat32()));
+
+            var checks = new Check<double>[]
+            {
+                new(1, RawStringSource.Get("1")),
+                new(-1, RawStringSource.Get("-1")),
+                new(0, RawStringSource.Get("0")),
+                new(0, RawStringSource.Get("000")),
+                new(0, RawStringSource.Get("-0")),
+                new(-3, RawStringSource.Get("-03")),
+                new(1234, RawStringSource.Get("1234")),
+                new(-1234, RawStringSource.Get("-1234")),
+                new(long.MaxValue, RawStringSource.Get("9223372036854775807")),
+                new(long.MinValue, RawStringSource.Get("-9223372036854775808")),
+                new(95, RawStringSource.Get("+95")),
+                new(-4.8e-9, RawStringSource.Get("-4.8e-9")),
+                new(+0.4E+9, RawStringSource.Get("+0.4E+9")),
+                new(-0e0, RawStringSource.Get("-0e0")),
+                new(03e008, RawStringSource.Get("03e008")),
+                new(03e-008, RawStringSource.Get("03e-008")),
+                new(1E-45, RawStringSource.Get("1E-45")),
+                new(0.34E+39, RawStringSource.Get("0.34E+39")),
+                new(4e9, RawStringSource.Get("4e9")),
+                new(double.NaN, RawStringSource.Get("nan")),
+                new(-double.NaN, RawStringSource.Get("-NAN")),
+                new(double.NaN, RawStringSource.Get("+NaN")),
+                new(17E+307, RawStringSource.Get("17E+307")),
+            };
+
+            foreach(var (ans, input) in checks) {
+                Assert.True(input.TryToFloat64(out var result));
+                Assert.Equal(ans, result, 12);
+                Assert.Equal(ans, input.ToFloat64(), 12);
             }
 
             return;
@@ -427,6 +460,8 @@ namespace UnitTest
         private static partial ReadOnlySpan<byte> Str43();
         [Utf8("+NaN")]
         private static partial ReadOnlySpan<byte> Str44();
+        [Utf8("17E+307")]
+        private static partial ReadOnlySpan<byte> Str45();
 
         static RawStringSource()
         {
@@ -475,6 +510,7 @@ namespace UnitTest
             Register(Str42());
             Register(Str43());
             Register(Str44());
+            Register(Str45());
 
             static unsafe void Register(ReadOnlySpan<byte> s)
             {
