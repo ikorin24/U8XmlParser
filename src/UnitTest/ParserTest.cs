@@ -32,6 +32,13 @@ namespace UnitTest
                 });
                 AllocationSafety.Ensure();
             }
+            foreach(var func in TestCases.GetTestCases(Data.ErrorSample3)) {
+                Assert.Throws<FormatException>(() =>
+                {
+                    using var xml = func();
+                });
+                AllocationSafety.Ensure();
+            }
 
             foreach(var func in TestCases.GetUnsafeTestCases(Data.Sample1)) {
                 using(var xml = func()) {
@@ -47,6 +54,13 @@ namespace UnitTest
                 AllocationSafety.Ensure();
             }
             foreach(var func in TestCases.GetUnsafeTestCases(Data.ErrorSample2)) {
+                Assert.Throws<FormatException>(() =>
+                {
+                    using var xml = func();
+                });
+                AllocationSafety.Ensure();
+            }
+            foreach(var func in TestCases.GetUnsafeTestCases(Data.ErrorSample3)) {
                 Assert.Throws<FormatException>(() =>
                 {
                     using var xml = func();
