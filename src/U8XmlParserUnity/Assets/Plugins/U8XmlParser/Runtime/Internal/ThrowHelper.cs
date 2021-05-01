@@ -1,6 +1,10 @@
 ﻿#nullable enable
 
-#if !(NETSTANDARD2_0 || NET48)
+#if UNITY_2018_1_OR_NEWER
+#define IS_UNITY
+#endif
+
+#if !(NETSTANDARD2_0 || NET48) && !IS_UNITY
 #define CODE_ANALYTICS
 #endif
 

@@ -3,10 +3,14 @@
   <PropertyGroup>
     <TargetFrameworks>net5.0;netcoreapp3.1;net48;netstandard2.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>8.0</LangVersion>
     <RootNamespace>U8Xml</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\U8XmlParserUnity\Assets\Plugins\U8XmlParser\Runtime\**\*.cs" />
+  </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />

@@ -1,4 +1,9 @@
 ﻿#nullable enable
+
+#if UNITY_2018_1_OR_NEWER
+#define IS_UNITY
+#endif
+
 using System;
 using System.Text;
 using System.Diagnostics;
@@ -182,7 +187,17 @@ namespace U8Xml
             return true;
         }
 
-        public override int GetHashCode() => HashCode.Combine(_ptr, _length);
+        public override int GetHashCode()
+        {
+#if IS_UNITY
+            int hashCode = 1418580562;
+            hashCode = hashCode * -1521134295 + _ptr.GetHashCode();
+            hashCode = hashCode * -1521134295 + _length.GetHashCode();
+            return hashCode;
+#else
+            return HashCode.Combine(_ptr, _length);
+#endif
+        }
 
         public static bool operator ==(RawString left, RawString right) => left.Equals(right);
 
