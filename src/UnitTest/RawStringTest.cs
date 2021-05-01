@@ -46,7 +46,6 @@ namespace UnitTest
                 new(0, RawStringSource.Get("000")),
                 new(1234, RawStringSource.Get("1234")),
                 new(uint.MaxValue, RawStringSource.Get("4294967295")),
-                new(95, RawStringSource.Get("+95")),
             };
             foreach(var (ans, input) in checks) {
                 Assert.True(input.TryToUInt32(out var result));
@@ -89,7 +88,6 @@ namespace UnitTest
                 new(0, RawStringSource.Get("000")),
                 new(1234, RawStringSource.Get("1234")),
                 new(ulong.MaxValue, RawStringSource.Get("18446744073709551615")),
-                new(95, RawStringSource.Get("+95")),
             };
             foreach(var (ans, input) in checks) {
                 Assert.True(input.TryToUInt64(out var result));
@@ -132,7 +130,6 @@ namespace UnitTest
                 new(0, RawStringSource.Get("000")),
                 new(1234, RawStringSource.Get("1234")),
                 new(ushort.MaxValue, RawStringSource.Get("65535")),
-                new(95, RawStringSource.Get("+95")),
             };
             foreach(var (ans, input) in checks) {
                 Assert.True(input.TryToUInt16(out var result));
@@ -172,7 +169,6 @@ namespace UnitTest
                 new(0, RawStringSource.Get("0")),
                 new(0, RawStringSource.Get("000")),
                 new(byte.MaxValue, RawStringSource.Get("255")),
-                new(95, RawStringSource.Get("+95")),
             };
             foreach(var (ans, input) in checks) {
                 Assert.True(input.TryToUInt8(out var result));
@@ -198,8 +194,8 @@ namespace UnitTest
                 new(-3, RawStringSource.Get("-03")),
                 new(1234, RawStringSource.Get("1234")),
                 new(-1234, RawStringSource.Get("-1234")),
-                //new(long.MaxValue, RawStringSource.Get("9223372036854775807")),
-                //new(long.MinValue, RawStringSource.Get("-9223372036854775808")),
+                new(long.MaxValue, RawStringSource.Get("9223372036854775807")),
+                new(long.MinValue, RawStringSource.Get("-9223372036854775808")),
                 new(95, RawStringSource.Get("+95")),
             };
             foreach(var (ans, input) in checks) {

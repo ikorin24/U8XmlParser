@@ -1,123 +1,159 @@
 ﻿#nullable enable
 using System;
 using System.Runtime.CompilerServices;
+using System.Buffers.Text;
 using U8Xml.Internal;
 
 namespace U8Xml
 {
 	unsafe partial struct RawString
 	{
+        /// <summary>utf-8 bytes of "∞"</summary>
+        private static ReadOnlySpan<byte> InfUtf8Str => new byte[] { 0xE2, 0x88, 0x9E };
+
         private const string InvalidFormatMessage = "Invalid format";
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ToUpper(Span<byte> buffer)
         {
-            Utf8SpanHelper.ToUpper(AsSpan(), buffer);
+            if(buffer.Length < _length) { ThrowHelper.ThrowArg("buffer is too short."); }
+
+            const uint offset = (uint)'z' - (uint)'a';
+            for(int i = 0; i < _length; i++) {
+                if(At(i) - (uint)'a' <= offset) {
+                    buffer.At(i) = (byte)(At(i) - 32);
+                }
+                else {
+                    buffer.At(i) = At(i);
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[] ToUpper()
         {
-            return Utf8SpanHelper.ToUpper(AsSpan());
+            if(_length == 0) { return Array.Empty<byte>(); }
+            var buf = NewUninitializedByteArrayIfPossible(_length);
+            ToUpper(buf);
+            return buf;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ToLower(Span<byte> buffer)
         {
-            Utf8SpanHelper.ToLower(AsSpan(), buffer);
+            if(buffer.Length < _length) { ThrowHelper.ThrowArg("buffer is too short."); }
+
+            const uint offset = (uint)'Z' - (uint)'A';
+            for(int i = 0; i < _length; i++) {
+                if((At(i) - (uint)'A' <= offset)) {
+                    buffer.At(i) = (byte)(At(i) + 32);
+                }
+                else {
+                    buffer.At(i) = At(i);
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte[] ToLower()
         {
-            return Utf8SpanHelper.ToLower(AsSpan());
+            if(_length == 0) { return Array.Empty<byte>(); }
+            var buf = NewUninitializedByteArrayIfPossible(_length);
+            ToLower(buf);
+            return buf;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToFloat32(out float value)
         {
-            return Utf8SpanHelper.TryParseFloat32(AsSpan(), out value);
+            if(Utf8Parser.TryParse(AsSpan(), out value, out _)) {
+                return true;
+            }
+            return FloatInfinityFallback(AsSpan(), out value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float ToFloat32()
         {
-            if(Utf8SpanHelper.TryParseFloat32(AsSpan(), out var result) == false) {
+            if(Utf8Parser.TryParse(AsSpan(), out float value, out _)) {
+                return value;
+            }
+            if(FloatInfinityFallback(AsSpan(), out value) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
-            return result;
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToInt32(out int value)
 		{
-            return Utf8SpanHelper.TryParseInt32(AsSpan(), out value);
+            return Utf8Parser.TryParse(AsSpan(), out value, out _);
 		}
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ToInt32()
 		{
-            if(Utf8SpanHelper.TryParseInt32(AsSpan(), out var result) == false) {
+            if(Utf8Parser.TryParse(AsSpan(), out int value, out _) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
-			return result;
+			return value;
 		}
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToUInt32(out uint value)
         {
-            return Utf8SpanHelper.TryParseUInt32(AsSpan(), out value);
+            return Utf8Parser.TryParse(AsSpan(), out value, out _);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint ToUInt32()
         {
-            if(Utf8SpanHelper.TryParseUInt32(AsSpan(), out var result) == false) {
+            if(Utf8Parser.TryParse(AsSpan(), out uint value, out _) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
-            return result;
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToInt64(out long value)
         {
-            return Utf8SpanHelper.TryParseInt64(AsSpan(), out value);
+            return Utf8Parser.TryParse(AsSpan(), out value, out _);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long ToInt64()
         {
-            if(Utf8SpanHelper.TryParseInt64(AsSpan(), out var result) == false) {
+            if(Utf8Parser.TryParse(AsSpan(), out long value, out _) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
-            return result;
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToUInt64(out ulong value)
         {
-            return Utf8SpanHelper.TryParseUInt64(AsSpan(), out value);
+            return Utf8Parser.TryParse(AsSpan(), out value, out _);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ulong ToUInt64()
         {
-            if(Utf8SpanHelper.TryParseUInt64(AsSpan(), out var result) == false) {
+            if(Utf8Parser.TryParse(AsSpan(), out ulong value, out _) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
-            return result;
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToInt16(out short value)
         {
-            return Utf8SpanHelper.TryParseInt16(AsSpan(), out value);
+            return Utf8Parser.TryParse(AsSpan(), out value, out _);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public short ToInt16()
         {
-            if(TryToInt16(out var value) == false) {
+            if(Utf8Parser.TryParse(AsSpan(), out short value, out _) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
             return value;
@@ -126,13 +162,13 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToUInt16(out ushort value)
         {
-            return Utf8SpanHelper.TryParseUInt16(AsSpan(), out value);
+            return Utf8Parser.TryParse(AsSpan(), out value, out _);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ushort ToUInt16()
         {
-            if(TryToUInt16(out var value) == false) {
+            if(Utf8Parser.TryParse(AsSpan(), out ushort value, out _) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
             return value;
@@ -141,13 +177,13 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToInt8(out sbyte value)
         {
-            return Utf8SpanHelper.TryParseInt8(AsSpan(), out value);
+            return Utf8Parser.TryParse(AsSpan(), out value, out _);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public sbyte ToInt8()
         {
-            if(TryToInt8(out var value) == false) {
+            if(Utf8Parser.TryParse(AsSpan(), out sbyte value, out _) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
             return value;
@@ -156,13 +192,13 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToUInt8(out byte value)
         {
-            return Utf8SpanHelper.TryParseUInt8(AsSpan(), out value);
+            return Utf8Parser.TryParse(AsSpan(), out value, out _);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte ToUInt8()
         {
-            if(TryToUInt8(out var value) == false) {
+            if(Utf8Parser.TryParse(AsSpan(), out byte value, out _) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
             return value;
@@ -177,6 +213,47 @@ namespace U8Xml
                 }
             }
             return (this, Empty);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static bool FloatInfinityFallback(ReadOnlySpan<byte> span, out float value)
+        {
+            span = span.Trim();
+            if(span.Length == 0) {
+                value = 0;
+                return false;
+            }
+            if(span.At(0) == '+' && IsInf(span.Slice(1))) {
+                value = float.PositiveInfinity;
+                return true;
+            }
+            if(span.At(0) == '-' && IsInf(span.Slice(1))) {
+                value = float.NegativeInfinity;
+                return true;
+            }
+            if(IsInf(span)) {
+                value = float.PositiveInfinity;
+                return true;
+            }
+            value = 0;
+            return false;
+
+            // return true if span is "∞"
+            static bool IsInf(ReadOnlySpan<byte> span)
+                => span.Length == 3 &&
+                   span.At(0) == InfUtf8Str[0] &&
+                   span.At(1) == InfUtf8Str[1] &&
+                   span.At(2) == InfUtf8Str[2];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte[] NewUninitializedByteArrayIfPossible(int length)
+        {
+#if NET5_0_OR_GREATER
+            return GC.AllocateUninitializedArray<byte>(length);
+#else
+            return new byte[length];
+#endif
         }
     }
 }
