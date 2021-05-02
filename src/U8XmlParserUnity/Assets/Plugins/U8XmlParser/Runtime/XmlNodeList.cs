@@ -30,6 +30,23 @@ namespace U8Xml
             _parent = parent;
         }
 
+        public XmlNode First()
+        {
+            if(Count == 0) { ThrowHelper.ThrowInvalidOperation("Sequence contains no elements."); }
+            return new XmlNode(_parent->FirstChild);
+        }
+
+        public XmlNode First(Func<XmlNode, bool> predicate)
+        {
+            if(predicate is null) { ThrowHelper.ThrowNullArg(nameof(predicate)); }
+            foreach(var node in this) {
+                if(predicate(node)) {
+                    return node;
+                }
+            }
+            throw new InvalidOperationException("Sequence contains no matching elements.");
+        }
+
         public Enumerator GetEnumerator() => new Enumerator(_parent->FirstChild);
 
         IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent->FirstChild);
