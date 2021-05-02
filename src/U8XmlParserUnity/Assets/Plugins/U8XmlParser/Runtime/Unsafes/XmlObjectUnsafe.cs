@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using U8Xml.Internal;
 
-namespace U8Xml
+namespace U8Xml.Unsafes
 {
     /// <summary>
     /// [WARNING] DON'T use this if you don't know how to use. This method is hidden. <para/>
