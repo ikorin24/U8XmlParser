@@ -51,6 +51,18 @@ namespace U8Xml
             }
         }
 
+        public bool HasNextSibling => ((XmlNode_*)_node)->Sibling != null;
+
+        public XmlNode NextSibling
+        {
+            get
+            {
+                var next = ((XmlNode_*)_node)->Sibling;
+                if(next == null) { ThrowHelper.ThrowInvalidOperation("The node does not have a next sibling."); }
+                return new XmlNode(next);
+            }
+        }
+
         public override bool Equals(object? obj) => obj is XmlNode node && Equals(node);
 
         public bool Equals(XmlNode other) => _node == other._node;
