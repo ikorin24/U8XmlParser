@@ -1,7 +1,7 @@
 ﻿#nullable enable
 
-#if UNITY_2018_1_OR_NEWER
-#define IS_UNITY
+#if NETSTANDARD2_1 || NETCOREAPP3_1_OR_GREATER
+#define HASHCODE_LIB
 #endif
 
 using System;
@@ -189,13 +189,13 @@ namespace U8Xml
 
         public override int GetHashCode()
         {
-#if IS_UNITY
+#if HASHCODE_LIB
+            return HashCode.Combine(_ptr, _length);
+#else
             int hashCode = 1418580562;
             hashCode = hashCode * -1521134295 + _ptr.GetHashCode();
             hashCode = hashCode * -1521134295 + _length.GetHashCode();
             return hashCode;
-#else
-            return HashCode.Combine(_ptr, _length);
 #endif
         }
 
