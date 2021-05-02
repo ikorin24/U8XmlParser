@@ -31,6 +31,26 @@ namespace U8Xml
 
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
+        public XmlNode FirstChild
+        {
+            get
+            {
+                var firstChild = ((XmlNode_*)_node)->FirstChild;
+                if(firstChild == null) { ThrowHelper.ThrowInvalidOperation("The node has no children."); }
+                return new XmlNode(firstChild);
+            }
+        }
+
+        public XmlNode LastChild
+        {
+            get
+            {
+                var lastChild = ((XmlNode_*)_node)->LastChild;
+                if(lastChild == null) { ThrowHelper.ThrowInvalidOperation("The node has no children."); }
+                return new XmlNode(lastChild);
+            }
+        }
+
         public override bool Equals(object? obj) => obj is XmlNode node && Equals(node);
 
         public bool Equals(XmlNode other) => _node == other._node;
