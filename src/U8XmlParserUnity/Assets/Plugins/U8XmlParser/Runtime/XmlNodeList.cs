@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using U8Xml.Internal;
 
 namespace U8Xml
 {
@@ -16,6 +17,8 @@ namespace U8Xml
         public bool IsEmpty => _parent->FirstChild == null;
 
         public int Count => _parent->ChildCount;
+
+        public XmlNode Parent => new XmlNode(_parent);
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebugDisplay => _parent != null ? $"{nameof(XmlNode)}[{Count}]" : $"{nameof(XmlNode)} (invalid instance)";

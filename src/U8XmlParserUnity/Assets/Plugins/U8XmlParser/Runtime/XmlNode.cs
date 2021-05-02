@@ -18,6 +18,17 @@ namespace U8Xml
         public bool HasChildren => ((XmlNode_*)_node)->HasChildren;
         public XmlNodeList Children => new XmlNodeList((XmlNode_*)_node);
 
+        public bool IsRoot => ((XmlNode_*)_node)->Parent == null;
+        public XmlNode Parent
+        {
+            get
+            {
+                var parent = ((XmlNode_*)_node)->Parent;
+                if(parent == null) { ThrowHelper.ThrowInvalidOperation("The root node has no parent."); }
+                return new XmlNode(parent);
+            }
+        }
+
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
         public override bool Equals(object? obj) => obj is XmlNode node && Equals(node);
@@ -35,9 +46,10 @@ namespace U8Xml
         public readonly RawString Name;
         public RawString InnerText;
 
-        public XmlNode_* FirstChild;    // XmlNode_*
-        public XmlNode_* LastChild;     // XmlNode_*
-        public XmlNode_* Sibling;       // XmlNode_*
+        public XmlNode_* Parent;
+        public XmlNode_* FirstChild;
+        public XmlNode_* LastChild;
+        public XmlNode_* Sibling;
         public int ChildCount;
 
         public int AttrIndex;
@@ -59,6 +71,7 @@ namespace U8Xml
         {
             Name = name;
             InnerText = RawString.Empty;
+            Parent = null;
             FirstChild = null;
             LastChild = null;
             Sibling = null;
@@ -84,6 +97,7 @@ namespace U8Xml
             }
             parent->LastChild = child;
             parent->ChildCount++;
+            child->Parent = parent;
         }
     }
 }
