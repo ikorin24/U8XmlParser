@@ -10,5 +10,6 @@ namespace U8Xml.Internal
         XmlDeclaration Declaration { get; }
         XmlDocumentType DocumentType { get; }
         RawString AsRawString();
+        AllNodeList GetAllNodes();
     }
 }

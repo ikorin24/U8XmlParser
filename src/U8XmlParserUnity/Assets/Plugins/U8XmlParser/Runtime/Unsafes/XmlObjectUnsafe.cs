@@ -42,6 +42,8 @@ namespace U8Xml.Unsafes
             AllocationSafety.Remove(sizeof(XmlObjectCore));
         }
 
+        public AllNodeList GetAllNodes() => ((XmlObjectCore*)_core)->GetAllNodes();
+
         public override string ToString() => AsRawString().ToString();
 
         internal static XmlObjectUnsafe Create(in XmlObjectCore core)

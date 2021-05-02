@@ -43,6 +43,9 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString AsRawString() => _core.AsRawString();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public AllNodeList GetAllNodes() => _core.GetAllNodes();
+
         public override string ToString() => AsRawString().ToString();
     }
 }
