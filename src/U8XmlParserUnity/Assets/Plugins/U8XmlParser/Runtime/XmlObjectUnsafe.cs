@@ -42,6 +42,8 @@ namespace U8Xml
             AllocationSafety.Remove(sizeof(XmlObjectCore));
         }
 
+        public override string ToString() => AsRawString().ToString();
+
         internal static XmlObjectUnsafe Create(in XmlObjectCore core)
         {
             var size = sizeof(XmlObjectCore);
