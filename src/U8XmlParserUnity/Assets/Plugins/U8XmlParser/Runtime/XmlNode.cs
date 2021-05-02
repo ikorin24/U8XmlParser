@@ -6,7 +6,7 @@ using U8Xml.Internal;
 
 namespace U8Xml
 {
-    [DebuggerDisplay("{ToString(),nq}")]
+    [DebuggerDisplay("<{ToString(),nq}>")]
     public readonly unsafe struct XmlNode : IEquatable<XmlNode>
     {
         private readonly IntPtr _node;  // XmlNode_*
