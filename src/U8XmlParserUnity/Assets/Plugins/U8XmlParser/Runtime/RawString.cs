@@ -1,9 +1,4 @@
 ﻿#nullable enable
-
-#if NETSTANDARD2_1 || NETCOREAPP3_1_OR_GREATER
-#define HASHCODE_LIB
-#endif
-
 using System;
 using System.Text;
 using System.Diagnostics;
@@ -189,14 +184,7 @@ namespace U8Xml
 
         public override int GetHashCode()
         {
-#if HASHCODE_LIB
-            return HashCode.Combine(_ptr, _length);
-#else
-            int hashCode = 1418580562;
-            hashCode = hashCode * -1521134295 + _ptr.GetHashCode();
-            hashCode = hashCode * -1521134295 + _length.GetHashCode();
-            return hashCode;
-#endif
+            return XXHash32.ComputeHash((byte*)_ptr, _length);
         }
 
         public static bool operator ==(RawString left, RawString right) => left.Equals(right);
