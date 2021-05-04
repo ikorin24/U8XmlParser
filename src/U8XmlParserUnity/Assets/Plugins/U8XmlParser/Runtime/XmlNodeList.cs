@@ -20,8 +20,6 @@ namespace U8Xml
 
         public int Count => _parent->ChildCount;
 
-        public XmlNode Parent => new XmlNode(_parent);
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebugDisplay => _parent != null ? $"{nameof(XmlNode)}[{Count}]" : $"{nameof(XmlNode)} (invalid instance)";
 
@@ -38,7 +36,20 @@ namespace U8Xml
             return new XmlNode(_parent->FirstChild);
         }
 
+        public Option<XmlNode> FirstOrNull()
+        {
+            return new XmlNode(_parent->FirstChild);
+        }
+
         public XmlNode First(Func<XmlNode, bool> predicate)
+        {
+            if(FirstOrNull(predicate).TryGetValue(out var node) == false) {
+                ThrowHelper.ThrowInvalidOperation("Sequence contains no matching elements.");
+            }
+            return node;
+        }
+
+        public Option<XmlNode> FirstOrNull(Func<XmlNode, bool> predicate)
         {
             if(predicate is null) { ThrowHelper.ThrowNullArg(nameof(predicate)); }
             foreach(var node in this) {
@@ -46,7 +57,7 @@ namespace U8Xml
                     return node;
                 }
             }
-            throw new InvalidOperationException("Sequence contains no matching elements.");
+            return new Option<XmlNode>(default);
         }
 
         public Enumerator GetEnumerator() => new Enumerator(_parent->FirstChild);

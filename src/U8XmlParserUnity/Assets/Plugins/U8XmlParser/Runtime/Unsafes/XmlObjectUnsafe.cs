@@ -27,9 +27,9 @@ namespace U8Xml.Unsafes
 
         public XmlNode Root => ((XmlObjectCore*)_core)->Root;
 
-        public XmlDeclaration Declaration => ((XmlObjectCore*)_core)->Declaration;
+        public Option<XmlDeclaration> Declaration => ((XmlObjectCore*)_core)->Declaration;
 
-        public XmlDocumentType DocumentType => ((XmlObjectCore*)_core)->DocumentType;
+        public Option<XmlDocumentType> DocumentType => ((XmlObjectCore*)_core)->DocumentType;
 
         public RawString AsRawString() => ((XmlObjectCore*)_core)->AsRawString();
 

@@ -8,6 +8,12 @@ namespace U8Xml
     {
         private readonly T _v;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option(in T v)
+        {
+            _v = v;
+        }
+
         public T Value
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -26,6 +32,8 @@ namespace U8Xml
             value = _v;
             return _v.IsNull == false;
         }
+
+        public static implicit operator Option<T>(in T value) => new Option<T>(value);
     }
     
 

@@ -19,10 +19,10 @@ namespace U8Xml
         public XmlNode Root => _core.Root;
 
         /// <summary>Get xml declaration</summary>
-        public XmlDeclaration Declaration => _core.Declaration;
+        public Option<XmlDeclaration> Declaration => _core.Declaration;
 
         /// <summary>Get xml document type declaration</summary>
-        public XmlDocumentType DocumentType => _core.DocumentType;
+        public Option<XmlDocumentType> DocumentType => _core.DocumentType;
 
         internal XmlObject(in XmlObjectCore core)
         {

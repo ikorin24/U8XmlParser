@@ -12,8 +12,8 @@ namespace U8Xml
 
         public bool IsNull => _declaration == null;
 
-        public XmlAttribute Version => new XmlAttribute(_declaration->Version);
-        public XmlAttribute Encoding => new XmlAttribute(_declaration->Encoding);
+        public Option<XmlAttribute> Version => new XmlAttribute(_declaration->Version);
+        public Option<XmlAttribute> Encoding => new XmlAttribute(_declaration->Encoding);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlDeclaration(XmlDeclaration_* declaration)

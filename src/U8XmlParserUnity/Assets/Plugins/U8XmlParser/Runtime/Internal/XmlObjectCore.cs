@@ -19,9 +19,9 @@ namespace U8Xml.Internal
 
         public XmlNode Root => new XmlNode(_nodes.FirstItem);
 
-        public XmlDeclaration Declaration => new XmlDeclaration(_optional.Declaration);
+        public Option<XmlDeclaration> Declaration => new XmlDeclaration(_optional.Declaration);
 
-        public XmlDocumentType DocumentType => new XmlDocumentType(_optional.DocumentType);
+        public Option<XmlDocumentType> DocumentType => new XmlDocumentType(_optional.DocumentType);
 
         internal XmlObjectCore(ref UnmanagedBuffer buffer, int offset, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attributes, OptionalNodeList optional)
         {

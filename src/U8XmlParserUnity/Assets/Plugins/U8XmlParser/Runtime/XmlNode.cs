@@ -21,49 +21,16 @@ namespace U8Xml
         public XmlNodeList Children => new XmlNodeList((XmlNode_*)_node);
 
         public bool IsRoot => ((XmlNode_*)_node)->Parent == null;
-        public XmlNode Parent
-        {
-            get
-            {
-                var parent = ((XmlNode_*)_node)->Parent;
-                if(parent == null) { ThrowHelper.ThrowInvalidOperation("The root node has no parent."); }
-                return new XmlNode(parent);
-            }
-        }
+
+        public Option<XmlNode> Parent => new XmlNode(((XmlNode_*)_node)->Parent);
+
+        public Option<XmlNode> FirstChild => new XmlNode(((XmlNode_*)_node)->FirstChild);
+
+        public Option<XmlNode> LastChild => new XmlNode(((XmlNode_*)_node)->LastChild);
+
+        public Option<XmlNode> NextSibling => new XmlNode(((XmlNode_*)_node)->Sibling);
 
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
-
-        public XmlNode FirstChild
-        {
-            get
-            {
-                var firstChild = ((XmlNode_*)_node)->FirstChild;
-                if(firstChild == null) { ThrowHelper.ThrowInvalidOperation("The node has no children."); }
-                return new XmlNode(firstChild);
-            }
-        }
-
-        public XmlNode LastChild
-        {
-            get
-            {
-                var lastChild = ((XmlNode_*)_node)->LastChild;
-                if(lastChild == null) { ThrowHelper.ThrowInvalidOperation("The node has no children."); }
-                return new XmlNode(lastChild);
-            }
-        }
-
-        public bool HasNextSibling => ((XmlNode_*)_node)->Sibling != null;
-
-        public XmlNode NextSibling
-        {
-            get
-            {
-                var next = ((XmlNode_*)_node)->Sibling;
-                if(next == null) { ThrowHelper.ThrowInvalidOperation("The node does not have a next sibling."); }
-                return new XmlNode(next);
-            }
-        }
 
         public override bool Equals(object? obj) => obj is XmlNode node && Equals(node);
 

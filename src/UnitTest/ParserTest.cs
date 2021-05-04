@@ -101,12 +101,14 @@ namespace UnitTest
         private static void TestSample1Contents<TXmlObject>(TXmlObject xml) where TXmlObject : IXmlObject
         {
             Assert.NotNull(xml);
-            var declaration = xml.Declaration;
+            var declaration = xml.Declaration.Value;
             Assert.True(declaration.AsRawString() == @"<?xml version=""1.0"" encoding=""UTF-8""?>");
-            Assert.True(declaration.Version.Name == "version");
-            Assert.True(declaration.Version.Value == "1.0");
-            Assert.True(declaration.Encoding.Name == "encoding");
-            Assert.True(declaration.Encoding.Value == "UTF-8");
+            var version = declaration.Version.Value;
+            Assert.True(version.Name == "version");
+            Assert.True(version.Value == "1.0");
+            var encoding = declaration.Encoding.Value;
+            Assert.True(encoding.Name == "encoding");
+            Assert.True(encoding.Value == "UTF-8");
 
             var root = xml.Root;
             Assert.True(root.Name == "あいうえお");
