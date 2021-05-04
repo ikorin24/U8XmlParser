@@ -35,12 +35,14 @@ namespace U8Xml.Internal
     //                          |  Capacity |  Count  |  [0]  | ........... |  [31]  |
     //                          +-----------+---------+-------+-------------+--------+
 
-    internal unsafe readonly struct CustomList<T> : IDisposable where T : unmanaged
+    internal unsafe readonly struct CustomList<T> : IDisposable, IReference where T : unmanaged
     {
         private static readonly int[] _lineCapacity;
         private readonly IntPtr _p;     // ListInfo*
 
         private ListInfo* Info => (ListInfo*)_p;
+
+        public bool IsNull => _p == IntPtr.Zero;
 
         public int Count
         {

@@ -5,9 +5,11 @@ using System.Runtime.InteropServices;
 
 namespace U8Xml.Internal
 {
-    internal unsafe readonly struct OptionalNodeList : IDisposable
+    internal unsafe readonly struct OptionalNodeList : IDisposable, IReference
     {
         private readonly IntPtr _list;  // OptionalNodeList_*
+
+        public bool IsNull => _list == IntPtr.Zero;
 
         public XmlDeclaration_* Declaration => &((OptionalNodeList_*)_list)->Declaration;
 

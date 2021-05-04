@@ -8,10 +8,12 @@ namespace U8Xml
 {
     /// <summary>Attribute of node in xml</summary>
     [DebuggerDisplay("{ToString(),nq}")]
-    public unsafe readonly struct XmlAttribute : IEquatable<XmlAttribute>
+    public unsafe readonly struct XmlAttribute : IEquatable<XmlAttribute>, IReference
     {
         // Don't add any other fields. The layout must be same as IntPtr.
         private readonly IntPtr _attr;  // XmlAttribute_*
+
+        public bool IsNull => _attr == IntPtr.Zero;
 
         /// <summary>Get attribute name</summary>
         public ref readonly RawString Name => ref ((XmlAttribute_*)_attr)->Name;

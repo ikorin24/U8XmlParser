@@ -10,9 +10,11 @@ namespace U8Xml
 {
     [DebuggerDisplay("{DebugDisplay,nq}")]
     [DebuggerTypeProxy(typeof(XmlNodeListTypeProxy))]
-    public unsafe readonly struct XmlNodeList : IEnumerable<XmlNode>, ICollection<XmlNode>
+    public unsafe readonly struct XmlNodeList : IEnumerable<XmlNode>, ICollection<XmlNode>, IReference
     {
         private readonly XmlNode_* _parent;
+
+        public bool IsNull => _parent == null;
 
         public bool IsEmpty => _parent->FirstChild == null;
 

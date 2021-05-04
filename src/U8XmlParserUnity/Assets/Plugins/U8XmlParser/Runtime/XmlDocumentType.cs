@@ -6,9 +6,11 @@ using System.Runtime.CompilerServices;
 namespace U8Xml
 {
     [DebuggerDisplay("{ToString(),nq}")]
-    public unsafe readonly struct XmlDocumentType : IEquatable<XmlDocumentType>
+    public unsafe readonly struct XmlDocumentType : IEquatable<XmlDocumentType>, IReference
     {
         private readonly XmlDocumentType_* _docType;
+
+        public bool IsNull => _docType == null;
 
         public RawString Name => _docType->Name;
 

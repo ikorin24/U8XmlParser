@@ -6,9 +6,11 @@ using System.Runtime.CompilerServices;
 namespace U8Xml
 {
     [DebuggerDisplay("{ToString(),nq}")]
-    public unsafe readonly struct XmlDeclaration : IEquatable<XmlDeclaration>
+    public unsafe readonly struct XmlDeclaration : IEquatable<XmlDeclaration>, IReference
     {
         private readonly XmlDeclaration_* _declaration;
+
+        public bool IsNull => _declaration == null;
 
         public XmlAttribute Version => new XmlAttribute(_declaration->Version);
         public XmlAttribute Encoding => new XmlAttribute(_declaration->Encoding);

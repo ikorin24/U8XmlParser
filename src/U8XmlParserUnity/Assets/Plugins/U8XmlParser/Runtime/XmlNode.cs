@@ -7,9 +7,11 @@ using U8Xml.Internal;
 namespace U8Xml
 {
     [DebuggerDisplay("<{ToString(),nq}>")]
-    public readonly unsafe struct XmlNode : IEquatable<XmlNode>
+    public readonly unsafe struct XmlNode : IEquatable<XmlNode>, IReference
     {
         private readonly IntPtr _node;  // XmlNode_*
+
+        public bool IsNull => _node == IntPtr.Zero;
 
         public RawString Name => ((XmlNode_*)_node)->Name;
         public RawString InnerText => ((XmlNode_*)_node)->InnerText;

@@ -24,9 +24,11 @@ namespace U8Xml.Internal
     //                               |                                   ª
     //                               „¤----------------------------------„£
 
-    internal unsafe readonly struct RawStringTable : IDisposable
+    internal unsafe readonly struct RawStringTable : IDisposable, IReference
     {
         private readonly IntPtr _table; // RawStringTable_*
+
+        public bool IsNull => _table == IntPtr.Zero;
 
         private RawStringTable_* Table => (RawStringTable_*)_table;
 
