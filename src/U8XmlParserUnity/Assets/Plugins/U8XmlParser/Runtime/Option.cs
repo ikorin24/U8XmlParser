@@ -1,10 +1,14 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using U8Xml.Internal;
 
 namespace U8Xml
 {
-    public readonly struct Option<T> where T : unmanaged, IReference
+    [DebuggerDisplay("{ToString(),nq}")]
+    public readonly struct Option<T> : IEquatable<Option<T>> where T : unmanaged, IReference
     {
         private readonly T _v;
 
@@ -32,6 +36,16 @@ namespace U8Xml
             value = _v;
             return _v.IsNull == false;
         }
+
+        public override string ToString() => _v.IsNull ? "null" : (_v.ToString() ?? "");
+
+        public override bool Equals(object? obj) => obj is Option<T> option && Equals(option);
+
+        public bool Equals(Option<T> other) => EqualityComparer<T>.Default.Equals(_v, other._v);
+
+        public bool Equals(in T other) => EqualityComparer<T>.Default.Equals(_v, other);
+
+        public override int GetHashCode() => _v.GetHashCode();
 
         public static implicit operator Option<T>(in T value) => new Option<T>(value);
     }
