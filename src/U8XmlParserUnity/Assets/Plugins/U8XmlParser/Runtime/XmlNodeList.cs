@@ -40,7 +40,7 @@ namespace U8Xml
         {
             if(predicate is null) { ThrowHelper.ThrowNullArg(nameof(predicate)); }
             foreach(var node in this) {
-                if(predicate(node)) {
+                if(predicate!(node)) {
                     return node;
                 }
             }
