@@ -272,18 +272,7 @@ namespace U8Xml
                     goto None;
                 }
                 else {
-                    var bracketCount = 0;
-                    while(true) {
-                        if(i >= data.Length) { throw NewFormatException(); }
-                        if(data.At(i) == '<') { bracketCount++; }
-                        else if(data.At(i) == '>') {
-                            if(bracketCount == 0) { break; }
-                            bracketCount--;
-                        }
-                        i++;
-                    }
-                    i++;
-                    goto None;
+                    throw NewFormatException();
                 }
             }
 
@@ -315,25 +304,24 @@ namespace U8Xml
             if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
 
             var nameStart = i;
-            while(true) {
-                if(i + 1 >= data.Length) { throw NewFormatException(); }
-                var next = data.At(i + 1);
-                i++;
-                if(next == '[') { break; }
-            }
-            docType->Name = data.Slice(nameStart, i - nameStart).TrimEnd();
-            i += 2;
-            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+            SkipUntil((byte)'[', data, ref i);
+            var nameLen = i - nameStart - 1;
+            var contentStart = i;
+            if(nameLen <= 0) { throw NewFormatException(); }
+            docType->Name = data.Slice(nameStart, nameLen).TrimEnd();
 
-            ParseDocTypeContents(data, ref i);
-
+            SkipUntil((byte)']', data, ref i);
+            docType->InternalSubset = data.Slice(contentStart, i - contentStart - 1);
+            SkipUntil((byte)'>', data, ref i);
             docType->Body = data.Slice(bodyStart, i - bodyStart);
             return true;
 
-
-            static void ParseDocTypeContents(RawString data, ref int i)
+            static void SkipUntil(byte ascii, RawString data, ref int i)
             {
-                throw new NotImplementedException();
+                while(true) {
+                    if(i >= data.Length) { throw NewFormatException(); }
+                    if(data.At(i++) == ascii) { return; }
+                }
             }
         }
 

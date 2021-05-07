@@ -8,6 +8,11 @@ namespace UnitTest
     {
         [Utf8(
 @"<?xml version=""1.0"" encoding=""UTF-8""?>
+<!DOCTYPE テストデータ[
+    <!ELEMENT あいうえお (かきくけこ, abc)>
+    <!ELEMENT かきくけこ #(PCDATA)>
+    <!ELEMENT abc #(PCDATA)>
+]>
 <あいうえお ほげ=""3"">
     <かきくけこ>さしすせそ</かきくけこ>
     <abc>

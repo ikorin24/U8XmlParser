@@ -14,6 +14,8 @@ namespace U8Xml
 
         public RawString Name => _docType->Name;
 
+        public RawString InternalSubset => _docType->InternalSubset;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlDocumentType(XmlDocumentType_* docType)
         {
@@ -36,5 +38,6 @@ namespace U8Xml
     {
         public RawString Body;
         public RawString Name;
+        public RawString InternalSubset;
     }
 }
