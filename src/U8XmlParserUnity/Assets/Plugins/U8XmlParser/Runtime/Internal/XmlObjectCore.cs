@@ -14,6 +14,7 @@ namespace U8Xml.Internal
         private readonly CustomList<XmlNode_> _nodes;
         private readonly CustomList<XmlAttribute_> _attributes;
         private readonly OptionalNodeList _optional;
+        private readonly RawStringTable _entities;
 
         public bool IsDisposed => _rawByteData == IntPtr.Zero;
 
@@ -23,13 +24,14 @@ namespace U8Xml.Internal
 
         public Option<XmlDocumentType> DocumentType => new XmlDocumentType(_optional.DocumentType);
 
-        internal XmlObjectCore(ref UnmanagedBuffer buffer, int offset, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attributes, OptionalNodeList optional)
+        internal XmlObjectCore(ref UnmanagedBuffer buffer, int offset, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attributes, OptionalNodeList optional, RawStringTable entities)
         {
             buffer.TransferMemoryOwnership(out _rawByteData, out _byteLength);
             _offset = offset;
             _nodes = nodes;
             _attributes = attributes;
             _optional = optional;
+            _entities = entities;
         }
 
         public void Dispose()
@@ -45,6 +47,7 @@ namespace U8Xml.Internal
                 _nodes.Dispose();
                 _attributes.Dispose();
                 _optional.Dispose();
+                _entities.Dispose();
             }
         }
 

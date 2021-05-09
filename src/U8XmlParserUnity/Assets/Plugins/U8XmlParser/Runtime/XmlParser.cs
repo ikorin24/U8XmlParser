@@ -147,19 +147,21 @@ namespace U8Xml
             var nodes = CustomList<XmlNode_>.Create();
             var attrs = CustomList<XmlAttribute_>.Create();
             var optional = OptionalNodeList.Create();
+            var entities = default(RawStringTable);
             try {
-                StartStateMachine(rawString, nodes, attrs, optional);
-                return new XmlObjectCore(ref utf8Buf, offset, nodes, attrs, optional);
+                StartStateMachine(rawString, nodes, attrs, optional, ref entities);
+                return new XmlObjectCore(ref utf8Buf, offset, nodes, attrs, optional, entities);
             }
             catch {
                 nodes.Dispose();
                 attrs.Dispose();
                 optional.Dispose();
+                entities.Dispose();
                 throw;
             }
         }
 
-        private static void StartStateMachine(RawString data, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attrs, OptionalNodeList optional)
+        private static void StartStateMachine(RawString data, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attrs, OptionalNodeList optional, ref RawStringTable entities)
         {
             // Encoding assumes utf-8 without bom. Others are not supported.
             // Parse format by using a state machine. (It's very primitive but fastest.)
@@ -268,7 +270,7 @@ namespace U8Xml
                 if(TryParseCDATA(data, ref i, nodeStack)) {
                     goto None;
                 }
-                else if(TryParseDocType(data, ref i, nodes.Count > 0, optional)) {
+                else if(TryParseDocType(data, ref i, nodes.Count > 0, optional, ref entities)) {
                     goto None;
                 }
                 else {
@@ -286,9 +288,9 @@ namespace U8Xml
             }
         }
 
-        private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional)
+        private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional, ref RawStringTable entities)
         {
-            var bodyStart = i - 2;
+            // <!DOCTYPE foo[...]>
             ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
 
             if(data.Slice(i).StartWith(DocTypeStr) == false) { return false; }
@@ -299,6 +301,8 @@ namespace U8Xml
                 ThrowHelper.ThrowFormatException("Cannot have multiple DTDs.");
             }
 
+
+            var bodyStart = i - 2;
             var docType = optional.DocumentType;
             i += DocTypeStr.Length;
             if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
@@ -310,10 +314,57 @@ namespace U8Xml
             if(nameLen <= 0) { throw NewFormatException(); }
             docType->Name = data.Slice(nameStart, nameLen).TrimEnd();
 
-            SkipUntil((byte)']', data, ref i);
+            using var list = default(RawStringList);
+            while(true) {
+                if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+                var c = data.At(i++);
+                if(c == ']') { break; }
+                if(c != '<') { throw NewFormatException(); }
+                if((i + 2 < data.Length) && (data.At(i) == '!') && (data.At(i + 1) == '-') && (data.At(i + 2) == '-'))  // Start with "<!--"
+                {
+                    // Skip comment <!--xxx-->
+                    SkipComment(data, ref i);
+                    continue;
+                }
+
+                if(((i + 6) < data.Length) &&
+                   (data.At(i) == '!') && (data.At(i + 1) == 'E') && (data.At(i + 2) == 'N') && (data.At(i + 3) == 'T') &&
+                   (data.At(i + 4) == 'I') && (data.At(i + 5) == 'T') && (data.At(i + 6) == 'Y') && (data.At(i + 7) == ' ')) {
+
+                    // "<!ENTITY "
+                    i += 8;
+
+                    var j = i;
+                    SkipToEmpty(data, ref i);
+                    var name = data.SliceUnsafe(j, i - j);
+                    list.Add(name);
+                    list.Add(default);  // TODO: add value
+                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+
+
+                    SkipUntil((byte)'>', data, ref i);
+                    continue;
+                }
+
+                SkipUntil((byte)'>', data, ref i);
+            }
+
             docType->InternalSubset = data.Slice(contentStart, i - contentStart - 1);
             SkipUntil((byte)'>', data, ref i);
             docType->Body = data.Slice(bodyStart, i - bodyStart);
+
+
+            if(list.Count == 0) {
+                return true;
+            }
+
+            Debug.Assert(list.Count % 2 == 0);
+            entities = RawStringTable.Create(list.Count / 2);
+            for(int k = 0; k < list.Count / 2; k++) {
+                if(entities.TryAdd(list[k * 2], list[k * 2 + 1]) == false) {
+                    throw NewFormatException($"entity: {list[k * 2]} is duplicated.");
+                }
+            }
             return true;
 
             static void SkipUntil(byte ascii, RawString data, ref int i)
@@ -321,6 +372,16 @@ namespace U8Xml
                 while(true) {
                     if(i >= data.Length) { throw NewFormatException(); }
                     if(data.At(i++) == ascii) { return; }
+                }
+            }
+
+            static void SkipToEmpty(RawString data, ref int i)
+            {
+                while(true) {
+                    if(i + 1 >= data.Length) { throw NewFormatException(); }
+                    ref var next = ref data.At(i + 1);
+                    i++;
+                    if(next == ' ' || next == '\t' || next == '\r' || next == '\n') { break; }
                 }
             }
         }

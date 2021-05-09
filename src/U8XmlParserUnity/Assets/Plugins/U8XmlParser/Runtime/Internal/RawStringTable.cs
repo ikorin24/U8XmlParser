@@ -11,6 +11,7 @@ namespace U8Xml.Internal
     //
     // - It's only support to add and get items.
     // - Empty key is forbidden.
+    // - Fixed capacity
     //
     //    RawStringTable
     // +-------------------+
@@ -163,12 +164,15 @@ namespace U8Xml.Internal
 
         public void Dispose()
         {
+#if DEBUG
+            if(_table != IntPtr.Zero) {
+                var size = sizeof(RawStringTable_) + Table->Capacity * sizeof(Entry);
+                AllocationSafety.Remove(size);
+            }
+#endif
+
             Marshal.FreeHGlobal(_table);
             Unsafe.AsRef(_table) = IntPtr.Zero;
-#if DEBUG
-            var size = sizeof(RawStringTable_) + Table->Capacity * sizeof(Entry);
-            AllocationSafety.Remove(size);
-#endif
         }
 
         private struct RawStringTable_
