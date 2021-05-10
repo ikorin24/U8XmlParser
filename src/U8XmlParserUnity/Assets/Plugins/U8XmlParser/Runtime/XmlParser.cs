@@ -337,9 +337,21 @@ namespace U8Xml
                     var j = i;
                     SkipToEmpty(data, ref i);
                     var name = data.SliceUnsafe(j, i - j);
-                    list.Add(name, default);    // TODO: add value
                     if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
 
+                    var quote = data.At(i);
+                    if(quote != '"' && quote != '\'') { throw NewFormatException(); }
+                    i++;
+                    var k = i;
+                    while(true) {
+                        i++;
+                        if(i >= data.Length) { throw NewFormatException(); }
+                        var q = data.At(i);
+                        if(q == quote) { break; }
+                    }
+                    var value = data.SliceUnsafe(k, i - k);
+                    i++;
+                    list.Add(name, value);
 
                     SkipUntil((byte)'>', data, ref i);
                     continue;
@@ -352,14 +364,13 @@ namespace U8Xml
             SkipUntil((byte)'>', data, ref i);
             docType->Body = data.Slice(bodyStart, i - bodyStart);
 
-
             if(list.Count == 0) {
                 return true;
             }
 
             entities = RawStringTable.Create(list.Count);
-            for(int k = 0; k < list.Count; k++) {
-                ref readonly var item = ref list[k];
+            for(int l = 0; l < list.Count; l++) {
+                ref readonly var item = ref list[l];
                 if(entities.TryAdd(item.Key, item.Value) == false) {
                     throw NewFormatException($"entity: {item.Key} is duplicated.");
                 }

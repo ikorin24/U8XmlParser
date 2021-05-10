@@ -25,6 +25,7 @@ namespace U8Xml.Internal
     //                               |                                   ª
     //                               „¤----------------------------------„£
 
+    [DebuggerDisplay("{DebugDisplay,nq}")]
     internal unsafe readonly struct RawStringTable : IDisposable, IReference
     {
         private readonly IntPtr _table; // RawStringTable_*
@@ -32,6 +33,9 @@ namespace U8Xml.Internal
         public bool IsNull => _table == IntPtr.Zero;
 
         private RawStringTable_* Table => (RawStringTable_*)_table;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private string DebugDisplay => Table != null ? $"{nameof(RawStringTable)} (Count={Table->Count})" : "null";
 
         private RawStringTable(RawStringTable_* table)
         {
@@ -182,6 +186,7 @@ namespace U8Xml.Internal
             public int Count;
         }
 
+        [DebuggerDisplay("Key={Key}, Value={Value}")]
         private struct Entry
         {
             public RawString Key;
