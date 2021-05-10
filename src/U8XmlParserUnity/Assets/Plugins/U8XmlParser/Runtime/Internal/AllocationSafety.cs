@@ -24,8 +24,10 @@ namespace U8Xml.Internal
         [Conditional("DEBUG")]
         public static void Ensure()
         {
-            if(_size != 0) {
-                throw new Exception("Memory leak happened or something wrong.");
+            var size = _size;
+            _size = 0;
+            if(size != 0) {
+                throw new Exception($"Memory leak happened or something wrong. ({_size} bytes)");
             }
         }
     }
