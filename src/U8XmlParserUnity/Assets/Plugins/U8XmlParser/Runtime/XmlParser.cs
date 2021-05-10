@@ -314,7 +314,7 @@ namespace U8Xml
             if(nameLen <= 0) { throw NewFormatException(); }
             docType->Name = data.Slice(nameStart, nameLen).TrimEnd();
 
-            using var list = default(RawStringList);
+            using var list = default(RawStringPairList);
             while(true) {
                 if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
                 var c = data.At(i++);
@@ -337,8 +337,7 @@ namespace U8Xml
                     var j = i;
                     SkipToEmpty(data, ref i);
                     var name = data.SliceUnsafe(j, i - j);
-                    list.Add(name);
-                    list.Add(default);  // TODO: add value
+                    list.Add(name, default);    // TODO: add value
                     if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
 
 
@@ -358,11 +357,11 @@ namespace U8Xml
                 return true;
             }
 
-            Debug.Assert(list.Count % 2 == 0);
-            entities = RawStringTable.Create(list.Count / 2);
-            for(int k = 0; k < list.Count / 2; k++) {
-                if(entities.TryAdd(list[k * 2], list[k * 2 + 1]) == false) {
-                    throw NewFormatException($"entity: {list[k * 2]} is duplicated.");
+            entities = RawStringTable.Create(list.Count);
+            for(int k = 0; k < list.Count; k++) {
+                ref readonly var item = ref list[k];
+                if(entities.TryAdd(item.Key, item.Value) == false) {
+                    throw NewFormatException($"entity: {item.Key} is duplicated.");
                 }
             }
             return true;
