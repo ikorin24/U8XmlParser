@@ -111,6 +111,9 @@ namespace U8Xml
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal byte* GetPtr() => (byte*)_ptr;
+
         /// <summary>Get or set an item with specified index.</summary>
         /// <remarks>[CAUTION] This method does not check index boundary!</remarks>
         /// <param name="index">index of an item</param>
@@ -182,9 +185,18 @@ namespace U8Xml
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int GetHashCode(byte* ptr, int length)
+        {
+            // Returns hash computed by same algorithm as RawString.
+            // This method is used in RawStringTable
+
+            return XXHash32.ComputeHash(ptr, length);
+        }
+
         public override int GetHashCode()
         {
-            return XXHash32.ComputeHash((byte*)_ptr, _length);
+            return GetHashCode((byte*)_ptr, _length);
         }
 
         public static bool operator ==(RawString left, RawString right) => left.Equals(right);

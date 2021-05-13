@@ -56,7 +56,7 @@ namespace U8Xml.Internal
             if(count >= capacity) { ThrowHelper.ThrowInvalidOperation("Cannot add any more."); }
             if(key.IsEmpty) { ThrowHelper.ThrowArg("Cannot add empty key."); }
 
-            var hash = GetKeyHash(key, capacity);
+            var hash = GetKeyHash(key.GetPtr(), key.Length, capacity);
             var entries = Table->Entries;
             ref var entry = ref entries[hash];
             if(entry.Key.IsEmpty) {
@@ -95,16 +95,32 @@ namespace U8Xml.Internal
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetValue(in RawString key, out RawString value)
         {
-            if(key.IsEmpty) {
+            return TryGetValue(key.GetPtr(), key.Length, out value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetValue(ReadOnlySpan<byte> key, out RawString value)
+        {
+            fixed(byte* ptr = key) {
+                return TryGetValue(ptr, key.Length, out value);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryGetValue(byte* keyPtr, int keyLength, out RawString value)
+        {
+            Debug.Assert(keyLength >= 0);
+            if(keyLength == 0) {
                 value = RawString.Empty;
                 return false;
             }
             var capacity = Table->Capacity;
             var entries = Table->Entries;
-            var hash = GetKeyHash(key, capacity);
+            var hash = GetKeyHash(keyPtr, keyLength, capacity);
 
             ref var entry = ref entries[hash];
-            if(entry.Key == key) {
+            var key = SpanHelper.CreateReadOnlySpan<byte>(keyPtr, keyLength);
+            if(entry.Key.SequenceEqual(key)) {
                 value = entry.Value;
                 return true;
             }
@@ -115,14 +131,14 @@ namespace U8Xml.Internal
 
             return TryGetWithRehash(key, out value, Table, hash);
 
-            static bool TryGetWithRehash(in RawString key, out RawString value, RawStringTable_* table, int hash)
+            static bool TryGetWithRehash(ReadOnlySpan<byte> key, out RawString value, RawStringTable_* table, int hash)
             {
                 var capacity = table->Capacity;
                 var entries = table->Entries;
                 for(int i = 0; i < capacity; i++) {
                     hash = Rehash(hash, capacity);
                     ref var entry = ref entries[hash];
-                    if(entry.Key == key) {
+                    if(entry.Key.SequenceEqual(key)) {
                         value = entry.Value;
                         return true;
                     }
@@ -137,9 +153,9 @@ namespace U8Xml.Internal
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int GetKeyHash(in RawString key, int tableCapacity)
+        private static int GetKeyHash(byte* keyPtr, int keyLength, int tableCapacity)
         {
-            return (key.GetHashCode() & 0x7FFFFFFF) % tableCapacity;
+            return (RawString.GetHashCode(keyPtr, keyLength) & 0x7FFFFFFF) % tableCapacity;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
