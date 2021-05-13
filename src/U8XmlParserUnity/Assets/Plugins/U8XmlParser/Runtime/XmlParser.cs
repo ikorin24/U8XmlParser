@@ -371,9 +371,9 @@ namespace U8Xml
             entities = RawStringTable.Create(list.Count);
             for(int l = 0; l < list.Count; l++) {
                 ref readonly var item = ref list[l];
-                if(entities.TryAdd(item.Key, item.Value) == false) {
-                    throw NewFormatException($"entity: {item.Key} is duplicated.");
-                }
+
+                // Ignore the entity if the key is duplicated.
+                entities.TryAdd(item.Key, item.Value);
             }
             return true;
 
