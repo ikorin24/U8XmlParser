@@ -2,6 +2,7 @@
 
 using System;
 using System.Buffers;
+using System.Buffers.Text;
 using System.Runtime.CompilerServices;
 using U8Xml.Internal;
 
@@ -21,8 +22,14 @@ namespace U8Xml
         /// <param name="str">string to check</param>
         /// <param name="requiredBufferLength">byte length to required to resolve</param>
         /// <returns>state of resolver</returns>
-        public XmlEntityResolverState CheckNeedToResolve(RawString str, out int requiredBufferLength)
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public unsafe XmlEntityResolverState CheckNeedToResolve(RawString str, out int requiredBufferLength)
         {
+            const int ExBufLen = 5;
+            byte* exBuf = stackalloc byte[ExBufLen];
+
             var len = str.Length;
             var pos = -1;
             var needToResolve = false;
@@ -43,7 +50,11 @@ namespace U8Xml
                     }
                     var alias = str.SliceUnsafe(pos, i - pos);
                     if(TryGetValue(alias, out var value) == false) {
-                        goto CanNotResolve;
+                        var tmp = SpanHelper.CreateSpan<byte>(exBuf, ExBufLen);
+                        if(TryUnicodePointToUtf8(alias, tmp, out int byteLen) == false) {
+                            goto CanNotResolve;
+                        }
+                        value = tmp.Slice(0, byteLen);
                     }
                     len = len - 2 - alias.Length + value.Length;
                     pos = -1;
@@ -109,8 +120,14 @@ namespace U8Xml
         /// <param name="str">string to resolve</param>
         /// <param name="bufferToResolve">the buffer used in resolving the string</param>
         /// <returns>byte length of the resolved string</returns>
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
         public unsafe int Resolve(RawString str, Span<byte> bufferToResolve)
         {
+            const int ExBufLen = 5;
+            byte* exBuf = stackalloc byte[ExBufLen];
+
             // Use pointer to avoid the overhead in case of SlowSpan runtime.
             fixed(byte* buf = bufferToResolve) {
                 int i = 0;
@@ -139,7 +156,11 @@ namespace U8Xml
                         if(str.At(i++) == ';') {
                             var alias = str.SliceUnsafe(start, i - 1 - start);
                             if(TryGetValue(alias, out var value) == false) {
-                                throw new FormatException($"Could not resolve entity: '&{alias};'");
+                                var tmp = SpanHelper.CreateSpan<byte>(exBuf, ExBufLen);
+                                if(TryUnicodePointToUtf8(alias, tmp, out int byteLen) == false) {
+                                    throw new FormatException($"Could not resolve entity: '&{alias};'");
+                                }
+                                value = tmp.Slice(0, byteLen);
                             }
 
                             // If my implementation is correct, value.Length will not be zero. However, I will check just to be sure.
@@ -166,7 +187,7 @@ namespace U8Xml
             }
         }
 
-        private bool TryGetValue(in RawString alias, out ReadOnlySpan<byte> value)
+        private bool TryGetValue(RawString alias, out ReadOnlySpan<byte> value)
         {
             if(PredefinedEntityTable.TryGetPredefinedValue(alias, out value)) {
                 return true;
@@ -179,6 +200,32 @@ namespace U8Xml
             var success = table.TryGetValue(alias, out var v);
             value = v.AsSpan();
             return success;
+        }
+
+        private static bool TryUnicodePointToUtf8(RawString str, Span<byte> buffer, out int byteLength)
+        {
+            // str is like as "#1234" or "#x12AB"
+
+            if(str.Length < 2 || str.At(0) != '#') {
+                byteLength = 0;
+                return false;
+            }
+
+            if(str.At(1) == 'x') {
+                var hex = str.SliceUnsafe(2, str.Length - 2).AsSpan();
+                if(Utf8Parser.TryParse(hex, out uint codePoint, out _, 'x') == false) {
+                    byteLength = 0;
+                    return false;
+                }
+                return UnicodeHelper.TryEncodeCodePointToUtf8(codePoint, buffer, out byteLength);
+            }
+            else {
+                if(str.SliceUnsafe(1, str.Length - 1).TryToUInt32(out uint codePoint) == false) {
+                    byteLength = 0;
+                    return false;
+                }
+                return UnicodeHelper.TryEncodeCodePointToUtf8(codePoint, buffer, out byteLength);
+            }
         }
     }
 

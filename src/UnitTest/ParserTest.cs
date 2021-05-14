@@ -156,7 +156,7 @@ namespace UnitTest
                 {
                     var entities = xml.EntityTable;
                     var attr = second.Attributes.First();
-                    Assert.True(attr.Value == "123&foo;456");
+                    Assert.True(attr.Value == "123&foo;456&#8721;&#x2211;");
                     Assert.True(entities.CheckNeedToResolve(attr.Value, out var len) == XmlEntityResolverState.NeedToResolve);
                     Assert.True(entities.GetResolvedByteLength(attr.Value) == len);
                     var resolved = entities.Resolve(attr.Value);
@@ -164,7 +164,7 @@ namespace UnitTest
                     var buf = new byte[len];
                     Assert.True(entities.Resolve(attr.Value, buf) == len);
                     Assert.True(buf.SequenceEqual(resolved));
-                    Assert.True(Encoding.UTF8.GetString(resolved) == "123ふー456");
+                    Assert.True(Encoding.UTF8.GetString(resolved) == "123ふー456∑∑");
                 }
             }
 
@@ -192,7 +192,7 @@ namespace UnitTest
                         {
                             var entities = xml.EntityTable;
                             var attr = child.Attributes.First();
-                            Assert.True(attr.Value == "123&foo;456");
+                            Assert.True(attr.Value == "123&foo;456&#8721;&#x2211;");
                             Assert.True(entities.CheckNeedToResolve(attr.Value, out var len) == XmlEntityResolverState.NeedToResolve);
                             Assert.True(entities.GetResolvedByteLength(attr.Value) == len);
                             var resolved = entities.Resolve(attr.Value);
@@ -200,7 +200,7 @@ namespace UnitTest
                             var buf = new byte[len];
                             Assert.True(entities.Resolve(attr.Value, buf) == len);
                             Assert.True(buf.SequenceEqual(resolved));
-                            Assert.True(Encoding.UTF8.GetString(resolved) == "123ふー456");
+                            Assert.True(Encoding.UTF8.GetString(resolved) == "123ふー456∑∑");
                         }
                     }
                     i++;
