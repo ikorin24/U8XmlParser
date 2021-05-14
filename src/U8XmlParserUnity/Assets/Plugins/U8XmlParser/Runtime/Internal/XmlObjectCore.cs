@@ -24,6 +24,8 @@ namespace U8Xml.Internal
 
         public Option<XmlDocumentType> DocumentType => new XmlDocumentType(_optional.DocumentType);
 
+        public XmlEntityTable EntityTable => new XmlEntityTable(_entities);
+
         internal XmlObjectCore(ref UnmanagedBuffer buffer, int offset, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attributes, OptionalNodeList optional, RawStringTable entities)
         {
             buffer.TransferMemoryOwnership(out _rawByteData, out _byteLength);

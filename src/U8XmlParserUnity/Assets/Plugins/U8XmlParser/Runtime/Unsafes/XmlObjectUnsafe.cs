@@ -31,6 +31,8 @@ namespace U8Xml.Unsafes
 
         public Option<XmlDocumentType> DocumentType => ((XmlObjectCore*)_core)->DocumentType;
 
+        public XmlEntityTable EntityTable => ((XmlObjectCore*)_core)->EntityTable;
+
         public RawString AsRawString() => ((XmlObjectCore*)_core)->AsRawString();
 
         public void Dispose()

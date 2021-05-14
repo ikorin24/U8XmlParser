@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Linq;
+using System.Text;
 using Xunit;
 using U8Xml;
 using U8Xml.Internal;
@@ -146,10 +147,25 @@ namespace UnitTest
                 var second = root.Children.ElementAt(1);
                 Assert.True(second.Name == "abc");
                 Assert.True(second.InnerText == "15 / 3 > A && -3 < B");
-                Assert.True(second.HasAttribute == false);
-                Assert.True(second.Attributes.Count == 0);
+                Assert.True(second.HasAttribute);
+                Assert.True(second.Attributes.Count == 1);
                 Assert.True(second.HasChildren == false);
                 Assert.True(second.Children.Count == 0);
+
+                // Resolve entity
+                {
+                    var entities = xml.EntityTable;
+                    var attr = second.Attributes.First();
+                    Assert.True(attr.Value == "123&foo;456");
+                    Assert.True(entities.CheckNeedToResolve(attr.Value, out var len) == XmlEntityResolverState.NeedToResolve);
+                    Assert.True(entities.GetResolvedByteLength(attr.Value) == len);
+                    var resolved = entities.Resolve(attr.Value);
+                    Assert.True(resolved.Length == len);
+                    var buf = new byte[len];
+                    Assert.True(entities.Resolve(attr.Value, buf) == len);
+                    Assert.True(buf.SequenceEqual(resolved));
+                    Assert.True(Encoding.UTF8.GetString(resolved) == "123ふー456");
+                }
             }
 
             // Test children enumeration directly
@@ -167,10 +183,25 @@ namespace UnitTest
                     else if(i == 1) {
                         Assert.True(child.Name == "abc");
                         Assert.True(child.InnerText == "15 / 3 > A && -3 < B");
-                        Assert.True(child.HasAttribute == false);
-                        Assert.True(child.Attributes.Count == 0);
+                        Assert.True(child.HasAttribute);
+                        Assert.True(child.Attributes.Count == 1);
                         Assert.True(child.HasChildren == false);
                         Assert.True(child.Children.Count == 0);
+
+                        // Resolve entity
+                        {
+                            var entities = xml.EntityTable;
+                            var attr = child.Attributes.First();
+                            Assert.True(attr.Value == "123&foo;456");
+                            Assert.True(entities.CheckNeedToResolve(attr.Value, out var len) == XmlEntityResolverState.NeedToResolve);
+                            Assert.True(entities.GetResolvedByteLength(attr.Value) == len);
+                            var resolved = entities.Resolve(attr.Value);
+                            Assert.True(resolved.Length == len);
+                            var buf = new byte[len];
+                            Assert.True(entities.Resolve(attr.Value, buf) == len);
+                            Assert.True(buf.SequenceEqual(resolved));
+                            Assert.True(Encoding.UTF8.GetString(resolved) == "123ふー456");
+                        }
                     }
                     i++;
                 }

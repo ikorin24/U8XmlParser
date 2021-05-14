@@ -12,11 +12,11 @@ namespace UnitTest
     <!ELEMENT あいうえお (かきくけこ, abc)>
     <!ELEMENT かきくけこ #(PCDATA)>
     <!ELEMENT abc #(PCDATA)>
-    <!ENTITY foo ""bar"" >
+    <!ENTITY foo ""ふー"" >
 ]>
 <あいうえお ほげ=""3"">
     <かきくけこ>さしすせそ</かきくけこ>
-    <abc>
+    <abc aa=""123&foo;456"">
         <![CDATA[15 / 3 > A && -3 < B]]>
     </abc>
 </あいうえお>")]

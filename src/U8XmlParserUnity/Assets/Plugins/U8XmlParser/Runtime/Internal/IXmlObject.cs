@@ -9,6 +9,7 @@ namespace U8Xml.Internal
         XmlNode Root { get; }
         Option<XmlDeclaration> Declaration { get; }
         Option<XmlDocumentType> DocumentType { get; }
+        XmlEntityTable EntityTable { get; }
         RawString AsRawString();
         AllNodeList GetAllNodes();
     }
