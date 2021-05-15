@@ -50,19 +50,23 @@ namespace U8Xml.Internal
             const int LengthToRead = 4096;
             int bufSize = Math.Min(fileSizeHint, LengthToRead);
             var rentArray = ArrayPool<byte>.Shared.Rent(bufSize);
-            var buf = new UnmanagedBuffer(0);
+
+            var buf = new UnmanagedBuffer(fileSizeHint);
+            var totalLen = 0;
             try {
                 while(true) {
                     var readlen = stream!.Read(rentArray, 0, bufSize);
                     if(readlen == 0) { break; }
-                    var tmp = new UnmanagedBuffer(checked(buf.Length + readlen));
-                    buf.AsSpan().CopyTo(tmp.AsSpan());
-                    rentArray.AsSpan(0, readlen).CopyTo(tmp.AsSpan(buf.Length));
-                    buf.Dispose();
-                    buf = tmp;
+
+                    if(buf.Length < totalLen + readlen) {
+                        ExtendBuffer(ref buf, totalLen);
+                    }
+                    rentArray.AsSpan(0, readlen).CopyTo(buf.AsSpan(totalLen));
+                    totalLen += readlen;
+
                     if(stream.CanSeek && stream.Position == stream.Length) { break; }
                 }
-                return (buf, buf.Length);
+                return (buf, totalLen);
             }
             catch {
                 buf.Dispose();
@@ -70,6 +74,21 @@ namespace U8Xml.Internal
             }
             finally {
                 ArrayPool<byte>.Shared.Return(rentArray);
+            }
+
+            static void ExtendBuffer(ref UnmanagedBuffer buf, int currentUsedLen)
+            {
+                var newBufSize = buf.Length <= 0 ? 1024 : buf.Length * 2;
+                var newBuf = new UnmanagedBuffer(newBufSize);
+                try {
+                    buf.AsSpan(0, currentUsedLen).CopyTo(newBuf.AsSpan());
+                }
+                catch {
+                    newBuf.Dispose();
+                    throw;
+                }
+                buf.Dispose();
+                buf = newBuf;
             }
 #endif
         }
