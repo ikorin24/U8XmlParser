@@ -12,7 +12,8 @@ namespace UnitTest
     <!ELEMENT あいうえお (かきくけこ, abc)>
     <!ELEMENT かきくけこ #(PCDATA)>
     <!ELEMENT abc #(PCDATA)>
-    <!ENTITY foo ""ふー"" >
+    <!ENTITY foofoofoo ""ふー"">
+    <!ENTITY foo ""&foofoofoo;"" >
 ]>
 <あいうえお ほげ=""3"">
     <かきくけこ>さしすせそ</かきくけこ>

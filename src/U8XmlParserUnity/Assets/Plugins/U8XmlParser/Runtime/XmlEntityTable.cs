@@ -22,12 +22,25 @@ namespace U8Xml
         /// <param name="str">string to check</param>
         /// <param name="requiredBufferLength">byte length to required to resolve</param>
         /// <returns>state of resolver</returns>
+        public unsafe XmlEntityResolverState CheckNeedToResolve(ReadOnlySpan<byte> str, out int requiredBufferLength)
+        {
+            fixed(byte* p = str) {
+                // It is safe to create RawString from ReadOnlySpan<byte>
+                // because the method does not store the RawString instance anywhere.
+                return CheckNeedToResolve(new RawString(p, str.Length), out requiredBufferLength);
+            }
+        }
+
+        /// <summary>Check to see if the input string needs to be resolved.</summary>
+        /// <param name="str">string to check</param>
+        /// <param name="requiredBufferLength">byte length to required to resolve</param>
+        /// <returns>state of resolver</returns>
 #if NET5_0_OR_GREATER
         [SkipLocalsInit]
 #endif
         public unsafe XmlEntityResolverState CheckNeedToResolve(RawString str, out int requiredBufferLength)
         {
-            const int ExBufLen = 5;
+            const int ExBufLen = 5;         // A unicode character can be up to 5 bytes.
             byte* exBuf = stackalloc byte[ExBufLen];
 
             var len = str.Length;
@@ -56,6 +69,16 @@ namespace U8Xml
                         }
                         value = tmp.Slice(0, byteLen);
                     }
+                    else {
+                        // The value of entity may contains other enity alias.
+                        var recursiveResolveNeeded = CheckNeedToResolve(value, out int l);
+                        if(recursiveResolveNeeded == XmlEntityResolverState.CannotResolve) {
+                            goto CanNotResolve;
+                        }
+                        else if(recursiveResolveNeeded == XmlEntityResolverState.NeedToResolve) {
+                            len = len - value.Length + l;
+                        }
+                    }
                     len = len - 2 - alias.Length + value.Length;
                     pos = -1;
                     continue;
@@ -78,6 +101,18 @@ namespace U8Xml
         /// <summary>Get byte length of a buffer which the resolver need to resolve the string.</summary>
         /// <param name="str">string to check</param>
         /// <returns>byte length of a buffer</returns>
+        public unsafe int GetResolvedByteLength(ReadOnlySpan<byte> str)
+        {
+            fixed(byte* p = str) {
+                // It is safe to create RawString from ReadOnlySpan<byte>
+                // because the method does not store the RawString instance anywhere.
+                return GetResolvedByteLength(new RawString(p, str.Length));
+            }
+        }
+
+        /// <summary>Get byte length of a buffer which the resolver need to resolve the string.</summary>
+        /// <param name="str">string to check</param>
+        /// <returns>byte length of a buffer</returns>
         public int GetResolvedByteLength(RawString str)
         {
             var state = CheckNeedToResolve(str, out var requiredBufLen);
@@ -85,6 +120,18 @@ namespace U8Xml
                 throw new ArgumentException("Could not resolve the input string.");
             }
             return requiredBufLen;
+        }
+
+        /// <summary>Resolve the string.</summary>
+        /// <param name="str">the string to resolve</param>
+        /// <returns>resolved utf-8 string as byte array</returns>
+        public unsafe byte[] Resolve(ReadOnlySpan<byte> str)
+        {
+            fixed(byte* p = str) {
+                // It is safe to create RawString from ReadOnlySpan<byte>
+                // because the method does not store the RawString instance anywhere.
+                return Resolve(new RawString(p, str.Length));
+            }
         }
 
         /// <summary>Resolve the string.</summary>
@@ -112,6 +159,20 @@ namespace U8Xml
                 finally {
                     ArrayPool<byte>.Shared.Return(buf);
                 }
+            }
+        }
+
+        /// <summary>Resolve the string to the specified buffer.</summary>
+        /// <remarks>The buffer must be large enough to resolve.</remarks>
+        /// <param name="str">string to resolve</param>
+        /// <param name="bufferToResolve">the buffer used in resolving the string</param>
+        /// <returns>byte length of the resolved string</returns>
+        public unsafe int Resolve(ReadOnlySpan<byte> str, Span<byte> bufferToResolve)
+        {
+            fixed(byte* p = str) {
+                // It is safe to create RawString from ReadOnlySpan<byte>
+                // because the method does not store the RawString instance anywhere.
+                return Resolve(new RawString(p, str.Length), bufferToResolve);
             }
         }
 
@@ -158,9 +219,19 @@ namespace U8Xml
                             if(TryGetValue(alias, out var value) == false) {
                                 var tmp = SpanHelper.CreateSpan<byte>(exBuf, ExBufLen);
                                 if(TryUnicodePointToUtf8(alias, tmp, out int byteLen) == false) {
-                                    throw new FormatException($"Could not resolve entity: '&{alias};'");
+                                    throw new FormatException($"Could not resolve the entity: '&{alias};'");
                                 }
                                 value = tmp.Slice(0, byteLen);
+                            }
+                            else {
+                                // The value of entity may contains other enity alias.
+                                var recursiveResolveNeeded = CheckNeedToResolve(value, out int l);
+                                if(recursiveResolveNeeded == XmlEntityResolverState.CannotResolve) {
+                                    throw new FormatException($"Could not resolve an entity");
+                                }
+                                else if(recursiveResolveNeeded == XmlEntityResolverState.NeedToResolve) {
+                                    value = Resolve(value);
+                                }
                             }
 
                             // If my implementation is correct, value.Length will not be zero. However, I will check just to be sure.

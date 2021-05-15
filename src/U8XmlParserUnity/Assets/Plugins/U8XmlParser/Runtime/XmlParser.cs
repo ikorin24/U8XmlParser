@@ -372,6 +372,13 @@ namespace U8Xml
             for(int l = 0; l < list.Count; l++) {
                 ref readonly var item = ref list[l];
 
+                // An entity can refer to another entity that was defined before it.
+                if(ContainsAlias(item.Value, out var alias)) {
+                    if(entities.TryGetValue(alias, out _) == false) {
+                        throw NewFormatException();
+                    }
+                }
+
                 // Ignore the entity if the key is duplicated.
                 entities.TryAdd(item.Key, item.Value);
             }
@@ -393,6 +400,23 @@ namespace U8Xml
                     i++;
                     if(next == ' ' || next == '\t' || next == '\r' || next == '\n') { break; }
                 }
+            }
+
+            static bool ContainsAlias(RawString str, out RawString alias)
+            {
+                int pos = 0;
+                for(int i = 0; i < str.Length; i++) {
+                    if(str.At(i) == '&' && pos == 0) {
+                        pos = i + 1;
+                        continue;
+                    }
+                    if(str.At(i) == ';' && pos != 1) {
+                        alias = str.SliceUnsafe(pos, i - 1 - pos);
+                        return true;
+                    }
+                }
+                alias = RawString.Empty;
+                return false;
             }
         }
 
