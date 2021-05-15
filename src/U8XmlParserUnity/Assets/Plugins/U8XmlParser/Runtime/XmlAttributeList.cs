@@ -54,7 +54,7 @@ namespace U8Xml
         {
             if(predicate is null) { ThrowHelper.ThrowNullArg(nameof(predicate)); }
             foreach(var attr in this) {
-                if(predicate(attr)) {
+                if(predicate!(attr)) {
                     return attr;
                 }
             }
