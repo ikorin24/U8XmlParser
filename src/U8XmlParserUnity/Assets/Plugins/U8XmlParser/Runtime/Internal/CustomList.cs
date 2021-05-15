@@ -117,6 +117,16 @@ namespace U8Xml.Internal
             }
         }
 
+        public T* At(int i)
+        {
+            // No check because CustomList<T> is internal.
+            Debug.Assert(Info != null);
+            Debug.Assert((uint)i < (uint)Count);
+            var (lineNum, posInLine) = GetLineNumAndIndex(i);
+            var line = (&Info->L0)[lineNum];
+            return &(&line->FirstItem)[posInLine];
+        }
+
         public void Dispose()
         {
             for(int i = 0; i < ListInfo.BucketCount; i++) {

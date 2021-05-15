@@ -31,6 +31,36 @@ namespace U8Xml
             _length = length;
         }
 
+        public XmlAttribute First()
+        {
+            if(Count == 0) { ThrowHelper.ThrowInvalidOperation("Sequence contains no elements."); }
+            return new XmlAttribute(_list.At(_start));
+        }
+
+        public XmlAttribute First(Func<XmlAttribute, bool> predicate)
+        {
+            if(FirstOrDefault(predicate).TryGetValue(out var attr) == false) {
+                ThrowHelper.ThrowInvalidOperation("Sequence contains no matching elements.");
+            }
+            return attr;
+        }
+
+        public Option<XmlAttribute> FirstOrDefault()
+        {
+            return Count == 0 ? default : new XmlAttribute(_list.At(_start));
+        }
+
+        public Option<XmlAttribute> FirstOrDefault(Func<XmlAttribute, bool> predicate)
+        {
+            if(predicate is null) { ThrowHelper.ThrowNullArg(nameof(predicate)); }
+            foreach(var attr in this) {
+                if(predicate(attr)) {
+                    return attr;
+                }
+            }
+            return default;
+        }
+
         void ICollection<XmlAttribute>.Add(XmlAttribute item) => throw new NotSupportedException();
 
         void ICollection<XmlAttribute>.Clear() => throw new NotSupportedException();

@@ -38,28 +38,18 @@ namespace U8Xml
 
         public Option<XmlNode> FirstOrDefault()
         {
-            return FirstOrNull();
-        }
-
-        public Option<XmlNode> FirstOrNull()
-        {
             return new XmlNode(_parent->FirstChild);
         }
 
         public XmlNode First(Func<XmlNode, bool> predicate)
         {
-            if(FirstOrNull(predicate).TryGetValue(out var node) == false) {
+            if(FirstOrDefault(predicate).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation("Sequence contains no matching elements.");
             }
             return node;
         }
 
         public Option<XmlNode> FirstOrDefault(Func<XmlNode, bool> predicate)
-        {
-            return FirstOrNull(predicate);
-        }
-
-        public Option<XmlNode> FirstOrNull(Func<XmlNode, bool> predicate)
         {
             if(predicate is null) { ThrowHelper.ThrowNullArg(nameof(predicate)); }
             foreach(var node in this) {
