@@ -26,7 +26,7 @@ namespace U8Xml.Internal
                 }
             }
             else if(alias.Length == 3) {
-                if(alias.At(0) == 'a' && alias.At(1) == 'm' && alias.At(1) == 'p') {
+                if(alias.At(0) == 'a' && alias.At(1) == 'm' && alias.At(2) == 'p') {
                     // &amp;
                     value = EntityAMP;
                     return true;
