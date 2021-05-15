@@ -165,6 +165,7 @@ namespace UnitTest
                     Assert.True(entities.Resolve(attr.Value, buf) == len);
                     Assert.True(buf.SequenceEqual(resolved));
                     Assert.True(Encoding.UTF8.GetString(resolved) == "123ふー456∑∑");
+                    Assert.True(entities.ResolveToString(attr.Value) == "123ふー456∑∑");
                 }
             }
 
@@ -201,6 +202,7 @@ namespace UnitTest
                             Assert.True(entities.Resolve(attr.Value, buf) == len);
                             Assert.True(buf.SequenceEqual(resolved));
                             Assert.True(Encoding.UTF8.GetString(resolved) == "123ふー456∑∑");
+                            Assert.True(entities.ResolveToString(attr.Value) == "123ふー456∑∑");
                         }
                     }
                     i++;

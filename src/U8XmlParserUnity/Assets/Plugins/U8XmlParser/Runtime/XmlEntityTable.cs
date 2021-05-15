@@ -4,6 +4,7 @@ using System;
 using System.Buffers;
 using System.Buffers.Text;
 using System.Runtime.CompilerServices;
+using System.Text;
 using U8Xml.Internal;
 
 namespace U8Xml
@@ -120,6 +121,45 @@ namespace U8Xml
                 throw new ArgumentException("Could not resolve the input string.");
             }
             return requiredBufLen;
+        }
+
+        /// <summary>Resolve the input utf-8 string to <see langword="string"/></summary>
+        /// <param name="str">utf-8 string to resolve</param>
+        /// <returns>resolved <see langword="string"/></returns>
+        public unsafe string ResolveToString(ReadOnlySpan<byte> str)
+        {
+            fixed(byte* p = str) {
+                // It is safe to create RawString from ReadOnlySpan<byte>
+                // because the method does not store the RawString instance anywhere.
+                return ResolveToString(new RawString(p, str.Length));
+            }
+        }
+
+        /// <summary>Resolve the input utf-8 string to <see langword="string"/></summary>
+        /// <param name="str">utf-8 string to resolve</param>
+        /// <returns>resolved <see langword="string"/></returns>
+        public unsafe string ResolveToString(RawString str)
+        {
+            var byteLen = GetResolvedByteLength(str);
+            if(byteLen <= 128) {
+                Span<byte> buf = stackalloc byte[byteLen];
+                Resolve(str, buf);
+                fixed(byte* ptr = buf) {
+                    return Encoding.UTF8.GetString(ptr, byteLen);
+                }
+            }
+            else {
+                var buf = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    Resolve(str, buf.AsSpan());
+                    fixed(byte* ptr = buf) {
+                        return Encoding.UTF8.GetString(ptr, byteLen);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
+            }
         }
 
         /// <summary>Resolve the string.</summary>
