@@ -22,7 +22,7 @@ $ dotnet add package U8XmlParser
 
 If Unity 2020 or newer, install the package from UPM by git URL.
 
-git URL: (https://github.com/ikorin24/U8XmlParser.git?path=src/U8XmlParserUnity/Assets/Plugins)
+git URL: (https://github.com/ikorin24/U8XmlParser.git?path=src/U8XmlParserUnity/Assets/Plugins#v1.0.0)
 
 For Unity 2019 or older, add the following libraries built for .net standard2.0 to your project.
 You can get them at the [release page](https://github.com/ikorin24/U8XmlParser/releases).
