@@ -1,7 +1,7 @@
 {
     "name": "com.ikorin24.u8xmlparser",
     "displayName": "U8XmlParser",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "unity": "2020.3",
     "description": "Provides the fastest xml parser.",
     "keywords": [ "xml", "parser", "XmlParser", "U8XmlParser" ],
