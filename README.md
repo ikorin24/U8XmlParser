@@ -134,9 +134,9 @@ Benchmarked by [BenchmarkDotNet](https://github.com/dotnet/BenchmarkDotNet).
 
 BenchmarkDotNet=v0.12.1, OS=Windows 10.0.19042
 Intel Core i7-10700 CPU 2.90GHz, 1 CPU, 16 logical and 8 physical cores
-.NET Core SDK=5.0.202
-  [Host]     : .NET Core 5.0.5 (CoreCLR 5.0.521.16609, CoreFX 5.0.521.16609), X64 RyuJIT
-  Job-KJNRQJ : .NET Core 5.0.5 (CoreCLR 5.0.521.16609, CoreFX 5.0.521.16609), X64 RyuJIT
+.NET Core SDK=6.0.100-preview.4.21255.9
+  [Host]     : .NET Core 5.0.6 (CoreCLR 5.0.621.22011, CoreFX 5.0.621.22011), X64 RyuJIT
+  Job-FFRSPZ : .NET Core 5.0.6 (CoreCLR 5.0.621.22011, CoreFX 5.0.621.22011), X64 RyuJIT
 
 Jit=RyuJit  Platform=X64  InvocationCount=1  
 IterationCount=100  UnrollFactor=1  
@@ -144,10 +144,10 @@ IterationCount=100  UnrollFactor=1
 ```
 |                     Method |      Mean |    Error |   StdDev | Ratio | RatioSD | Rank |      Gen 0 |     Gen 1 |     Gen 2 |  Allocated |
 |--------------------------- |----------:|---------:|---------:|------:|--------:|-----:|-----------:|----------:|----------:|-----------:|
-| &#39;U8Xml.XmlParser (my lib)&#39; |  21.86 ms | 0.057 ms | 0.152 ms |  1.00 |    0.00 |    1 |          - |         - |         - |       64 B |
-|  System.Xml.Linq.XDocument | 117.67 ms | 1.979 ms | 5.834 ms |  5.38 |    0.28 |    3 |  7000.0000 | 4000.0000 | 1000.0000 | 51898640 B |
-|     System.Xml.XmlDocument | 175.50 ms | 1.960 ms | 5.779 ms |  8.03 |    0.28 |    4 | 10000.0000 | 5000.0000 | 1000.0000 | 76709520 B |
-|       System.Xml.XmlReader |  34.11 ms | 0.066 ms | 0.186 ms |  1.56 |    0.01 |    2 |          - |         - |         - |   132712 B |
+| &#39;U8Xml.XmlParser (my lib)&#39; |  22.51 ms | 0.035 ms | 0.099 ms |  1.00 |    0.00 |    1 |          - |         - |         - |       64 B |
+|  System.Xml.Linq.XDocument | 119.76 ms | 0.556 ms | 1.639 ms |  5.32 |    0.08 |    3 |  7000.0000 | 4000.0000 | 1000.0000 | 51898640 B |
+|     System.Xml.XmlDocument | 172.68 ms | 2.337 ms | 6.892 ms |  7.68 |    0.30 |    4 | 10000.0000 | 5000.0000 | 1000.0000 | 76709520 B |
+|       System.Xml.XmlReader |  34.37 ms | 0.014 ms | 0.038 ms |  1.53 |    0.01 |    2 |          - |         - |         - |   132712 B |
 
 ---
 
@@ -157,20 +157,20 @@ IterationCount=100  UnrollFactor=1
 
 BenchmarkDotNet=v0.12.1, OS=Windows 10.0.19042
 Intel Core i7-10700 CPU 2.90GHz, 1 CPU, 16 logical and 8 physical cores
-.NET Core SDK=5.0.202
-  [Host]     : .NET Core 5.0.5 (CoreCLR 5.0.521.16609, CoreFX 5.0.521.16609), X64 RyuJIT
-  Job-FURHHZ : .NET Core 5.0.5 (CoreCLR 5.0.521.16609, CoreFX 5.0.521.16609), X64 RyuJIT
+.NET Core SDK=6.0.100-preview.4.21255.9
+  [Host]     : .NET Core 5.0.6 (CoreCLR 5.0.621.22011, CoreFX 5.0.621.22011), X64 RyuJIT
+  Job-YGCDZN : .NET Core 5.0.6 (CoreCLR 5.0.621.22011, CoreFX 5.0.621.22011), X64 RyuJIT
 
 Jit=RyuJit  Platform=X64  InvocationCount=1  
 IterationCount=100  UnrollFactor=1  
 
 ```
-|                     Method |       Mean |    Error |    StdDev |     Median | Ratio | RatioSD | Rank | Gen 0 | Gen 1 | Gen 2 | Allocated |
-|--------------------------- |-----------:|---------:|----------:|-----------:|------:|--------:|-----:|------:|------:|------:|----------:|
-| &#39;U8Xml.XmlParser (my lib)&#39; |   245.7 μs |  2.46 μs |   6.90 μs |   243.4 μs |  1.00 |    0.00 |    1 |     - |     - |     - |      64 B |
-|  System.Xml.Linq.XDocument | 1,110.2 μs |  2.44 μs |   7.05 μs | 1,108.9 μs |  4.52 |    0.13 |    3 |     - |     - |     - |  547336 B |
-|     System.Xml.XmlDocument | 1,330.4 μs | 69.72 μs | 204.47 μs | 1,474.9 μs |  5.53 |    0.87 |    4 |     - |     - |     - |  796912 B |
-|       System.Xml.XmlReader |   580.4 μs |  0.30 μs |   0.86 μs |   580.3 μs |  2.36 |    0.06 |    2 |     - |     - |     - |   29360 B |
+|                     Method |       Mean |    Error |   StdDev |     Median | Ratio | RatioSD | Rank | Gen 0 | Gen 1 | Gen 2 | Allocated |
+|--------------------------- |-----------:|---------:|---------:|-----------:|------:|--------:|-----:|------:|------:|------:|----------:|
+| &#39;U8Xml.XmlParser (my lib)&#39; |   278.3 μs |  0.59 μs |  1.65 μs |   278.4 μs |  1.00 |    0.00 |    1 |     - |     - |     - |      64 B |
+|  System.Xml.Linq.XDocument | 1,170.7 μs | 34.49 μs | 94.98 μs | 1,161.3 μs |  4.21 |    0.34 |    3 |     - |     - |     - |  547336 B |
+|     System.Xml.XmlDocument | 1,442.4 μs |  4.29 μs | 12.18 μs | 1,442.2 μs |  5.18 |    0.05 |    4 |     - |     - |     - |  796912 B |
+|       System.Xml.XmlReader |   599.7 μs |  3.13 μs |  9.09 μs |   594.8 μs |  2.15 |    0.03 |    2 |     - |     - |     - |   29360 B |
 
 
 
