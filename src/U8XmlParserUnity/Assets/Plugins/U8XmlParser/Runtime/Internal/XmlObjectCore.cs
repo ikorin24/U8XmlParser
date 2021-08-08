@@ -41,8 +41,7 @@ namespace U8Xml.Internal
             var data = Interlocked.Exchange(ref Unsafe.AsRef(_rawByteData), default);
             if(data != IntPtr.Zero) {
                 AllocationSafety.Remove(_byteLength);
-                Marshal.FreeHGlobal(_rawByteData);
-                Unsafe.AsRef(_rawByteData) = IntPtr.Zero;
+                Marshal.FreeHGlobal(data);
                 Unsafe.AsRef(_byteLength) = 0;
                 Unsafe.AsRef(_offset) = 0;
                 _nodes.Dispose();
