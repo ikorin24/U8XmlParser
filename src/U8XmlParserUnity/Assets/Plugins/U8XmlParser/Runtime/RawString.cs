@@ -185,6 +185,47 @@ namespace U8Xml
             return true;
         }
 
+        public bool StartWith(string other) => StartWith(other.AsSpan());
+
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public bool StartWith(ReadOnlySpan<char> other)
+        {
+            if(other.Length == 0) {
+                return true;
+            }
+            var utf8 = Encoding.UTF8;
+            var byteLen = utf8.GetByteCount(other);
+            if(byteLen > Length) {
+                return false;
+            }
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = other) {
+                    utf8.GetBytes(ptr, other.Length, buf, byteLen);
+                }
+                var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                return AsSpan().StartsWith(span);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = other) {
+                        utf8.GetBytes(ptr, other.Length, buf, byteLen);
+                        var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                        return AsSpan().StartsWith(span);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetHashCode(byte* ptr, int length)
         {
@@ -254,4 +295,16 @@ namespace U8Xml
             _entity = entity;
         }
     }
+
+#if NETSTANDARD2_0 || NET48
+    internal static class EncodingExtension
+    {
+        public static unsafe int GetByteCount(this Encoding encoding, ReadOnlySpan<char> span)
+        {
+            fixed(char* ptr = span) {
+                return encoding.GetByteCount(ptr, span.Length);
+            }
+        }
+    }
+#endif
 }

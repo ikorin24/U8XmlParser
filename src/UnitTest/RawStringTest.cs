@@ -356,6 +356,65 @@ namespace UnitTest
             }
         }
 
+        [Fact]
+        public void StartWith()
+        {
+            const string str1 = "あいうえお";
+            const string str2 = "あいう";
+            const string str3 = "えお";
+            var rawStr1 = RawStringSource.Get("あいうえお");
+            var rawStr2 = RawStringSource.Get("あいう");
+            var rawStr3 = RawStringSource.Get("えお");
+
+            // [Assert true]
+            {
+                // "あいうえお" starts with "あいうえお"
+                Assert.True(rawStr1.StartWith(rawStr1));                    // RawString -- RawString
+                Assert.True(rawStr1.StartWith(rawStr1.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.StartWith(str1));                       // RawString -- string
+                Assert.True(rawStr1.StartWith(str1.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいうえお" starts with "あいう"
+                Assert.True(rawStr1.StartWith(rawStr2));                    // RawString -- RawString
+                Assert.True(rawStr1.StartWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.StartWith(str2));                       // RawString -- string
+                Assert.True(rawStr1.StartWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいうえお" starts with ""
+                Assert.True(rawStr1.StartWith(RawString.Empty));            // RawString -- RawString
+                Assert.True(rawStr1.StartWith(ReadOnlySpan<byte>.Empty));   // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.StartWith(string.Empty));               // RawString -- string
+                Assert.True(rawStr1.StartWith(ReadOnlySpan<char>.Empty));   // RawString -- ReadOnlySpan<char>
+
+                // "あいう" starts with "あいう"
+                Assert.True(rawStr2.StartWith(rawStr2));                    // RawString -- RawString
+                Assert.True(rawStr2.StartWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.StartWith(str2));                       // RawString -- string
+                Assert.True(rawStr2.StartWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいう" starts with ""
+                Assert.True(rawStr2.StartWith(RawString.Empty));            // RawString -- RawString
+                Assert.True(rawStr2.StartWith(ReadOnlySpan<byte>.Empty));   // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.StartWith(string.Empty));               // RawString -- string
+                Assert.True(rawStr2.StartWith(ReadOnlySpan<char>.Empty));   // RawString -- ReadOnlySpan<char>
+            }
+
+            // [Assert false]
+            {
+                // "あいうえお" does not start with "えお"
+                Assert.False(rawStr1.StartWith(rawStr3));                    // RawString -- RawString
+                Assert.False(rawStr1.StartWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr1.StartWith(str3));                       // RawString -- string
+                Assert.False(rawStr1.StartWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいう" starts with "えお"
+                Assert.False(rawStr2.StartWith(rawStr3));                    // RawString -- RawString
+                Assert.False(rawStr2.StartWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr2.StartWith(str3));                       // RawString -- string
+                Assert.False(rawStr2.StartWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
+            }
+        }
+
         private readonly struct Check<T>
         {
             public readonly T Answer;
@@ -462,6 +521,10 @@ namespace UnitTest
         private static partial ReadOnlySpan<byte> Str44();
         [Utf8("17E+307")]
         private static partial ReadOnlySpan<byte> Str45();
+        [Utf8("あいう")]
+        private static partial ReadOnlySpan<byte> Str46();
+        [Utf8("えお")]
+        private static partial ReadOnlySpan<byte> Str47();
 
         static RawStringSource()
         {
@@ -511,6 +574,8 @@ namespace UnitTest
             Register(Str43());
             Register(Str44());
             Register(Str45());
+            Register(Str46());
+            Register(Str47());
 
             static unsafe void Register(ReadOnlySpan<byte> s)
             {
