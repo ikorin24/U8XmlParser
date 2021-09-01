@@ -407,7 +407,7 @@ namespace UnitTest
                 Assert.False(rawStr1.StartWith(str3));                       // RawString -- string
                 Assert.False(rawStr1.StartWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
 
-                // "あいう" starts with "えお"
+                // "あいう" does not start with "えお"
                 Assert.False(rawStr2.StartWith(rawStr3));                    // RawString -- RawString
                 Assert.False(rawStr2.StartWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
                 Assert.False(rawStr2.StartWith(str3));                       // RawString -- string
