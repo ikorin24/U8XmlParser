@@ -19,11 +19,11 @@ namespace U8Xml.Internal
     // |       Table       |   +-----------------------------------+---------------------------+---------------------------+--
     // +---------|---------+   |          RawStringTable_          |           Entry           |           Entry           |  ...
     //           |             +------------+------------+---------+-------------+-------------+-------------+-------------+--
-    //           Ñ§----------->|   Entry*   |    int     |   int   |  RawString  |  RawString  |  RawString  |  RawString  |  
+    //           `------------>|   Entry*   |    int     |   int   |  RawString  |  RawString  |  RawString  |  RawString  |  
     //                         |   Entries  |  Capacity  |  Count  |     Key     |     Key     |     Key     |     Key     |  ...
     //                         +-----|------+------------+---------+-------------+-------------+-------------+-------------+--
-    //                               |                                   Å™
-    //                               Ñ§----------------------------------Ñ£
+    //                               |                                   ‚Üë
+    //                               `-----------------------------------'
 
     [DebuggerDisplay("{DebugDisplay,nq}")]
     internal unsafe readonly struct RawStringTable : IDisposable, IReference
