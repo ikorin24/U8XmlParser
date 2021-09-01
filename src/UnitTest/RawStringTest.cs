@@ -415,6 +415,65 @@ namespace UnitTest
             }
         }
 
+        [Fact]
+        public void EndsWith()
+        {
+            const string str1 = "あいうえお";
+            const string str2 = "あいう";
+            const string str3 = "えお";
+            var rawStr1 = RawStringSource.Get("あいうえお");
+            var rawStr2 = RawStringSource.Get("あいう");
+            var rawStr3 = RawStringSource.Get("えお");
+
+            // [Assert true]
+            {
+                // "あいうえお" ends with "あいうえお"
+                Assert.True(rawStr1.EndsWith(rawStr1));                     // RawString -- RawString
+                Assert.True(rawStr1.EndsWith(rawStr1.AsSpan()));            // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.EndsWith(str1));                        // RawString -- string
+                Assert.True(rawStr1.EndsWith(str1.AsSpan()));               // RawString -- ReadOnlySpan<char>
+
+                // "あいうえお" ends with "えお"
+                Assert.True(rawStr1.EndsWith(rawStr3));                     // RawString -- RawString
+                Assert.True(rawStr1.EndsWith(rawStr3.AsSpan()));            // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.EndsWith(str3));                        // RawString -- string
+                Assert.True(rawStr1.EndsWith(str3.AsSpan()));               // RawString -- ReadOnlySpan<char>
+
+                // "あいうえお" ends with ""
+                Assert.True(rawStr1.EndsWith(RawString.Empty));             // RawString -- RawString
+                Assert.True(rawStr1.EndsWith(ReadOnlySpan<byte>.Empty));    // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.EndsWith(string.Empty));                // RawString -- string
+                Assert.True(rawStr1.EndsWith(ReadOnlySpan<char>.Empty));    // RawString -- ReadOnlySpan<char>
+
+                // "あいう" ends with "あいう"
+                Assert.True(rawStr2.EndsWith(rawStr2));                     // RawString -- RawString
+                Assert.True(rawStr2.EndsWith(rawStr2.AsSpan()));            // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.EndsWith(str2));                        // RawString -- string
+                Assert.True(rawStr2.EndsWith(str2.AsSpan()));               // RawString -- ReadOnlySpan<char>
+
+                // "あいう" ends with ""
+                Assert.True(rawStr2.EndsWith(RawString.Empty));             // RawString -- RawString
+                Assert.True(rawStr2.EndsWith(ReadOnlySpan<byte>.Empty));    // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.EndsWith(string.Empty));                // RawString -- string
+                Assert.True(rawStr2.EndsWith(ReadOnlySpan<char>.Empty));    // RawString -- ReadOnlySpan<char>
+            }
+
+            // [Assert false]
+            {
+                // "あいうえお" does not end with "あいう"
+                Assert.False(rawStr1.EndsWith(rawStr2));                    // RawString -- RawString
+                Assert.False(rawStr1.EndsWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr1.EndsWith(str2));                       // RawString -- string
+                Assert.False(rawStr1.EndsWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいう" does not end with "えお"
+                Assert.False(rawStr2.EndsWith(rawStr3));                    // RawString -- RawString
+                Assert.False(rawStr2.EndsWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr2.EndsWith(str3));                       // RawString -- string
+                Assert.False(rawStr2.EndsWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
+            }
+        }
+
         private readonly struct Check<T>
         {
             public readonly T Answer;

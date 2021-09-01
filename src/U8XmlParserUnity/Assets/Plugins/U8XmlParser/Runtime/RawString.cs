@@ -214,6 +214,60 @@ namespace U8Xml
             }
         }
 
+        public bool EndsWith(RawString other)
+        {
+            return AsSpan().EndsWith(other.AsSpan());
+        }
+
+        public bool EndsWith(ReadOnlySpan<byte> other)
+        {
+            return AsSpan().EndsWith(other);
+        }
+
+        public bool EndsWith(string other)
+        {
+            return EndsWith(other.AsSpan());
+        }
+
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public bool EndsWith(ReadOnlySpan<char> other)
+        {
+            if(other.Length == 0) {
+                return true;
+            }
+            var utf8 = Encoding.UTF8;
+            var byteLen = utf8.GetByteCount(other);
+            if(byteLen > Length) {
+                return false;
+            }
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = other) {
+                    utf8.GetBytes(ptr, other.Length, buf, byteLen);
+                }
+                var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                return AsSpan().EndsWith(span);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = other) {
+                        utf8.GetBytes(ptr, other.Length, buf, byteLen);
+                        var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                        return AsSpan().EndsWith(span);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetHashCode(byte* ptr, int length)
         {
