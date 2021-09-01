@@ -113,7 +113,7 @@ namespace U8Xml.Internal
             var enumerator = GetEnumerator(start, length);
             var i = 0;
             while(enumerator.MoveNext()) {
-                buf[i] = enumerator.Current;
+                buf[i++] = enumerator.Current;
             }
         }
 
