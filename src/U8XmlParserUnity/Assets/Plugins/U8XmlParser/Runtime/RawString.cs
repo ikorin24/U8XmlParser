@@ -165,24 +165,12 @@ namespace U8Xml
 
         public bool StartWith(RawString other)
         {
-            if(_length < other.Length) { return false; }
-            for(int i = 0; i < other.Length; i++) {
-                if(At(i) != other.At(i)) {
-                    return false;
-                }
-            }
-            return true;
+            return AsSpan().StartsWith(other.AsSpan());
         }
 
         public bool StartWith(ReadOnlySpan<byte> other)
         {
-            if(_length < other.Length) { return false; }
-            for(int i = 0; i < other.Length; i++) {
-                if(At(i) != other.At(i)) {
-                    return false;
-                }
-            }
-            return true;
+            return AsSpan().StartsWith(other);
         }
 
         public bool StartWith(string other) => StartWith(other.AsSpan());
