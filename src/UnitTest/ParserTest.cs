@@ -5,6 +5,7 @@ using System.Text;
 using Xunit;
 using U8Xml;
 using U8Xml.Internal;
+using System.Collections.Generic;
 
 namespace UnitTest
 {
@@ -97,6 +98,55 @@ namespace UnitTest
                 Assert.True(NodeInfoComparer.Default.Equals(tree, ans));
             }
             AllocationSafety.Ensure();
+        }
+
+        [Fact]
+        public void GetAllNodes()
+        {
+            using(var xml = XmlParser.Parse(Data.Sample2)) {
+                var answer = new[] { xml.Root }.Concat(GetChildrenRecursively(xml.Root));
+
+                // Enumerate descendants via foreach
+                {
+                    var list = new List<XmlNode>();
+                    foreach(var node in xml.GetAllNodes()) {
+                        list.Add(node);
+                    }
+                    Assert.True(list.SequenceEqual(answer));
+                }
+
+                // Enumerate descendants via IEnumerable<T>
+                {
+                    Assert.True(xml.GetAllNodes().AsEnumerable().SequenceEqual(answer));
+                }
+            }
+        }
+
+        [Fact]
+        public void Descendants()
+        {
+            using(var xml = XmlParser.Parse(Data.Sample2)) {
+                foreach(var node in xml.GetAllNodes()) {
+                    CheckDescendantNodes(node);
+                }
+            }
+            AllocationSafety.Ensure();
+            return;
+
+            static void CheckDescendantNodes(XmlNode targetNode)
+            {
+                // Enumerate descendants via foreach
+                var answer = GetChildrenRecursively(targetNode).ToArray();
+                int i = 0;
+                foreach(var node in targetNode.Descendants) {
+                    Assert.Equal(answer[i], node);
+                    i++;
+                }
+                Assert.Equal(i, answer.Length);
+
+                // Enumerate descendants via IEnumerable<T>
+                Assert.True(targetNode.Descendants.AsEnumerable().SequenceEqual(answer));
+            }
         }
 
         private static void TestSample1Contents<TXmlObject>(TXmlObject xml) where TXmlObject : IXmlObject
@@ -206,6 +256,18 @@ namespace UnitTest
                         }
                     }
                     i++;
+                }
+            }
+        }
+
+        private static IEnumerable<XmlNode> GetChildrenRecursively(XmlNode node)
+        {
+            // The order is depth first search.
+
+            foreach(var child in node.Children) {
+                yield return child;
+                foreach(var c2 in GetChildrenRecursively(child)) {
+                    yield return c2;
                 }
             }
         }

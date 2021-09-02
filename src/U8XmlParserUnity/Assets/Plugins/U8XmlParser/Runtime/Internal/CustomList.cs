@@ -88,10 +88,11 @@ namespace U8Xml.Internal
             return new CustomList<T>(listInfo);
         }
 
-        public T* GetPointerToAdd()
+        public T* GetPointerToAdd(out int index)
         {
             Debug.Assert(Info != null);     // I don't check it because CustomList<T> is internal.
-            if(Info->Count >= ListInfo.MaxItemCount) { ThrowHelper.ThrowInvalidOperation("Can not add any more."); }
+            var count = Info->Count;
+            if(count >= ListInfo.MaxItemCount) { ThrowHelper.ThrowInvalidOperation("Can not add any more."); }
             var currentLine = Info->CurrentLine;
             if(currentLine->Count == currentLine->Capacity) {
                 currentLine = NewLine(Info);
@@ -99,6 +100,7 @@ namespace U8Xml.Internal
             var addr = &currentLine->FirstItem + currentLine->Count;
             currentLine->Count++;
             Info->Count++;
+            index = count;
             return addr;
         }
 
@@ -145,7 +147,18 @@ namespace U8Xml.Internal
 
         public Enumerator GetEnumerator() => new Enumerator(Info, 0, Count);
 
-        public Enumerator GetEnumerator(int start, int count) => new Enumerator(Info, start, count);
+        public Enumerator GetEnumerator(int start)
+        {
+            Debug.Assert(Info == null || (uint)start < Count);
+            return new Enumerator(Info, start, Count - start);
+        }
+
+        public Enumerator GetEnumerator(int start, int count)
+        {
+            Debug.Assert(Info == null || (uint)start < Count);
+            Debug.Assert(Info == null || (uint)count <= (uint)(Count - start));
+            return new Enumerator(Info, start, count);
+        }
 
         private static (int lineNum, int index) GetLineNumAndIndex(int i)
         {
@@ -215,6 +228,10 @@ namespace U8Xml.Internal
 
             internal Enumerator(CustomList<T>.ListInfo* listInfo, int start, int count)
             {
+                if(listInfo == null) {
+                    this = default;     // default instance is valid.
+                    return;
+                }
                 _listInfo = listInfo;
                 _count = count;
                 _i = 0;
