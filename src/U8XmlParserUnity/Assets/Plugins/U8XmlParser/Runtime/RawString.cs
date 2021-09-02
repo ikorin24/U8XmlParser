@@ -286,14 +286,27 @@ namespace U8Xml
 
         public static bool operator !=(RawString left, RawString right) => !(left == right);
 
-        public static bool operator ==(RawString left, string right)
+        public static bool operator ==(RawString left, ReadOnlySpan<byte> right) => left.SequenceEqual(right);
+
+        public static bool operator !=(RawString left, ReadOnlySpan<byte> right) => !(left == right);
+
+        public static bool operator ==(ReadOnlySpan<byte> left, RawString right) => right == left;
+
+        public static bool operator !=(ReadOnlySpan<byte> left, RawString right) => !(left == right);
+
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public static bool operator ==(RawString left, ReadOnlySpan<char> right)
         {
-            if(right is null) { return left.IsEmpty; }
+            if(right.IsEmpty) { return left.IsEmpty; }
             var utf8 = Encoding.UTF8;
             var byteLen = utf8.GetByteCount(right);
             if(byteLen != left.Length) { return false; }
-            if(byteLen <= 128) {
-                byte* buf = stackalloc byte[byteLen];
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
                 fixed(char* ptr = right) {
                     utf8.GetBytes(ptr, right.Length, buf, byteLen);
                 }
@@ -313,6 +326,14 @@ namespace U8Xml
                 }
             }
         }
+
+        public static bool operator !=(RawString left, ReadOnlySpan<char> right) => !(left == right);
+
+        public static bool operator ==(ReadOnlySpan<char> left, RawString right) => right == left;
+
+        public static bool operator !=(ReadOnlySpan<char> left, RawString right) => !(left == right);
+
+        public static bool operator ==(RawString left, string right) => left == right.AsSpan();
 
         public static bool operator !=(RawString left, string right) => !(left == right);
 
