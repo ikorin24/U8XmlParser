@@ -357,7 +357,7 @@ namespace UnitTest
         }
 
         [Fact]
-        public void StartWith()
+        public void StartsWith()
         {
             const string str1 = "あいうえお";
             const string str2 = "あいう";
@@ -369,49 +369,49 @@ namespace UnitTest
             // [Assert true]
             {
                 // "あいうえお" starts with "あいうえお"
-                Assert.True(rawStr1.StartWith(rawStr1));                    // RawString -- RawString
-                Assert.True(rawStr1.StartWith(rawStr1.AsSpan()));           // RawString -- ReadOnlySpan<byte>
-                Assert.True(rawStr1.StartWith(str1));                       // RawString -- string
-                Assert.True(rawStr1.StartWith(str1.AsSpan()));              // RawString -- ReadOnlySpan<char>
+                Assert.True(rawStr1.StartsWith(rawStr1));                    // RawString -- RawString
+                Assert.True(rawStr1.StartsWith(rawStr1.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.StartsWith(str1));                       // RawString -- string
+                Assert.True(rawStr1.StartsWith(str1.AsSpan()));              // RawString -- ReadOnlySpan<char>
 
                 // "あいうえお" starts with "あいう"
-                Assert.True(rawStr1.StartWith(rawStr2));                    // RawString -- RawString
-                Assert.True(rawStr1.StartWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
-                Assert.True(rawStr1.StartWith(str2));                       // RawString -- string
-                Assert.True(rawStr1.StartWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
+                Assert.True(rawStr1.StartsWith(rawStr2));                    // RawString -- RawString
+                Assert.True(rawStr1.StartsWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.StartsWith(str2));                       // RawString -- string
+                Assert.True(rawStr1.StartsWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
 
                 // "あいうえお" starts with ""
-                Assert.True(rawStr1.StartWith(RawString.Empty));            // RawString -- RawString
-                Assert.True(rawStr1.StartWith(ReadOnlySpan<byte>.Empty));   // RawString -- ReadOnlySpan<byte>
-                Assert.True(rawStr1.StartWith(string.Empty));               // RawString -- string
-                Assert.True(rawStr1.StartWith(ReadOnlySpan<char>.Empty));   // RawString -- ReadOnlySpan<char>
+                Assert.True(rawStr1.StartsWith(RawString.Empty));            // RawString -- RawString
+                Assert.True(rawStr1.StartsWith(ReadOnlySpan<byte>.Empty));   // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.StartsWith(string.Empty));               // RawString -- string
+                Assert.True(rawStr1.StartsWith(ReadOnlySpan<char>.Empty));   // RawString -- ReadOnlySpan<char>
 
                 // "あいう" starts with "あいう"
-                Assert.True(rawStr2.StartWith(rawStr2));                    // RawString -- RawString
-                Assert.True(rawStr2.StartWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
-                Assert.True(rawStr2.StartWith(str2));                       // RawString -- string
-                Assert.True(rawStr2.StartWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
+                Assert.True(rawStr2.StartsWith(rawStr2));                    // RawString -- RawString
+                Assert.True(rawStr2.StartsWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.StartsWith(str2));                       // RawString -- string
+                Assert.True(rawStr2.StartsWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
 
                 // "あいう" starts with ""
-                Assert.True(rawStr2.StartWith(RawString.Empty));            // RawString -- RawString
-                Assert.True(rawStr2.StartWith(ReadOnlySpan<byte>.Empty));   // RawString -- ReadOnlySpan<byte>
-                Assert.True(rawStr2.StartWith(string.Empty));               // RawString -- string
-                Assert.True(rawStr2.StartWith(ReadOnlySpan<char>.Empty));   // RawString -- ReadOnlySpan<char>
+                Assert.True(rawStr2.StartsWith(RawString.Empty));            // RawString -- RawString
+                Assert.True(rawStr2.StartsWith(ReadOnlySpan<byte>.Empty));   // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.StartsWith(string.Empty));               // RawString -- string
+                Assert.True(rawStr2.StartsWith(ReadOnlySpan<char>.Empty));   // RawString -- ReadOnlySpan<char>
             }
 
             // [Assert false]
             {
                 // "あいうえお" does not start with "えお"
-                Assert.False(rawStr1.StartWith(rawStr3));                    // RawString -- RawString
-                Assert.False(rawStr1.StartWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
-                Assert.False(rawStr1.StartWith(str3));                       // RawString -- string
-                Assert.False(rawStr1.StartWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
+                Assert.False(rawStr1.StartsWith(rawStr3));                    // RawString -- RawString
+                Assert.False(rawStr1.StartsWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr1.StartsWith(str3));                       // RawString -- string
+                Assert.False(rawStr1.StartsWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
 
                 // "あいう" does not start with "えお"
-                Assert.False(rawStr2.StartWith(rawStr3));                    // RawString -- RawString
-                Assert.False(rawStr2.StartWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
-                Assert.False(rawStr2.StartWith(str3));                       // RawString -- string
-                Assert.False(rawStr2.StartWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
+                Assert.False(rawStr2.StartsWith(rawStr3));                    // RawString -- RawString
+                Assert.False(rawStr2.StartsWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr2.StartsWith(str3));                       // RawString -- string
+                Assert.False(rawStr2.StartsWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
             }
         }
 

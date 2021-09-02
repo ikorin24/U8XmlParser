@@ -293,7 +293,7 @@ namespace U8Xml
             // <!DOCTYPE foo[...]>
             ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
 
-            if(data.Slice(i).StartWith(DocTypeStr) == false) { return false; }
+            if(data.Slice(i).StartsWith(DocTypeStr) == false) { return false; }
             if(hasNode) {
                 ThrowHelper.ThrowFormatException("DTD must be defined before the document root element.");
             }

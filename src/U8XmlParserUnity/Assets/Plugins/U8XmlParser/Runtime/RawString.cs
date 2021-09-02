@@ -163,22 +163,22 @@ namespace U8Xml
 
         public bool SequenceEqual(ReadOnlySpan<byte> other) => AsSpan().SequenceEqual(other);
 
-        public bool StartWith(RawString other)
+        public bool StartsWith(RawString other)
         {
             return AsSpan().StartsWith(other.AsSpan());
         }
 
-        public bool StartWith(ReadOnlySpan<byte> other)
+        public bool StartsWith(ReadOnlySpan<byte> other)
         {
             return AsSpan().StartsWith(other);
         }
 
-        public bool StartWith(string other) => StartWith(other.AsSpan());
+        public bool StartsWith(string other) => StartsWith(other.AsSpan());
 
 #if NET5_0_OR_GREATER
         [SkipLocalsInit]
 #endif
-        public bool StartWith(ReadOnlySpan<char> other)
+        public bool StartsWith(ReadOnlySpan<char> other)
         {
             if(other.Length == 0) {
                 return true;
@@ -337,16 +337,4 @@ namespace U8Xml
             _entity = entity;
         }
     }
-
-#if NETSTANDARD2_0 || NET48
-    internal static class EncodingExtension
-    {
-        public static unsafe int GetByteCount(this Encoding encoding, ReadOnlySpan<char> span)
-        {
-            fixed(char* ptr = span) {
-                return encoding.GetByteCount(ptr, span.Length);
-            }
-        }
-    }
-#endif
 }
