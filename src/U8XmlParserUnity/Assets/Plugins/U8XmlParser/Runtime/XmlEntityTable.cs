@@ -138,11 +138,15 @@ namespace U8Xml
         /// <summary>Resolve the input utf-8 string to <see langword="string"/></summary>
         /// <param name="str">utf-8 string to resolve</param>
         /// <returns>resolved <see langword="string"/></returns>
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
         public unsafe string ResolveToString(RawString str)
         {
             var byteLen = GetResolvedByteLength(str);
-            if(byteLen <= 128) {
-                Span<byte> buf = stackalloc byte[byteLen];
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                Span<byte> buf = stackalloc byte[Threshold];
                 Resolve(str, buf);
                 fixed(byte* ptr = buf) {
                     return Encoding.UTF8.GetString(ptr, byteLen);
