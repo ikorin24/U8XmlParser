@@ -26,6 +26,9 @@ namespace U8Xml
         /// <summary>Get length of the byte array. (NOT length of utf-8 string)</summary>
         public int Length => _length;
 
+        /// <summary>Get pointer to the head of the utf-8 characters.</summary>
+        public IntPtr Ptr => _ptr;
+
         /// <summary>Get or set an item with specified index</summary>
         /// <param name="index">index of an item</param>
         /// <returns>the item</returns>
