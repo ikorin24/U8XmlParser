@@ -268,6 +268,17 @@ namespace U8Xml
             }
         }
 
+        /// <summary>Compute hash code for the specified span using the same algorithm as <see cref="GetHashCode()"/>.</summary>
+        /// <param name="utf8String">span to compute hash code</param>
+        /// <returns>hash code</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetHashCode(ReadOnlySpan<byte> utf8String)
+        {
+            fixed(byte* ptr = utf8String) {
+                return GetHashCode(ptr, utf8String.Length);
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetHashCode(byte* ptr, int length)
         {

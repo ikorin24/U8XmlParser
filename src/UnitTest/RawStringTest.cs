@@ -474,6 +474,19 @@ namespace UnitTest
             }
         }
 
+        [Fact]
+        public void GetHashCodeTest()
+        {
+            var rawStr1 = RawStringSource.Get("あいうえお");
+            Assert.True(rawStr1.GetHashCode() == RawString.GetHashCode(rawStr1.AsSpan()));
+
+            var rawStr2 = RawStringSource.Get("hoge");
+            Assert.True(rawStr2.GetHashCode() == RawString.GetHashCode(rawStr2.AsSpan()));
+
+            var rawStr3 = RawString.Empty;
+            Assert.True(rawStr3.GetHashCode() == RawString.GetHashCode(rawStr3.AsSpan()));
+        }
+
         private readonly struct Check<T>
         {
             public readonly T Answer;
@@ -483,7 +496,7 @@ namespace UnitTest
             public void Deconstruct(out T ans, out RawString input) => (ans, input) = (Answer, Input);
         }
     }
-    
+
     internal static partial class RawStringSource
     {
         private static readonly Dictionary<string, RawString> _dic;
