@@ -14,6 +14,9 @@ namespace U8Xml
     {
         private readonly T _v;
 
+        /// <summary>Get empty instance of <see cref="Option{T}"/>.</summary>
+        public static Option<T> Null => default;
+
         /// <summary>Create the instance of <see cref="Option{T}"/>.</summary>
         /// <param name="v">original value</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
