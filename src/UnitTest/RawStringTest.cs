@@ -479,12 +479,15 @@ namespace UnitTest
         {
             var rawStr1 = RawStringSource.Get("あいうえお");
             Assert.True(rawStr1.GetHashCode() == RawString.GetHashCode(rawStr1.AsSpan()));
+            Assert.True(rawStr1.GetHashCode() == RawString.GetHashCode(rawStr1.Ptr, rawStr1.Length));
 
             var rawStr2 = RawStringSource.Get("hoge");
             Assert.True(rawStr2.GetHashCode() == RawString.GetHashCode(rawStr2.AsSpan()));
+            Assert.True(rawStr2.GetHashCode() == RawString.GetHashCode(rawStr2.Ptr, rawStr2.Length));
 
             var rawStr3 = RawString.Empty;
             Assert.True(rawStr3.GetHashCode() == RawString.GetHashCode(rawStr3.AsSpan()));
+            Assert.True(rawStr3.GetHashCode() == RawString.GetHashCode(rawStr3.Ptr, rawStr3.Length));
         }
 
         private readonly struct Check<T>

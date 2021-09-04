@@ -282,6 +282,16 @@ namespace U8Xml
             }
         }
 
+        /// <summary>Compute hash code for the specified span using the same algorithm as <see cref="GetHashCode()"/>.</summary>
+        /// <param name="ptr">pointer to byte span head</param>
+        /// <param name="length">length of byte span</param>
+        /// <returns>hash code</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetHashCode(IntPtr ptr, int length)
+        {
+            return GetHashCode((byte*)ptr, length);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int GetHashCode(byte* ptr, int length)
         {
