@@ -56,6 +56,74 @@ namespace U8Xml
 
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
+        /// <summary>Find a child by name. Returns the first child found.</summary>
+        /// <param name="name">child name to find</param>
+        /// <returns>a found child node as <see cref="Option{T}"/></returns>
+        public Option<XmlNode> FindChildOrDefault(RawString name) => FindChildOrDefault(name.AsSpan());
+
+        /// <summary>Find a child by name. Returns the first child found.</summary>
+        /// <param name="name">child name to find</param>
+        /// <returns>a found child node as <see cref="Option{T}"/></returns>
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> name)
+        {
+            foreach(var child in Children) {
+                if(child.Name == name) {
+                    return child;
+                }
+            }
+            return Option<XmlNode>.Null;
+        }
+
+        /// <summary>Find a child by name. Returns the first child found.</summary>
+        /// <param name="name">child name to find</param>
+        /// <returns>a found child node as <see cref="Option{T}"/></returns>
+        public Option<XmlNode> FindChildOrDefault(string name) => FindChildOrDefault(name.AsSpan());
+
+        /// <summary>Find a child by name. Returns the first child found.</summary>
+        /// <param name="name">child name to find</param>
+        /// <returns>a found child node as <see cref="Option{T}"/></returns>
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> name)
+        {
+            foreach(var child in Children) {
+                if(child.Name == name) {
+                    return child;
+                }
+            }
+            return Option<XmlNode>.Null;
+        }
+
+        /// <summary>Find a child by name. Returns the first child found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
+        /// <param name="name">child name to find</param>
+        /// <returns>a found child node</returns>
+        public XmlNode FindChild(RawString name) => FindChild(name.AsSpan());
+
+        /// <summary>Find a child by name. Returns the first child found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
+        /// <param name="name">child name to find</param>
+        /// <returns>a found child node</returns>
+        public XmlNode FindChild(ReadOnlySpan<byte> name)
+        {
+            if(FindChildOrDefault(name).TryGetValue(out var node) == false) {
+                ThrowHelper.ThrowInvalidOperation("Sequence contains no matching elements.");
+            }
+            return node;
+        }
+
+        /// <summary>Find a child by name. Returns the first child found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
+        /// <param name="name">child name to find</param>
+        /// <returns>a found child node</returns>
+        public XmlNode FindChild(string name) => FindChild(name.AsSpan());
+
+        /// <summary>Find a child by name. Returns the first child found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
+        /// <param name="name">child name to find</param>
+        /// <returns>a found child node</returns>
+        public XmlNode FindChild(ReadOnlySpan<char> name)
+        {
+            if(FindChildOrDefault(name).TryGetValue(out var node) == false) {
+                ThrowHelper.ThrowInvalidOperation("Sequence contains no matching elements.");
+            }
+            return node;
+        }
+
         /// <inheritdoc/>
         public override bool Equals(object? obj) => obj is XmlNode node && Equals(node);
 
