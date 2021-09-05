@@ -317,7 +317,7 @@ namespace UnitTest
         }
 
         [Fact]
-        public void Split2_Char()
+        public void Split2_byte()
         {
             {
                 var ab_cd = RawStringSource.Get("ab cd");
@@ -341,10 +341,55 @@ namespace UnitTest
         }
 
         [Fact]
-        public void Split2_Str()
+        public void Split2_char()
+        {
+            {
+                var ab_cd = RawStringSource.Get("ab cd");
+                const char separator = ' ';
+                var (ab, cd) = ab_cd.Split2(separator);
+                Assert.True(ab == ab_cd.Slice(0, 2));
+                Assert.True(cd == ab_cd.Slice(3, 2));
+            }
+            {
+                var ab_cd_ef_gh = RawStringSource.Get("ab cd ef gh");
+                const char separator = ' ';
+                var (ab, cd_ef_gh) = ab_cd_ef_gh.Split2(separator);
+                Assert.True(ab == ab_cd_ef_gh.Slice(0, 2));
+                Assert.True(cd_ef_gh == ab_cd_ef_gh.Slice(3));
+            }
+            {
+                var hoge = RawStringSource.Get("hoge");
+                const char separator = ' ';
+                var (a, b) = hoge.Split2(separator);
+                Assert.True(a == hoge);
+                Assert.True(hoge.Slice(4).IsEmpty);
+                Assert.True(b.IsEmpty);
+            }
+        }
+
+        [Fact]
+        public void Split2_byteSpan()
         {
             var str = RawStringSource.Get("ab, cde, efgh, ij,  ");
             ReadOnlySpan<byte> separator = stackalloc[] { (byte)',', (byte)' ' };
+
+            var tmp = str.Split2(separator);
+            Assert.True(tmp.Item1 == "ab" && tmp.Item2 == "cde, efgh, ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "cde" && tmp.Item2 == "efgh, ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "efgh" && tmp.Item2 == "ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "ij" && tmp.Item2 == " ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == " " && tmp.Item2 == "");
+        }
+
+        [Fact]
+        public void Split2_string()
+        {
+            var str = RawStringSource.Get("ab, cde, efgh, ij,  ");
+            const string separator = ", ";
 
             var tmp = str.Split2(separator);
             Assert.True(tmp.Item1 == "ab" && tmp.Item2 == "cde, efgh, ij,  ");
