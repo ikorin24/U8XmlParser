@@ -9,26 +9,26 @@ namespace U8Xml
     public readonly ref struct SplitRawStrings
     {
         private readonly RawString _str;
-        private readonly bool _isSeparatorChar;
-        private readonly byte _separatorChar;
-        private readonly ReadOnlySpan<byte> _separatorStr;
+        private readonly bool _isSeparatorSingleByte;
+        private readonly byte _separator;
+        private readonly ReadOnlySpan<byte> _spanSeparator;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SplitRawStrings(RawString str, byte separator)
         {
             _str = str;
-            _isSeparatorChar = true;
-            _separatorChar = separator;
-            _separatorStr = default;
+            _isSeparatorSingleByte = true;
+            _separator = separator;
+            _spanSeparator = default;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SplitRawStrings(RawString str, ReadOnlySpan<byte> separator)
         {
             _str = str;
-            _isSeparatorChar = false;
-            _separatorChar = default;
-            _separatorStr = separator;
+            _isSeparatorSingleByte = false;
+            _separator = default;
+            _spanSeparator = separator;
         }
 
         public IEnumerable<RawString> AsEnumerable()
@@ -46,7 +46,7 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator GetEnumerator() => _isSeparatorChar ? new Enumerator(_str, _separatorChar) : new Enumerator(_str, _separatorStr);
+        public Enumerator GetEnumerator() => _isSeparatorSingleByte ? new Enumerator(_str, _separator) : new Enumerator(_str, _spanSeparator);
 
         public ref struct Enumerator
         {
