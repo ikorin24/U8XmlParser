@@ -14,7 +14,7 @@ namespace U8Xml
         /// <param name="source">source node list to enumerate</param>
         /// <param name="name">node name to find</param>
         /// <returns>a found node as <see cref="Option{T}"/></returns>
-        public static Option<XmlNode> FindNameOrDefault<TNodes>(this TNodes source, ReadOnlySpan<byte> name) where TNodes : IEnumerable<XmlNode>
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, ReadOnlySpan<byte> name) where TNodes : IEnumerable<XmlNode>
         {
             foreach(var child in source) {
                 if(child.Name == name) {
@@ -28,16 +28,16 @@ namespace U8Xml
         /// <param name="source">source node list to enumerate</param>
         /// <param name="name">node name to find</param>
         /// <returns>a found node as <see cref="Option{T}"/></returns>
-        public static Option<XmlNode> FindNameOrDefault<TNodes>(this TNodes source, RawString name) where TNodes : IEnumerable<XmlNode>
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, RawString name) where TNodes : IEnumerable<XmlNode>
         {
-            return FindNameOrDefault(source, name.AsSpan());
+            return FindOrDefault(source, name.AsSpan());
         }
 
         /// <summary>Find a node by name. Returns the first node found.</summary>
         /// <param name="source">source node list to enumerate</param>
         /// <param name="name">node name to find</param>
         /// <returns>a found node as <see cref="Option{T}"/></returns>
-        public static Option<XmlNode> FindNameOrDefault<TNodes>(this TNodes source, ReadOnlySpan<char> name) where TNodes : IEnumerable<XmlNode>
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, ReadOnlySpan<char> name) where TNodes : IEnumerable<XmlNode>
         {
             foreach(var child in source) {
                 if(child.Name == name) {
@@ -51,18 +51,18 @@ namespace U8Xml
         /// <param name="source">source node list to enumerate</param>
         /// <param name="name">node name to find</param>
         /// <returns>a found node as <see cref="Option{T}"/></returns>
-        public static Option<XmlNode> FindNameOrDefault<TNodes>(this TNodes source, string name) where TNodes : IEnumerable<XmlNode>
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, string name) where TNodes : IEnumerable<XmlNode>
         {
-            return FindNameOrDefault(source, name.AsSpan());
+            return FindOrDefault(source, name.AsSpan());
         }
 
         /// <summary>Find a node by name. Returns the first node found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
         /// <param name="source">source node list to enumerate</param>
         /// <param name="name">node name to find</param>
         /// <returns>a found node</returns>
-        public static XmlNode FindName<TNodes>(this TNodes source, ReadOnlySpan<byte> name) where TNodes : IEnumerable<XmlNode>
+        public static XmlNode Find<TNodes>(this TNodes source, ReadOnlySpan<byte> name) where TNodes : IEnumerable<XmlNode>
         {
-            if(FindNameOrDefault(source, name).TryGetValue(out var node) == false) {
+            if(FindOrDefault(source, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
             }
             return node;
@@ -72,9 +72,9 @@ namespace U8Xml
         /// <param name="source">source node list to enumerate</param>
         /// <param name="name">node name to find</param>
         /// <returns>a found node</returns>
-        public static XmlNode FindName<TNodes>(this TNodes source, RawString name) where TNodes : IEnumerable<XmlNode>
+        public static XmlNode Find<TNodes>(this TNodes source, RawString name) where TNodes : IEnumerable<XmlNode>
         {
-            if(FindNameOrDefault(source, name).TryGetValue(out var node) == false) {
+            if(FindOrDefault(source, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
             }
             return node;
@@ -84,9 +84,9 @@ namespace U8Xml
         /// <param name="source">source node list to enumerate</param>
         /// <param name="name">node name to find</param>
         /// <returns>a found node</returns>
-        public static XmlNode FindName<TNodes>(this TNodes source, ReadOnlySpan<char> name) where TNodes : IEnumerable<XmlNode>
+        public static XmlNode Find<TNodes>(this TNodes source, ReadOnlySpan<char> name) where TNodes : IEnumerable<XmlNode>
         {
-            if(FindNameOrDefault(source, name).TryGetValue(out var node) == false) {
+            if(FindOrDefault(source, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
             }
             return node;
@@ -96,32 +96,32 @@ namespace U8Xml
         /// <param name="source">source node list to enumerate</param>
         /// <param name="name">node name to find</param>
         /// <returns>a found node</returns>
-        public static XmlNode FindName<TNodes>(this TNodes source, string name) where TNodes : IEnumerable<XmlNode>
+        public static XmlNode Find<TNodes>(this TNodes source, string name) where TNodes : IEnumerable<XmlNode>
         {
-            if(FindNameOrDefault(source, name).TryGetValue(out var node) == false) {
+            if(FindOrDefault(source, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
             }
             return node;
         }
 
-        public static bool TryFindName<TNodes>(this TNodes source, ReadOnlySpan<byte> name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
+        public static bool TryFind<TNodes>(this TNodes source, ReadOnlySpan<byte> name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
-            return FindNameOrDefault(source, name).TryGetValue(out node);
+            return FindOrDefault(source, name).TryGetValue(out node);
         }
 
-        public static bool TryFindName<TNodes>(this TNodes source, RawString name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
+        public static bool TryFind<TNodes>(this TNodes source, RawString name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
-            return FindNameOrDefault(source, name).TryGetValue(out node);
+            return FindOrDefault(source, name).TryGetValue(out node);
         }
 
-        public static bool TryFindName<TNodes>(this TNodes source, ReadOnlySpan<char> name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
+        public static bool TryFind<TNodes>(this TNodes source, ReadOnlySpan<char> name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
-            return FindNameOrDefault(source, name).TryGetValue(out node);
+            return FindOrDefault(source, name).TryGetValue(out node);
         }
 
-        public static bool TryFindName<TNodes>(this TNodes source, string name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
+        public static bool TryFind<TNodes>(this TNodes source, string name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
-            return FindNameOrDefault(source, name).TryGetValue(out node);
+            return FindOrDefault(source, name).TryGetValue(out node);
         }
     }
 }
