@@ -3,6 +3,8 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Buffers.Text;
 using U8Xml.Internal;
+using System.Text;
+using System.Buffers;
 
 namespace U8Xml
 {
@@ -231,6 +233,62 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SplitRawStrings Split(ReadOnlySpan<byte> separator) => new SplitRawStrings(this, separator);
 
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe SplitRawStrings Split(char separator)
+        {
+            if(separator < 128) {
+                return Split((byte)separator);
+            }
+            else {
+                const int CharMaxByteCount = 6;
+                byte* buf = stackalloc byte[CharMaxByteCount];
+                var byteCount = Encoding.UTF8.GetBytes(&separator, 1, buf, CharMaxByteCount);
+                return Split(SpanHelper.CreateReadOnlySpan<byte>(buf, byteCount));
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public SplitRawStrings Split(string separator) => Split(separator.AsSpan());
+
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe SplitRawStrings Split(ReadOnlySpan<char> separator)
+        {
+            const int CharMaxByteCount = 6;
+            const int StackBufSize = 128;
+            const int ThresholdLen = StackBufSize / CharMaxByteCount;
+            if(separator.Length == 1 && separator[0] < 128) {
+                return Split((byte)separator[0]);
+            }
+            if(separator.Length <= ThresholdLen) {
+                byte* buf = stackalloc byte[StackBufSize];
+                fixed(char* ptr = separator) {
+                    var byteCount = Encoding.UTF8.GetBytes(ptr, separator.Length, buf, StackBufSize);
+                    return Split(SpanHelper.CreateReadOnlySpan<byte>(buf, byteCount));
+                }
+            }
+            else {
+                var utf8 = Encoding.UTF8;
+                var byteCount = utf8.GetByteCount(separator);
+                var buf = ArrayPool<byte>.Shared.Rent(byteCount);
+                try {
+                    fixed(byte* bufPtr = buf)
+                    fixed(char* ptr = separator) {
+                        utf8.GetBytes(ptr, separator.Length, bufPtr, byteCount);
+                        return Split(SpanHelper.CreateReadOnlySpan<byte>(bufPtr, byteCount));
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
+            }
+        }
+
         public (RawString, RawString) Split2(byte separator)
         {
             for(int i = 0; i < _length; i++) {
@@ -255,6 +313,58 @@ namespace U8Xml
                 }
             }
             return (this, Empty);
+        }
+
+        public (RawString, RawString) Split2(char separator)
+        {
+            if(separator < 128) {
+                return Split2((byte)separator);
+            }
+            else {
+                const int CharMaxByteCount = 6;
+                byte* buf = stackalloc byte[CharMaxByteCount];
+                var byteCount = Encoding.UTF8.GetBytes(&separator, 1, buf, CharMaxByteCount);
+                return Split2(SpanHelper.CreateReadOnlySpan<byte>(buf, byteCount));
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public (RawString, RawString) Split2(string separator) => Split2(separator.AsSpan());
+
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public (RawString, RawString) Split2(ReadOnlySpan<char> separator)
+        {
+            const int CharMaxByteCount = 6;
+            const int StackBufSize = 128;
+            const int ThresholdLen = StackBufSize / CharMaxByteCount;
+            if(separator.Length == 1 && separator[0] < 128) {
+                return Split2((byte)separator[0]);
+            }
+            if(separator.Length <= ThresholdLen) {
+                byte* buf = stackalloc byte[StackBufSize];
+                fixed(char* ptr = separator) {
+                    var byteCount = Encoding.UTF8.GetBytes(ptr, separator.Length, buf, StackBufSize);
+                    return Split2(SpanHelper.CreateReadOnlySpan<byte>(buf, byteCount));
+                }
+            }
+            else {
+                var utf8 = Encoding.UTF8;
+                var byteCount = utf8.GetByteCount(separator);
+                var buf = ArrayPool<byte>.Shared.Rent(byteCount);
+                try {
+                    fixed(byte* bufPtr = buf)
+                    fixed(char* ptr = separator) {
+                        utf8.GetBytes(ptr, separator.Length, bufPtr, byteCount);
+                        return Split2(SpanHelper.CreateReadOnlySpan<byte>(bufPtr, byteCount));
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(buf);
+                }
+            }
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
