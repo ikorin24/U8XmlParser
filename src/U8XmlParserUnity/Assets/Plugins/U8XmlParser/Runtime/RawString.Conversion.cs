@@ -6,8 +6,8 @@ using U8Xml.Internal;
 
 namespace U8Xml
 {
-	unsafe partial struct RawString
-	{
+    unsafe partial struct RawString
+    {
         /// <summary>utf-8 bytes of "∞"</summary>
         private static ReadOnlySpan<byte> InfUtf8Str => new byte[] { 0xE2, 0x88, 0x9E };
 
@@ -107,18 +107,18 @@ namespace U8Xml
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToInt32(out int value)
-		{
+        {
             return Utf8Parser.TryParse(AsSpan(), out value, out _);
-		}
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ToInt32()
-		{
+        {
             if(Utf8Parser.TryParse(AsSpan(), out int value, out _) == false) {
                 ThrowHelper.ThrowInvalidOperation(InvalidFormatMessage);
             }
-			return value;
-		}
+            return value;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryToUInt32(out uint value)
