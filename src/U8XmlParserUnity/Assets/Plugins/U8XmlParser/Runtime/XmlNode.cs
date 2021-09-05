@@ -56,6 +56,11 @@ namespace U8Xml
 
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
+        public bool TryGetParent(out XmlNode parent) => Parent.TryGetValue(out parent);
+        public bool TryGetFirstChild(out XmlNode firstChild) => FirstChild.TryGetValue(out firstChild);
+        public bool TryGetLastChild(out XmlNode lastChild) => LastChild.TryGetValue(out lastChild);
+        public bool TryNextSibling(out XmlNode nextSibling) => NextSibling.TryGetValue(out nextSibling);
+
         /// <summary>Find a child by name. Returns the first child found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node as <see cref="Option{T}"/></returns>
@@ -123,6 +128,26 @@ namespace U8Xml
             }
             return node;
         }
+
+        public bool TryFindChild(ReadOnlySpan<byte> name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+        public bool TryFindChild(RawString name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+        public bool TryFindChild(ReadOnlySpan<char> name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+        public bool TryFindChild(string name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+
+        public Option<XmlAttribute> FindAttributeOrDefault(RawString name) => Attributes.FindNameOrDefault(name);
+        public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<byte> name) => Attributes.FindNameOrDefault(name);
+        public Option<XmlAttribute> FindAttributeOrDefault(string name) => Attributes.FindNameOrDefault(name);
+        public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<char> name) => Attributes.FindNameOrDefault(name);
+
+        public XmlAttribute FindAttribute(RawString name) => Attributes.FindName(name);
+        public XmlAttribute FindAttribute(ReadOnlySpan<byte> name) => Attributes.FindName(name);
+        public XmlAttribute FindAttribute(string name) => Attributes.FindName(name);
+        public XmlAttribute FindAttribute(ReadOnlySpan<char> name) => Attributes.FindName(name);
+
+        public bool TryFindAttribute(RawString name, out XmlAttribute attribute) => Attributes.TryFindName(name, out attribute);
+        public bool TryFindAttribute(ReadOnlySpan<byte> name, out XmlAttribute attribute) => Attributes.TryFindName(name, out attribute);
+        public bool TryFindAttribute(string name, out XmlAttribute attribute) => Attributes.TryFindName(name, out attribute);
+        public bool TryFindAttribute(ReadOnlySpan<char> name, out XmlAttribute attribute) => Attributes.TryFindName(name, out attribute);
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => obj is XmlNode node && Equals(node);
