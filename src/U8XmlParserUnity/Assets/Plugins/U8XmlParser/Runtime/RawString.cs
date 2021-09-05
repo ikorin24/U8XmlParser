@@ -26,6 +26,9 @@ namespace U8Xml
         /// <summary>Get length of the byte array. (NOT length of utf-8 string)</summary>
         public int Length => _length;
 
+        /// <summary>Get pointer to the head of the utf-8 characters.</summary>
+        public IntPtr Ptr => _ptr;
+
         /// <summary>Get or set an item with specified index</summary>
         /// <param name="index">index of an item</param>
         /// <returns>the item</returns>
@@ -163,26 +166,130 @@ namespace U8Xml
 
         public bool SequenceEqual(ReadOnlySpan<byte> other) => AsSpan().SequenceEqual(other);
 
-        public bool StartWith(RawString other)
+        public bool StartsWith(RawString other)
         {
-            if(_length < other.Length) { return false; }
-            for(int i = 0; i < other.Length; i++) {
-                if(At(i) != other.At(i)) {
-                    return false;
-                }
-            }
-            return true;
+            return AsSpan().StartsWith(other.AsSpan());
         }
 
-        public bool StartWith(ReadOnlySpan<byte> other)
+        public bool StartsWith(ReadOnlySpan<byte> other)
         {
-            if(_length < other.Length) { return false; }
-            for(int i = 0; i < other.Length; i++) {
-                if(At(i) != other.At(i)) {
-                    return false;
+            return AsSpan().StartsWith(other);
+        }
+
+        public bool StartsWith(string other) => StartsWith(other.AsSpan());
+
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public bool StartsWith(ReadOnlySpan<char> other)
+        {
+            if(other.Length == 0) {
+                return true;
+            }
+            var utf8 = Encoding.UTF8;
+            var byteLen = utf8.GetByteCount(other);
+            if(byteLen > Length) {
+                return false;
+            }
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = other) {
+                    utf8.GetBytes(ptr, other.Length, buf, byteLen);
+                }
+                var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                return AsSpan().StartsWith(span);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = other) {
+                        utf8.GetBytes(ptr, other.Length, buf, byteLen);
+                        var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                        return AsSpan().StartsWith(span);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
                 }
             }
-            return true;
+        }
+
+        public bool EndsWith(RawString other)
+        {
+            return AsSpan().EndsWith(other.AsSpan());
+        }
+
+        public bool EndsWith(ReadOnlySpan<byte> other)
+        {
+            return AsSpan().EndsWith(other);
+        }
+
+        public bool EndsWith(string other)
+        {
+            return EndsWith(other.AsSpan());
+        }
+
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public bool EndsWith(ReadOnlySpan<char> other)
+        {
+            if(other.Length == 0) {
+                return true;
+            }
+            var utf8 = Encoding.UTF8;
+            var byteLen = utf8.GetByteCount(other);
+            if(byteLen > Length) {
+                return false;
+            }
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = other) {
+                    utf8.GetBytes(ptr, other.Length, buf, byteLen);
+                }
+                var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                return AsSpan().EndsWith(span);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = other) {
+                        utf8.GetBytes(ptr, other.Length, buf, byteLen);
+                        var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                        return AsSpan().EndsWith(span);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
+
+        /// <summary>Compute hash code for the specified span using the same algorithm as <see cref="GetHashCode()"/>.</summary>
+        /// <param name="utf8String">span to compute hash code</param>
+        /// <returns>hash code</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetHashCode(ReadOnlySpan<byte> utf8String)
+        {
+            fixed(byte* ptr = utf8String) {
+                return GetHashCode(ptr, utf8String.Length);
+            }
+        }
+
+        /// <summary>Compute hash code for the specified span using the same algorithm as <see cref="GetHashCode()"/>.</summary>
+        /// <param name="ptr">pointer to byte span head</param>
+        /// <param name="length">length of byte span</param>
+        /// <returns>hash code</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int GetHashCode(IntPtr ptr, int length)
+        {
+            return GetHashCode((byte*)ptr, length);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -203,14 +310,27 @@ namespace U8Xml
 
         public static bool operator !=(RawString left, RawString right) => !(left == right);
 
-        public static bool operator ==(RawString left, string right)
+        public static bool operator ==(RawString left, ReadOnlySpan<byte> right) => left.SequenceEqual(right);
+
+        public static bool operator !=(RawString left, ReadOnlySpan<byte> right) => !(left == right);
+
+        public static bool operator ==(ReadOnlySpan<byte> left, RawString right) => right == left;
+
+        public static bool operator !=(ReadOnlySpan<byte> left, RawString right) => !(left == right);
+
+#if NET5_0_OR_GREATER
+        [SkipLocalsInit]
+#endif
+        public static bool operator ==(RawString left, ReadOnlySpan<char> right)
         {
-            if(right is null) { return left.IsEmpty; }
+            if(right.IsEmpty) { return left.IsEmpty; }
             var utf8 = Encoding.UTF8;
             var byteLen = utf8.GetByteCount(right);
             if(byteLen != left.Length) { return false; }
-            if(byteLen <= 128) {
-                byte* buf = stackalloc byte[byteLen];
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
                 fixed(char* ptr = right) {
                     utf8.GetBytes(ptr, right.Length, buf, byteLen);
                 }
@@ -230,6 +350,14 @@ namespace U8Xml
                 }
             }
         }
+
+        public static bool operator !=(RawString left, ReadOnlySpan<char> right) => !(left == right);
+
+        public static bool operator ==(ReadOnlySpan<char> left, RawString right) => right == left;
+
+        public static bool operator !=(ReadOnlySpan<char> left, RawString right) => !(left == right);
+
+        public static bool operator ==(RawString left, string right) => left == right.AsSpan();
 
         public static bool operator !=(RawString left, string right) => !(left == right);
 

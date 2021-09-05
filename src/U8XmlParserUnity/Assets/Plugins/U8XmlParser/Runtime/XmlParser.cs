@@ -223,8 +223,8 @@ namespace U8Xml
                 }
                 else {
                     GetNodeName(data, ref i, out var name);
-                    var node = nodes.GetPointerToAdd();
-                    *node = new XmlNode_(name, attrs);
+                    var node = nodes.GetPointerToAdd(out var nodeIndex);
+                    *node = new XmlNode_(nodes, nodeIndex, nodeStack.Count, name, attrs);
                     while(true) {
                         if(data.At(i) == '>') {
                             if(nodeStack.Count > 0) {
@@ -243,7 +243,7 @@ namespace U8Xml
                             goto None;
                         }
                         else {
-                            var attr = attrs.GetPointerToAdd();
+                            var attr = attrs.GetPointerToAdd(out _);
                             *attr = GetAttr(data, ref i);
                             if(node->HasAttribute == false) {
                                 node->AttrIndex = attrs.Count - 1;
@@ -293,7 +293,7 @@ namespace U8Xml
             // <!DOCTYPE foo[...]>
             ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
 
-            if(data.Slice(i).StartWith(DocTypeStr) == false) { return false; }
+            if(data.Slice(i).StartsWith(DocTypeStr) == false) { return false; }
             if(hasNode) {
                 ThrowHelper.ThrowFormatException("DTD must be defined before the document root element.");
             }
@@ -501,7 +501,7 @@ namespace U8Xml
                     return true;
                 }
                 else {
-                    var attr = attrs.GetPointerToAdd();
+                    var attr = attrs.GetPointerToAdd(out _);
                     *attr = GetAttr(data, ref i);
 
                     // const utf-8 string. They are embedded in the dll.

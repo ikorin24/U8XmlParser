@@ -37,7 +37,7 @@ namespace U8Xml
 
         public override string ToString() => _attr == IntPtr.Zero ? "" : ((XmlAttribute_*)_attr)->ToString();
 
-        public static implicit operator ValueTuple<RawString, RawString>(XmlAttribute attr) => (attr.Name, attr.Value);
+        public static implicit operator (RawString Name, RawString Value)(XmlAttribute attr) => (attr.Name, attr.Value);
 
         public static bool operator ==(XmlAttribute attr, ValueTuple<RawString, RawString> pair) => attr.Name == pair.Item1 && attr.Value == pair.Item2;
         public static bool operator !=(XmlAttribute attr, ValueTuple<RawString, RawString> pair) => !(attr == pair);

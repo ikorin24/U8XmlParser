@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Linq;
 
 namespace UnitTest
 {
@@ -316,7 +317,7 @@ namespace UnitTest
         }
 
         [Fact]
-        public unsafe void Split()
+        public void Split2_byte()
         {
             {
                 var ab_cd = RawStringSource.Get("ab cd");
@@ -340,6 +341,111 @@ namespace UnitTest
         }
 
         [Fact]
+        public void Split2_char()
+        {
+            {
+                var ab_cd = RawStringSource.Get("ab cd");
+                const char separator = ' ';
+                var (ab, cd) = ab_cd.Split2(separator);
+                Assert.True(ab == ab_cd.Slice(0, 2));
+                Assert.True(cd == ab_cd.Slice(3, 2));
+            }
+            {
+                var ab_cd_ef_gh = RawStringSource.Get("ab cd ef gh");
+                const char separator = ' ';
+                var (ab, cd_ef_gh) = ab_cd_ef_gh.Split2(separator);
+                Assert.True(ab == ab_cd_ef_gh.Slice(0, 2));
+                Assert.True(cd_ef_gh == ab_cd_ef_gh.Slice(3));
+            }
+            {
+                var hoge = RawStringSource.Get("hoge");
+                const char separator = ' ';
+                var (a, b) = hoge.Split2(separator);
+                Assert.True(a == hoge);
+                Assert.True(hoge.Slice(4).IsEmpty);
+                Assert.True(b.IsEmpty);
+            }
+        }
+
+        [Fact]
+        public void Split2_byteSpan()
+        {
+            var str = RawStringSource.Get("ab, cde, efgh, ij,  ");
+            ReadOnlySpan<byte> separator = stackalloc[] { (byte)',', (byte)' ' };
+
+            var tmp = str.Split2(separator);
+            Assert.True(tmp.Item1 == "ab" && tmp.Item2 == "cde, efgh, ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "cde" && tmp.Item2 == "efgh, ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "efgh" && tmp.Item2 == "ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "ij" && tmp.Item2 == " ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == " " && tmp.Item2 == "");
+        }
+
+        [Fact]
+        public void Split2_string()
+        {
+            var str = RawStringSource.Get("ab, cde, efgh, ij,  ");
+            const string separator = ", ";
+
+            var tmp = str.Split2(separator);
+            Assert.True(tmp.Item1 == "ab" && tmp.Item2 == "cde, efgh, ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "cde" && tmp.Item2 == "efgh, ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "efgh" && tmp.Item2 == "ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "ij" && tmp.Item2 == " ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == " " && tmp.Item2 == "");
+        }
+
+        [Fact]
+        public void Split_Str()
+        {
+            var str = RawStringSource.Get("ab, cde, efgh, ij,  ");
+            ReadOnlySpan<byte> separator = stackalloc[] { (byte)',', (byte)' ' };
+
+            var list = new List<RawString>();
+            foreach(var s in str.Split(separator)) {
+                list.Add(s);
+            }
+            Assert.Equal(5, list.Count);
+            Assert.True(list[0] == "ab");
+            Assert.True(list[1] == "cde");
+            Assert.True(list[2] == "efgh");
+            Assert.True(list[3] == "ij");
+            Assert.True(list[4] == " ");
+
+            Assert.True(str.Split(separator).AsEnumerable().SequenceEqual(list));
+            Assert.True(str.Split(separator).ToArray().SequenceEqual(list));
+        }
+
+        [Fact]
+        public void Split_Char()
+        {
+            var str = RawStringSource.Get("ab, cde, efgh, ij,  ");
+            const byte separator = (byte)',';
+
+            var list = new List<RawString>();
+            foreach(var s in str.Split(separator)) {
+                list.Add(s);
+            }
+            Assert.Equal(5, list.Count);
+            Assert.True(list[0] == "ab");
+            Assert.True(list[1] == " cde");
+            Assert.True(list[2] == " efgh");
+            Assert.True(list[3] == " ij");
+            Assert.True(list[4] == "  ");
+
+            Assert.True(str.Split(separator).AsEnumerable().SequenceEqual(list));
+            Assert.True(str.Split(separator).ToArray().SequenceEqual(list));
+        }
+
+        [Fact]
         public void Trim()
         {
             {
@@ -356,6 +462,140 @@ namespace UnitTest
             }
         }
 
+        [Fact]
+        public void StartsWith()
+        {
+            const string str1 = "あいうえお";
+            const string str2 = "あいう";
+            const string str3 = "えお";
+            var rawStr1 = RawStringSource.Get("あいうえお");
+            var rawStr2 = RawStringSource.Get("あいう");
+            var rawStr3 = RawStringSource.Get("えお");
+
+            // [Assert true]
+            {
+                // "あいうえお" starts with "あいうえお"
+                Assert.True(rawStr1.StartsWith(rawStr1));                    // RawString -- RawString
+                Assert.True(rawStr1.StartsWith(rawStr1.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.StartsWith(str1));                       // RawString -- string
+                Assert.True(rawStr1.StartsWith(str1.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいうえお" starts with "あいう"
+                Assert.True(rawStr1.StartsWith(rawStr2));                    // RawString -- RawString
+                Assert.True(rawStr1.StartsWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.StartsWith(str2));                       // RawString -- string
+                Assert.True(rawStr1.StartsWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいうえお" starts with ""
+                Assert.True(rawStr1.StartsWith(RawString.Empty));            // RawString -- RawString
+                Assert.True(rawStr1.StartsWith(ReadOnlySpan<byte>.Empty));   // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.StartsWith(string.Empty));               // RawString -- string
+                Assert.True(rawStr1.StartsWith(ReadOnlySpan<char>.Empty));   // RawString -- ReadOnlySpan<char>
+
+                // "あいう" starts with "あいう"
+                Assert.True(rawStr2.StartsWith(rawStr2));                    // RawString -- RawString
+                Assert.True(rawStr2.StartsWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.StartsWith(str2));                       // RawString -- string
+                Assert.True(rawStr2.StartsWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいう" starts with ""
+                Assert.True(rawStr2.StartsWith(RawString.Empty));            // RawString -- RawString
+                Assert.True(rawStr2.StartsWith(ReadOnlySpan<byte>.Empty));   // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.StartsWith(string.Empty));               // RawString -- string
+                Assert.True(rawStr2.StartsWith(ReadOnlySpan<char>.Empty));   // RawString -- ReadOnlySpan<char>
+            }
+
+            // [Assert false]
+            {
+                // "あいうえお" does not start with "えお"
+                Assert.False(rawStr1.StartsWith(rawStr3));                    // RawString -- RawString
+                Assert.False(rawStr1.StartsWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr1.StartsWith(str3));                       // RawString -- string
+                Assert.False(rawStr1.StartsWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいう" does not start with "えお"
+                Assert.False(rawStr2.StartsWith(rawStr3));                    // RawString -- RawString
+                Assert.False(rawStr2.StartsWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr2.StartsWith(str3));                       // RawString -- string
+                Assert.False(rawStr2.StartsWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
+            }
+        }
+
+        [Fact]
+        public void EndsWith()
+        {
+            const string str1 = "あいうえお";
+            const string str2 = "あいう";
+            const string str3 = "えお";
+            var rawStr1 = RawStringSource.Get("あいうえお");
+            var rawStr2 = RawStringSource.Get("あいう");
+            var rawStr3 = RawStringSource.Get("えお");
+
+            // [Assert true]
+            {
+                // "あいうえお" ends with "あいうえお"
+                Assert.True(rawStr1.EndsWith(rawStr1));                     // RawString -- RawString
+                Assert.True(rawStr1.EndsWith(rawStr1.AsSpan()));            // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.EndsWith(str1));                        // RawString -- string
+                Assert.True(rawStr1.EndsWith(str1.AsSpan()));               // RawString -- ReadOnlySpan<char>
+
+                // "あいうえお" ends with "えお"
+                Assert.True(rawStr1.EndsWith(rawStr3));                     // RawString -- RawString
+                Assert.True(rawStr1.EndsWith(rawStr3.AsSpan()));            // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.EndsWith(str3));                        // RawString -- string
+                Assert.True(rawStr1.EndsWith(str3.AsSpan()));               // RawString -- ReadOnlySpan<char>
+
+                // "あいうえお" ends with ""
+                Assert.True(rawStr1.EndsWith(RawString.Empty));             // RawString -- RawString
+                Assert.True(rawStr1.EndsWith(ReadOnlySpan<byte>.Empty));    // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr1.EndsWith(string.Empty));                // RawString -- string
+                Assert.True(rawStr1.EndsWith(ReadOnlySpan<char>.Empty));    // RawString -- ReadOnlySpan<char>
+
+                // "あいう" ends with "あいう"
+                Assert.True(rawStr2.EndsWith(rawStr2));                     // RawString -- RawString
+                Assert.True(rawStr2.EndsWith(rawStr2.AsSpan()));            // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.EndsWith(str2));                        // RawString -- string
+                Assert.True(rawStr2.EndsWith(str2.AsSpan()));               // RawString -- ReadOnlySpan<char>
+
+                // "あいう" ends with ""
+                Assert.True(rawStr2.EndsWith(RawString.Empty));             // RawString -- RawString
+                Assert.True(rawStr2.EndsWith(ReadOnlySpan<byte>.Empty));    // RawString -- ReadOnlySpan<byte>
+                Assert.True(rawStr2.EndsWith(string.Empty));                // RawString -- string
+                Assert.True(rawStr2.EndsWith(ReadOnlySpan<char>.Empty));    // RawString -- ReadOnlySpan<char>
+            }
+
+            // [Assert false]
+            {
+                // "あいうえお" does not end with "あいう"
+                Assert.False(rawStr1.EndsWith(rawStr2));                    // RawString -- RawString
+                Assert.False(rawStr1.EndsWith(rawStr2.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr1.EndsWith(str2));                       // RawString -- string
+                Assert.False(rawStr1.EndsWith(str2.AsSpan()));              // RawString -- ReadOnlySpan<char>
+
+                // "あいう" does not end with "えお"
+                Assert.False(rawStr2.EndsWith(rawStr3));                    // RawString -- RawString
+                Assert.False(rawStr2.EndsWith(rawStr3.AsSpan()));           // RawString -- ReadOnlySpan<byte>
+                Assert.False(rawStr2.EndsWith(str3));                       // RawString -- string
+                Assert.False(rawStr2.EndsWith(str3.AsSpan()));              // RawString -- ReadOnlySpan<char>
+            }
+        }
+
+        [Fact]
+        public void GetHashCodeTest()
+        {
+            var rawStr1 = RawStringSource.Get("あいうえお");
+            Assert.True(rawStr1.GetHashCode() == RawString.GetHashCode(rawStr1.AsSpan()));
+            Assert.True(rawStr1.GetHashCode() == RawString.GetHashCode(rawStr1.Ptr, rawStr1.Length));
+
+            var rawStr2 = RawStringSource.Get("hoge");
+            Assert.True(rawStr2.GetHashCode() == RawString.GetHashCode(rawStr2.AsSpan()));
+            Assert.True(rawStr2.GetHashCode() == RawString.GetHashCode(rawStr2.Ptr, rawStr2.Length));
+
+            var rawStr3 = RawString.Empty;
+            Assert.True(rawStr3.GetHashCode() == RawString.GetHashCode(rawStr3.AsSpan()));
+            Assert.True(rawStr3.GetHashCode() == RawString.GetHashCode(rawStr3.Ptr, rawStr3.Length));
+        }
+
         private readonly struct Check<T>
         {
             public readonly T Answer;
@@ -365,7 +605,7 @@ namespace UnitTest
             public void Deconstruct(out T ans, out RawString input) => (ans, input) = (Answer, Input);
         }
     }
-    
+
     internal static partial class RawStringSource
     {
         private static readonly Dictionary<string, RawString> _dic;
@@ -462,6 +702,12 @@ namespace UnitTest
         private static partial ReadOnlySpan<byte> Str44();
         [Utf8("17E+307")]
         private static partial ReadOnlySpan<byte> Str45();
+        [Utf8("あいう")]
+        private static partial ReadOnlySpan<byte> Str46();
+        [Utf8("えお")]
+        private static partial ReadOnlySpan<byte> Str47();
+        [Utf8("ab, cde, efgh, ij,  ")]
+        private static partial ReadOnlySpan<byte> Str48();
 
         static RawStringSource()
         {
@@ -511,6 +757,9 @@ namespace UnitTest
             Register(Str43());
             Register(Str44());
             Register(Str45());
+            Register(Str46());
+            Register(Str47());
+            Register(Str48());
 
             static unsafe void Register(ReadOnlySpan<byte> s)
             {
