@@ -103,5 +103,25 @@ namespace U8Xml
             }
             return attr;
         }
+
+        public static bool TryFindName<TAttributes>(this TAttributes source, RawString name, out XmlAttribute attribute) where TAttributes : IEnumerable<XmlAttribute>
+        {
+            return FindNameOrDefault(source, name).TryGetValue(out attribute);
+        }
+
+        public static bool TryFindName<TAttributes>(this TAttributes source, ReadOnlySpan<byte> name, out XmlAttribute attribute) where TAttributes : IEnumerable<XmlAttribute>
+        {
+            return FindNameOrDefault(source, name).TryGetValue(out attribute);
+        }
+
+        public static bool TryFindName<TAttributes>(this TAttributes source, string name, out XmlAttribute attribute) where TAttributes : IEnumerable<XmlAttribute>
+        {
+            return FindNameOrDefault(source, name).TryGetValue(out attribute);
+        }
+
+        public static bool TryFindName<TAttributes>(this TAttributes source, ReadOnlySpan<char> name, out XmlAttribute attribute) where TAttributes : IEnumerable<XmlAttribute>
+        {
+            return FindNameOrDefault(source, name).TryGetValue(out attribute);
+        }
     }
 }
