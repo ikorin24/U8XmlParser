@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Linq;
 
 namespace UnitTest
 {
@@ -316,7 +317,7 @@ namespace UnitTest
         }
 
         [Fact]
-        public unsafe void Split()
+        public void Split2_Char()
         {
             {
                 var ab_cd = RawStringSource.Get("ab cd");
@@ -337,6 +338,66 @@ namespace UnitTest
                 Assert.True(hoge.Slice(4).IsEmpty);
                 Assert.True(b.IsEmpty);
             }
+        }
+
+        [Fact]
+        public void Split2_Str()
+        {
+            var str = RawStringSource.Get("ab, cde, efgh, ij,  ");
+            ReadOnlySpan<byte> separator = stackalloc[] { (byte)',', (byte)' ' };
+
+            var tmp = str.Split2(separator);
+            Assert.True(tmp.Item1 == "ab" && tmp.Item2 == "cde, efgh, ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "cde" && tmp.Item2 == "efgh, ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "efgh" && tmp.Item2 == "ij,  ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == "ij" && tmp.Item2 == " ");
+            tmp = tmp.Item2.Split2(separator);
+            Assert.True(tmp.Item1 == " " && tmp.Item2 == "");
+        }
+
+        [Fact]
+        public void Split_Str()
+        {
+            var str = RawStringSource.Get("ab, cde, efgh, ij,  ");
+            ReadOnlySpan<byte> separator = stackalloc[] { (byte)',', (byte)' ' };
+
+            var list = new List<RawString>();
+            foreach(var s in str.Split(separator)) {
+                list.Add(s);
+            }
+            Assert.Equal(5, list.Count);
+            Assert.True(list[0] == "ab");
+            Assert.True(list[1] == "cde");
+            Assert.True(list[2] == "efgh");
+            Assert.True(list[3] == "ij");
+            Assert.True(list[4] == " ");
+
+            Assert.True(str.Split(separator).AsEnumerable().SequenceEqual(list));
+            Assert.True(str.Split(separator).ToArray().SequenceEqual(list));
+        }
+
+        [Fact]
+        public void Split_Char()
+        {
+            var str = RawStringSource.Get("ab, cde, efgh, ij,  ");
+            const byte separator = (byte)',';
+
+            var list = new List<RawString>();
+            foreach(var s in str.Split(separator)) {
+                list.Add(s);
+            }
+            Assert.Equal(5, list.Count);
+            Assert.True(list[0] == "ab");
+            Assert.True(list[1] == " cde");
+            Assert.True(list[2] == " efgh");
+            Assert.True(list[3] == " ij");
+            Assert.True(list[4] == "  ");
+
+            Assert.True(str.Split(separator).AsEnumerable().SequenceEqual(list));
+            Assert.True(str.Split(separator).ToArray().SequenceEqual(list));
         }
 
         [Fact]
@@ -600,6 +661,8 @@ namespace UnitTest
         private static partial ReadOnlySpan<byte> Str46();
         [Utf8("えお")]
         private static partial ReadOnlySpan<byte> Str47();
+        [Utf8("ab, cde, efgh, ij,  ")]
+        private static partial ReadOnlySpan<byte> Str48();
 
         static RawStringSource()
         {
@@ -651,6 +714,7 @@ namespace UnitTest
             Register(Str45());
             Register(Str46());
             Register(Str47());
+            Register(Str48());
 
             static unsafe void Register(ReadOnlySpan<byte> s)
             {

@@ -225,11 +225,32 @@ namespace U8Xml
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public SplitRawStrings Split(byte separator) => new SplitRawStrings(this, separator);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public SplitRawStrings Split(ReadOnlySpan<byte> separator) => new SplitRawStrings(this, separator);
+
         public (RawString, RawString) Split2(byte separator)
         {
             for(int i = 0; i < _length; i++) {
                 if(((byte*)_ptr)[i] == separator) {
                     var latterStart = Math.Min(i + 1, _length);
+                    return (SliceUnsafe(0, i), SliceUnsafe(latterStart, _length - latterStart));
+                }
+            }
+            return (this, Empty);
+        }
+
+        public (RawString, RawString) Split2(ReadOnlySpan<byte> separator)
+        {
+            if((uint)separator.Length > (uint)_length) {
+                return (this, Empty);
+            }
+            var maxLoop = _length - separator.Length + 1;
+            for(int i = 0; i < maxLoop; i++) {
+                if(SliceUnsafe(i, separator.Length).SequenceEqual(separator)) {
+                    var latterStart = Math.Min(i + separator.Length, _length);
                     return (SliceUnsafe(0, i), SliceUnsafe(latterStart, _length - latterStart));
                 }
             }
