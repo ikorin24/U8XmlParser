@@ -74,7 +74,7 @@ namespace U8Xml
             public void Reset() => _e.Reset();
         }
 
-        public sealed class EnumeratorClass : IEnumerator<XmlNode>
+        internal sealed class EnumeratorClass : IEnumerator<XmlNode>
         {
             private CustomList<XmlNode_>.Enumerator _e;
 
