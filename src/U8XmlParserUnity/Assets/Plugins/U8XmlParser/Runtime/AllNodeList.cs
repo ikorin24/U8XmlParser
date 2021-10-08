@@ -2,10 +2,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using U8Xml.Internal;
 
 namespace U8Xml
 {
+    [DebuggerDisplay("XmlNode[{Count}]")]
+    [DebuggerTypeProxy(typeof(AllNodeListDebuggerTypeProxy))]
     public readonly unsafe struct AllNodeList : IEnumerable<XmlNode>
     {
         private readonly CustomList<XmlNode_> _nodes;
@@ -92,6 +95,32 @@ namespace U8Xml
             public bool MoveNext() => _e.MoveNext();
 
             public void Reset() => _e.Reset();
+        }
+
+        internal sealed class AllNodeListDebuggerTypeProxy
+        {
+            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+            private readonly AllNodeList _list;
+
+            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+            public XmlNode[] Item
+            {
+                get
+                {
+                    var list = _list;
+                    var array = new XmlNode[list.Count];
+                    int i = 0;
+                    foreach(var item in list) {
+                        array[i++] = item;
+                    }
+                    return array;
+                }
+            }
+
+            public AllNodeListDebuggerTypeProxy(AllNodeList list)
+            {
+                _list = list;
+            }
         }
     }
 }
