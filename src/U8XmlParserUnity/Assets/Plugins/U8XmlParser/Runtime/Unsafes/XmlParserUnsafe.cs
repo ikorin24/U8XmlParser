@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.ComponentModel;
 using System.IO;
 using U8Xml.Internal;
 
@@ -11,7 +10,6 @@ namespace U8Xml.Unsafes
     /// *** Memory leaks happen if you use it in the wrong way. ***<para/>
     /// The object returned from the methods MUST BE disposed after you use it.<para/>
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
     public static class XmlParserUnsafe
     {
         /// <summary>
