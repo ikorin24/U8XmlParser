@@ -7,6 +7,8 @@ using U8Xml.Internal;
 
 namespace U8Xml
 {
+    [DebuggerDisplay("{DebuggerDisplay,nq}")]
+    [DebuggerTypeProxy(typeof(XmlNodeDescendantListDebuggerTypeProxy))]
     public unsafe readonly struct XmlNodeDescendantList : IEnumerable<XmlNode>
     {
         private readonly XmlNode_* _parent;
@@ -15,6 +17,19 @@ namespace U8Xml
         {
             Debug.Assert(parent != null);
             _parent = parent;
+        }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private string DebuggerDisplay
+        {
+            get
+            {
+                int count = 0;
+                foreach(var _ in this) {
+                    count++;
+                }
+                return $"XmlNode[{count}]";
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -83,6 +98,36 @@ namespace U8Xml
             public bool MoveNext() => _e.MoveNext();
 
             public void Reset() => _e.Reset();
+        }
+
+        internal sealed class XmlNodeDescendantListDebuggerTypeProxy
+        {
+            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+            private readonly XmlNodeDescendantList _list;
+
+            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+            public XmlNode[] Item
+            {
+                get
+                {
+                    var list = _list;
+                    int count = 0;
+                    foreach(var _ in list) {
+                        count++;
+                    }
+                    var array = new XmlNode[count];
+                    int i = 0;
+                    foreach(var item in list) {
+                        array[i++] = item;
+                    }
+                    return array;
+                }
+            }
+
+            public XmlNodeDescendantListDebuggerTypeProxy(XmlNodeDescendantList list)
+            {
+                _list = list;
+            }
         }
     }
 }
