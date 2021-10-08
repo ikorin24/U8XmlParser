@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -13,7 +12,6 @@ namespace U8Xml.Unsafes
     /// *** Memory leaks happen if you use it in the wrong way. ***<para/>
     /// You MUST dispose after using it. It's compatible with <see cref="XmlObject"/>
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Never)]
     public unsafe readonly struct XmlObjectUnsafe : IDisposable, IXmlObject
     {
         private readonly IntPtr _core;  // XmlObjectCore*
