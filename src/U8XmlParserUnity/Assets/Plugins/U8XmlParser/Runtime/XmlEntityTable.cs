@@ -36,9 +36,7 @@ namespace U8Xml
         /// <param name="str">string to check</param>
         /// <param name="requiredBufferLength">byte length to required to resolve</param>
         /// <returns>state of resolver</returns>
-#if NET5_0_OR_GREATER
         [SkipLocalsInit]
-#endif
         public unsafe XmlEntityResolverState CheckNeedToResolve(RawString str, out int requiredBufferLength)
         {
             const int ExBufLen = 5;         // A unicode character can be up to 5 bytes.
@@ -138,9 +136,7 @@ namespace U8Xml
         /// <summary>Resolve the input utf-8 string to <see langword="string"/></summary>
         /// <param name="str">utf-8 string to resolve</param>
         /// <returns>resolved <see langword="string"/></returns>
-#if NET5_0_OR_GREATER
         [SkipLocalsInit]
-#endif
         public unsafe string ResolveToString(RawString str)
         {
             var byteLen = GetResolvedByteLength(str);
@@ -181,9 +177,7 @@ namespace U8Xml
         /// <summary>Resolve the string.</summary>
         /// <param name="str">the string to resolve</param>
         /// <returns>resolved utf-8 string as byte array</returns>
-#if NET5_0_OR_GREATER
         [SkipLocalsInit]
-#endif
         public byte[] Resolve(RawString str)
         {
             var byteLen = GetResolvedByteLength(str);
@@ -225,9 +219,7 @@ namespace U8Xml
         /// <param name="str">string to resolve</param>
         /// <param name="bufferToResolve">the buffer used in resolving the string</param>
         /// <returns>byte length of the resolved string</returns>
-#if NET5_0_OR_GREATER
         [SkipLocalsInit]
-#endif
         public unsafe int Resolve(RawString str, Span<byte> bufferToResolve)
         {
             const int ExBufLen = 5;

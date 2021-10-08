@@ -275,9 +275,7 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (RawString, RawString) Split2(string separator) => Split2(separator.AsSpan());
 
-#if NET5_0_OR_GREATER
         [SkipLocalsInit]
-#endif
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (RawString, RawString) Split2(ReadOnlySpan<char> separator)
         {
