@@ -178,9 +178,7 @@ namespace U8Xml
 
         public bool StartsWith(string other) => StartsWith(other.AsSpan());
 
-#if NET5_0_OR_GREATER
         [SkipLocalsInit]
-#endif
         public bool StartsWith(ReadOnlySpan<char> other)
         {
             if(other.Length == 0) {
@@ -232,9 +230,7 @@ namespace U8Xml
             return EndsWith(other.AsSpan());
         }
 
-#if NET5_0_OR_GREATER
         [SkipLocalsInit]
-#endif
         public bool EndsWith(ReadOnlySpan<char> other)
         {
             if(other.Length == 0) {
@@ -318,9 +314,7 @@ namespace U8Xml
 
         public static bool operator !=(ReadOnlySpan<byte> left, RawString right) => !(left == right);
 
-#if NET5_0_OR_GREATER
         [SkipLocalsInit]
-#endif
         public static bool operator ==(RawString left, ReadOnlySpan<char> right)
         {
             if(right.IsEmpty) { return left.IsEmpty; }
