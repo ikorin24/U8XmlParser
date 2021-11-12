@@ -1,7 +1,7 @@
 # U8XmlParser
 
 [![GitHub license](https://img.shields.io/github/license/ikorin24/U8XmlParser?color=FF8821)](https://github.com/ikorin24/U8XmlParser/blob/master/LICENSE)
-[![nuget](https://img.shields.io/badge/nuget-v1.1.0-FF8821)](https://www.nuget.org/packages/U8XmlParser)
+[![nuget](https://img.shields.io/badge/nuget-v1.1.2-FF8821)](https://www.nuget.org/packages/U8XmlParser)
 
 High performance, thread-safe and IL2CPP-safe C# xml parser.
 
@@ -11,7 +11,7 @@ U8XmlParser is faster than any other xml libraries. (See the following benchmark
 
 ### For .NET
 
-.net standard2.0, 2.1, .net framework4.8, .net core3.1, .net5 are supported.
+.net standard2.0, 2.1, .net framework4.8, .net core3.1, .net5, .net6 are supported.
 
 Install from [Nuget package](https://www.nuget.org/packages/U8XmlParser/)
 
@@ -21,11 +21,22 @@ $ dotnet add package U8XmlParser
 
 ### For Unity
 
-If Unity 2020 or newer, install the package from UPM by git URL.
+#### **Unity 2020 or newer**
+
+Install the package from OpenUPM.
+See [OpenUPM](https://openupm.com/packages/com.ikorin24.u8xmlparser/) for details.
+
+```sh
+$ openupm add com.ikorin24.u8xmlparser
+```
+
+Or install the package from UPM by git URL.
 
 git URL: (https://github.com/ikorin24/U8XmlParser.git?path=src/U8XmlParserUnity/Assets/Plugins#v1.1.0)
 
-For Unity 2019 or older, add the following libraries built for .net standard2.0 to your project.
+#### **Unity 2019 or older**
+
+Add the following libraries built for .net standard2.0 to your project.
 You can get them at the [release page](https://github.com/ikorin24/U8XmlParser/releases).
 
 - U8XmlParser.dll (built for .net standard 2.0)
@@ -117,7 +128,7 @@ using (XmlObject xml = XmlParser.Parse(stream))
 
 ## Benchmark
 
-### Benchmarking Yourself
+### Benchmarking by yourself
 
 ```cs
 $ cd src/Benchmark

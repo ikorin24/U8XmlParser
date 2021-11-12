@@ -71,3 +71,5 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 .vsconfig
+
+!/[Aa]ssets/Plugins/U8XmlParser/*~/

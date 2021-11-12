@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net5.0;netcoreapp3.1;net48;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net6.0;net5.0;netcoreapp3.1;net48;netstandard2.0;netstandard2.1</TargetFrameworks>
     <Nullable>enable</Nullable>
     <LangVersion>8.0</LangVersion>
     <RootNamespace>U8Xml</RootNamespace>
@@ -14,7 +14,7 @@
     <RepositoryUrl>https://github.com/ikorin24/U8XmlParser.git</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryType>git</RepositoryType>
-    <Version>1.1.0</Version>
+    <Version>1.1.2</Version>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 

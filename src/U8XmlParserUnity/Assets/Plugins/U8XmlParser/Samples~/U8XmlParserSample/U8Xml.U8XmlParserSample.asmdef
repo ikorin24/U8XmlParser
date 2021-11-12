@@ -1,0 +1,16 @@
+{
+    "name": "U8XmlParserSample",
+    "rootNamespace": "U8Xml.Samples",
+    "references": [
+        "GUID:99988bbb805cede47a3a6f22765caf54"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
