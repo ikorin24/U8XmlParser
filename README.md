@@ -32,7 +32,7 @@ $ openupm add com.ikorin24.u8xmlparser
 
 Or install the package from UPM by git URL.
 
-git URL: (https://github.com/ikorin24/U8XmlParser.git?path=src/U8XmlParserUnity/Assets/Plugins#v1.1.0)
+git URL: (https://github.com/ikorin24/U8XmlParser.git?path=src/U8XmlParserUnity/Assets/Plugins#v1.1.2)
 
 #### **Unity 2019 or older**
 
