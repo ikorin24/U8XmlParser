@@ -2,6 +2,7 @@
 
 [![GitHub license](https://img.shields.io/github/license/ikorin24/U8XmlParser?color=FF8821)](https://github.com/ikorin24/U8XmlParser/blob/master/LICENSE)
 [![nuget](https://img.shields.io/badge/nuget-v1.1.2-FF8821)](https://www.nuget.org/packages/U8XmlParser)
+[![openupm](https://img.shields.io/npm/v/com.ikorin24.u8xmlparser?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.ikorin24.u8xmlparser/)
 
 High performance, thread-safe and IL2CPP-safe C# xml parser.
 
