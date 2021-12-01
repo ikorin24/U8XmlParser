@@ -1,7 +1,9 @@
 ﻿#nullable enable
 using System;
+using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using U8Xml.Internal;
 
 namespace U8Xml
@@ -54,6 +56,8 @@ namespace U8Xml
         /// <summary>Get the next sibling of the node.</summary>
         public Option<XmlNode> NextSibling => new XmlNode(((XmlNode_*)_node)->Sibling);
 
+        internal bool HasXmlNamespaceAttr => ((XmlNode_*)_node)->HasXmlNamespaceAttr;
+
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
         public bool TryGetParent(out XmlNode parent) => Parent.TryGetValue(out parent);
@@ -79,6 +83,38 @@ namespace U8Xml
             return Option<XmlNode>.Null;
         }
 
+        public Option<XmlNode> FindChildOrDefault(RawString namespaceName, RawString name) => FindChildOrDefault(namespaceName.AsSpan(), name.AsSpan());
+
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> namespaceName, RawString name) => FindChildOrDefault(namespaceName, name.AsSpan());
+
+        public Option<XmlNode> FindChildOrDefault(RawString namespaceName, ReadOnlySpan<byte> name) => FindChildOrDefault(namespaceName.AsSpan(), name);
+
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
+        {
+            if(TryGetNamespaceAlias(namespaceName, this, out var nsAlias) == false) {
+                return Option<XmlNode>.Null;
+            }
+            if(nsAlias.IsEmpty) {
+                return FindChildOrDefault(name);
+            }
+            var fullNameLength = nsAlias.Length + 1 + name.Length;
+            foreach(var child in Children) {
+                var childName = child.Name;
+                if(childName.Length == fullNameLength && childName.StartsWith(nsAlias)
+                                                      && childName.At(nsAlias.Length) == (byte)':'
+                                                      && childName.Slice(nsAlias.Length + 1) == name) {
+
+                    if(TryGetNamespaceAlias(namespaceName, child, out var nsAliasActual) == false) {
+                        return child;
+                    }
+                    if(nsAliasActual == nsAlias) {
+                        return child;
+                    }
+                }
+            }
+            return Option<XmlNode>.Null;
+        }
+
         /// <summary>Find a child by name. Returns the first child found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node as <see cref="Option{T}"/></returns>
@@ -97,6 +133,52 @@ namespace U8Xml
             return Option<XmlNode>.Null;
         }
 
+        public Option<XmlNode> FindChildOrDefault(string namespaceName, string name) => FindChildOrDefault(namespaceName.AsSpan(), name.AsSpan());
+
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> namespaceName, string name) => FindChildOrDefault(namespaceName, name.AsSpan());
+
+        public Option<XmlNode> FindChildOrDefault(string namespaceName, ReadOnlySpan<char> name) => FindChildOrDefault(namespaceName.AsSpan(), name);
+
+        [SkipLocalsInit]
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
+        {
+            var utf8 = Encoding.UTF8;
+            var nsNameByteLen = utf8.GetByteCount(namespaceName);
+            var nameByteLen = utf8.GetByteCount(name);
+            var byteLen = nsNameByteLen + nameByteLen;
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = namespaceName) {
+                    utf8.GetBytes(ptr, namespaceName.Length, buf, nsNameByteLen);
+                }
+                var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, nsNameByteLen);
+                fixed(char* ptr = name) {
+                    utf8.GetBytes(ptr, name.Length, buf + nsNameByteLen, nameByteLen);
+                }
+                var nameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf + nsNameByteLen, nameByteLen);
+                return FindChildOrDefault(nsNameUtf8, nameUtf8);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = namespaceName)
+                    fixed(char* ptr2 = name) {
+                        utf8.GetBytes(ptr, namespaceName.Length, buf, nsNameByteLen);
+                        var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, nsNameByteLen);
+                        utf8.GetBytes(ptr2, name.Length, buf + nsNameByteLen, nameByteLen);
+                        var nameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf + nsNameByteLen, nameByteLen);
+                        return FindChildOrDefault(nsNameUtf8, nameUtf8);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
+
         /// <summary>Find a child by name. Returns the first child found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node</returns>
@@ -108,6 +190,17 @@ namespace U8Xml
         public XmlNode FindChild(ReadOnlySpan<byte> name)
         {
             if(FindChildOrDefault(name).TryGetValue(out var node) == false) {
+                ThrowHelper.ThrowInvalidOperation("Sequence contains no matching elements.");
+            }
+            return node;
+        }
+
+        public XmlNode FindChild(RawString namespaceName, RawString name) => FindChild(namespaceName.AsSpan(), name.AsSpan());
+        public XmlNode FindChild(ReadOnlySpan<byte> namespaceName, RawString name) => FindChild(namespaceName, name.AsSpan());
+        public XmlNode FindChild(RawString namespaceName, ReadOnlySpan<byte> name) => FindChild(namespaceName.AsSpan(), name);
+        public XmlNode FindChild(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
+        {
+            if(FindChildOrDefault(namespaceName, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation("Sequence contains no matching elements.");
             }
             return node;
@@ -129,10 +222,29 @@ namespace U8Xml
             return node;
         }
 
+        public XmlNode FindChild(string namespaceName, string name) => FindChild(namespaceName.AsSpan(), name.AsSpan());
+        public XmlNode FindChild(ReadOnlySpan<char> namespaceName, string name) => FindChild(namespaceName, name.AsSpan());
+        public XmlNode FindChild(string namespaceName, ReadOnlySpan<char> name) => FindChild(namespaceName.AsSpan(), name);
+        public XmlNode FindChild(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
+        {
+            if(FindChildOrDefault(namespaceName, name).TryGetValue(out var node) == false) {
+                ThrowHelper.ThrowInvalidOperation("Sequence contains no matching elements.");
+            }
+            return node;
+        }
+
         public bool TryFindChild(ReadOnlySpan<byte> name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
         public bool TryFindChild(RawString name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+        public bool TryFindChild(RawString namespaceName, RawString name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        public bool TryFindChild(ReadOnlySpan<byte> namespaceName, RawString name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        public bool TryFindChild(RawString namespaceName, ReadOnlySpan<byte> name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        public bool TryFindChild(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
         public bool TryFindChild(ReadOnlySpan<char> name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
         public bool TryFindChild(string name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+        public bool TryFindChild(string namespaceName, string name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        public bool TryFindChild(ReadOnlySpan<char> namespaceName, string name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        public bool TryFindChild(string namespaceName, ReadOnlySpan<char> name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        public bool TryFindChild(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
 
         public Option<XmlAttribute> FindAttributeOrDefault(RawString name) => Attributes.FindOrDefault(name);
         public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<byte> name) => Attributes.FindOrDefault(name);
@@ -162,6 +274,66 @@ namespace U8Xml
 
         /// <inheritdoc/>
         public override string ToString() => _node != IntPtr.Zero ? ((XmlNode_*)_node)->Name.ToString() : "";
+
+        internal static bool TryGetNamespaceAlias(ReadOnlySpan<byte> nsName, XmlNode node, out RawString alias)
+        {
+            const uint xmln = (byte)'x' + ((byte)'m' << 8) + ((byte)'l' << 16) + ((byte)'n' << 24);
+
+            var n = node;
+            while(true) {
+                if(n.HasXmlNamespaceAttr) {
+                    foreach(var attr in n.Attributes) {
+                        var attrName = attr.Name;
+                        if((attrName.Length >= 5) && (*(uint*)attrName.GetPtr() == xmln)
+                                                  && (attrName.At(4) == (byte)'s')) {
+                            if(attrName.Length == 5 && attr.Value == nsName) {
+                                alias = RawString.Empty;
+                                return true;
+                            }
+                            else if(attrName.Length >= 7 && attrName[5] == (byte)':' && attr.Value == nsName) {
+                                alias = attrName.Slice(6);
+                                return true;
+                            }
+                        }
+                    }
+                }
+                if(n.TryGetParent(out n) == false) {
+                    alias = RawString.Empty;
+                    return false;
+                }
+            }
+        }
+
+        [SkipLocalsInit]
+        private static bool TryGetNamespaceAlias(ReadOnlySpan<char> nsName, XmlNode node, out RawString alias)
+        {
+            var utf8 = Encoding.UTF8;
+            var byteLen = utf8.GetByteCount(nsName);
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = nsName) {
+                    utf8.GetBytes(ptr, nsName.Length, buf, byteLen);
+                }
+                var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                return TryGetNamespaceAlias(nsNameUtf8, node, out alias);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = nsName) {
+                        utf8.GetBytes(ptr, nsName.Length, buf, byteLen);
+                        var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                        return TryGetNamespaceAlias(nsNameUtf8, node, out alias);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
     }
 
     [DebuggerDisplay("{ToString(),nq}")]
@@ -182,6 +354,8 @@ namespace U8Xml
         public int AttrIndex;
         public int AttrCount;
         private readonly CustomList<XmlAttribute_> _wholeAttrs;
+
+        public bool HasXmlNamespaceAttr;
 
         public readonly CustomList<XmlNode_> WholeNodes
         {
@@ -223,6 +397,7 @@ namespace U8Xml
             AttrIndex = 0;
             AttrCount = 0;
             _wholeAttrs = wholeAttrs;
+            HasXmlNamespaceAttr = false;
         }
 
         public override string ToString()

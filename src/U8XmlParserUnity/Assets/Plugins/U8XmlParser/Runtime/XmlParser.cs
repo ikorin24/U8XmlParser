@@ -245,6 +245,13 @@ namespace U8Xml
                         else {
                             var attr = attrs.GetPointerToAdd(out _);
                             *attr = GetAttr(data, ref i);
+                            var attrName = attr->Name;
+                            const uint xmln = (byte)'x' + ((byte)'m' << 8) + ((byte)'l' << 16) + ((byte)'n' << 24);
+                            if((attrName.Length >= 5) && (*(uint*)attrName.GetPtr() == xmln)
+                                                      && (attrName.At(4) == (byte)'s')) {
+                                node->HasXmlNamespaceAttr = true;
+                            }
+
                             if(node->HasAttribute == false) {
                                 node->AttrIndex = attrs.Count - 1;
                             }
