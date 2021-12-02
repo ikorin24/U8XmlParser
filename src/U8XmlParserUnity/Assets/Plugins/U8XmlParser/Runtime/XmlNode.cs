@@ -27,7 +27,7 @@ namespace U8Xml
         public bool HasAttribute => ((XmlNode_*)_node)->HasAttribute;
 
         /// <summary>Get attributes of the node.</summary>
-        public XmlAttributeList Attributes => ((XmlNode_*)_node)->Attributes;
+        public XmlAttributeList Attributes => new XmlAttributeList((XmlNode_*)_node);
 
         /// <summary>Get whether the node has any children.</summary>
         public bool HasChildren => ((XmlNode_*)_node)->HasChildren;
@@ -123,14 +123,35 @@ namespace U8Xml
         /// <summary>Find a child by name. Returns the first child found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node as <see cref="Option{T}"/></returns>
+        [SkipLocalsInit]
         public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> name)
         {
-            foreach(var child in Children) {
-                if(child.Name == name) {
-                    return child;
+            var utf8 = Encoding.UTF8;
+            var byteLen = utf8.GetByteCount(name);
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = name) {
+                    utf8.GetBytes(ptr, name.Length, buf, byteLen);
+                }
+                var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                return FindChildOrDefault(span);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = name) {
+                        utf8.GetBytes(ptr, name.Length, buf, byteLen);
+                        var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                        return FindChildOrDefault(span);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
                 }
             }
-            return Option<XmlNode>.Null;
         }
 
         public Option<XmlNode> FindChildOrDefault(string namespaceName, string name) => FindChildOrDefault(namespaceName.AsSpan(), name.AsSpan());
@@ -303,37 +324,6 @@ namespace U8Xml
                 }
             }
         }
-
-        [SkipLocalsInit]
-        private static bool TryGetNamespaceAlias(ReadOnlySpan<char> nsName, XmlNode node, out RawString alias)
-        {
-            var utf8 = Encoding.UTF8;
-            var byteLen = utf8.GetByteCount(nsName);
-
-            const int Threshold = 128;
-            if(byteLen <= Threshold) {
-                byte* buf = stackalloc byte[Threshold];
-                fixed(char* ptr = nsName) {
-                    utf8.GetBytes(ptr, nsName.Length, buf, byteLen);
-                }
-                var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
-                return TryGetNamespaceAlias(nsNameUtf8, node, out alias);
-            }
-            else {
-                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
-                try {
-                    fixed(byte* buf = rentArray)
-                    fixed(char* ptr = nsName) {
-                        utf8.GetBytes(ptr, nsName.Length, buf, byteLen);
-                        var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
-                        return TryGetNamespaceAlias(nsNameUtf8, node, out alias);
-                    }
-                }
-                finally {
-                    ArrayPool<byte>.Shared.Return(rentArray);
-                }
-            }
-        }
     }
 
     [DebuggerDisplay("{ToString(),nq}")]
@@ -353,7 +343,7 @@ namespace U8Xml
 
         public int AttrIndex;
         public int AttrCount;
-        private readonly CustomList<XmlAttribute_> _wholeAttrs;
+        public readonly CustomList<XmlAttribute_> WholeAttrs;
 
         public bool HasXmlNamespaceAttr;
 
@@ -366,12 +356,6 @@ namespace U8Xml
         public bool HasAttribute => AttrCount > 0;
 
         public bool HasChildren => FirstChild != null;
-
-        public XmlAttributeList Attributes
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new XmlAttributeList(_wholeAttrs, AttrIndex, AttrCount);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode_(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, CustomList<XmlAttribute_> wholeAttrs)
@@ -396,7 +380,7 @@ namespace U8Xml
             ChildCount = 0;
             AttrIndex = 0;
             AttrCount = 0;
-            _wholeAttrs = wholeAttrs;
+            WholeAttrs = wholeAttrs;
             HasXmlNamespaceAttr = false;
         }
 
