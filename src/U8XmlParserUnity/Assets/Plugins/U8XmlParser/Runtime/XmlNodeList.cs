@@ -14,6 +14,8 @@ namespace U8Xml
     {
         private readonly XmlNode_* _parent;
 
+        internal Option<XmlNode> Parent => new XmlNode(_parent);
+
         public bool IsNull => _parent == null;
 
         public bool IsEmpty => _parent->FirstChild == null;

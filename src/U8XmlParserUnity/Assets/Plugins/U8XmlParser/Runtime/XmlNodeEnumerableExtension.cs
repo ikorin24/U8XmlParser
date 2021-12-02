@@ -81,6 +81,40 @@ namespace U8Xml
             return FindOrDefault(source, name.AsSpan());
         }
 
+        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
+        {
+            if(source.Parent.TryGetValue(out var parent) == false) {
+                return Option<XmlNode>.Null;
+            }
+            if(XmlNode.TryGetNamespaceAlias(namespaceName, parent, out var nsAlias) == false) {
+                return Option<XmlNode>.Null;
+            }
+            if(nsAlias.IsEmpty) {
+                return FindOrDefault(source, name);
+            }
+            var fullNameLength = nsAlias.Length + 1 + name.Length;
+            foreach(var child in source) {
+                var childName = child.Name;
+                if(childName.Length == fullNameLength && childName.StartsWith(nsAlias)
+                                                      && childName.At(nsAlias.Length) == (byte)':'
+                                                      && childName.Slice(nsAlias.Length + 1) == name) {
+
+                    if(XmlNode.TryGetNamespaceAlias(namespaceName, child, out var nsAliasActual) == false) {
+                        return child;
+                    }
+                    if(nsAliasActual == nsAlias) {
+                        return child;
+                    }
+                }
+            }
+            return Option<XmlNode>.Null;
+        }
+        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, ReadOnlySpan<byte> namespaceName, RawString name) => FindOrDefault(source, namespaceName, name.AsSpan());
+        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, RawString namespaceName, ReadOnlySpan<byte> name) => FindOrDefault(source, namespaceName.AsSpan(), name);
+        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, RawString namespaceName, RawString name) => FindOrDefault(source, namespaceName.AsSpan(), name.AsSpan());
+
+        // TODO: overloads
+
         /// <summary>Find a node by name. Returns the first node found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
         /// <param name="source">source node list to enumerate</param>
         /// <param name="name">node name to find</param>
@@ -133,6 +167,8 @@ namespace U8Xml
             return node;
         }
 
+        // TODO: overloads
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryFind<TNodes>(this TNodes source, ReadOnlySpan<byte> name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
@@ -156,5 +192,7 @@ namespace U8Xml
         {
             return FindOrDefault(source, name).TryGetValue(out node);
         }
+
+        // TODO: overloads
     }
 }

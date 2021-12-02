@@ -89,31 +89,7 @@ namespace U8Xml
 
         public Option<XmlNode> FindChildOrDefault(RawString namespaceName, ReadOnlySpan<byte> name) => FindChildOrDefault(namespaceName.AsSpan(), name);
 
-        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
-        {
-            if(TryGetNamespaceAlias(namespaceName, this, out var nsAlias) == false) {
-                return Option<XmlNode>.Null;
-            }
-            if(nsAlias.IsEmpty) {
-                return FindChildOrDefault(name);
-            }
-            var fullNameLength = nsAlias.Length + 1 + name.Length;
-            foreach(var child in Children) {
-                var childName = child.Name;
-                if(childName.Length == fullNameLength && childName.StartsWith(nsAlias)
-                                                      && childName.At(nsAlias.Length) == (byte)':'
-                                                      && childName.Slice(nsAlias.Length + 1) == name) {
-
-                    if(TryGetNamespaceAlias(namespaceName, child, out var nsAliasActual) == false) {
-                        return child;
-                    }
-                    if(nsAliasActual == nsAlias) {
-                        return child;
-                    }
-                }
-            }
-            return Option<XmlNode>.Null;
-        }
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name) => Children.FindOrDefault(namespaceName, name);
 
         /// <summary>Find a child by name. Returns the first child found.</summary>
         /// <param name="name">child name to find</param>
@@ -271,16 +247,40 @@ namespace U8Xml
         public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<byte> name) => Attributes.FindOrDefault(name);
         public Option<XmlAttribute> FindAttributeOrDefault(string name) => Attributes.FindOrDefault(name);
         public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<char> name) => Attributes.FindOrDefault(name);
+        public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name) => Attributes.FindOrDefault(namespaceName, name);
+        public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<byte> namespaceName, RawString name) => Attributes.FindOrDefault(namespaceName, name);
+        public Option<XmlAttribute> FindAttributeOrDefault(RawString namespaceName, ReadOnlySpan<byte> name) => Attributes.FindOrDefault(namespaceName, name);
+        public Option<XmlAttribute> FindAttributeOrDefault(RawString namespaceName, RawString name) => Attributes.FindOrDefault(namespaceName, name);
+        public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name) => Attributes.FindOrDefault(namespaceName, name);
+        public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<char> namespaceName, string name) => Attributes.FindOrDefault(namespaceName, name);
+        public Option<XmlAttribute> FindAttributeOrDefault(string namespaceName, ReadOnlySpan<char> name) => Attributes.FindOrDefault(namespaceName, name);
+        public Option<XmlAttribute> FindAttributeOrDefault(string namespaceName, string name) => Attributes.FindOrDefault(namespaceName, name);
 
         public XmlAttribute FindAttribute(RawString name) => Attributes.Find(name);
         public XmlAttribute FindAttribute(ReadOnlySpan<byte> name) => Attributes.Find(name);
         public XmlAttribute FindAttribute(string name) => Attributes.Find(name);
         public XmlAttribute FindAttribute(ReadOnlySpan<char> name) => Attributes.Find(name);
+        public XmlAttribute FindAttribute(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name) => Attributes.Find(namespaceName, name);
+        public XmlAttribute FindAttribute(ReadOnlySpan<byte> namespaceName, RawString name) => Attributes.Find(namespaceName, name);
+        public XmlAttribute FindAttribute(RawString namespaceName, ReadOnlySpan<byte> name) => Attributes.Find(namespaceName, name);
+        public XmlAttribute FindAttribute(RawString namespaceName, RawString name) => Attributes.Find(namespaceName, name);
+        public XmlAttribute FindAttribute(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name) => Attributes.Find(namespaceName, name);
+        public XmlAttribute FindAttribute(ReadOnlySpan<char> namespaceName, string name) => Attributes.Find(namespaceName, name);
+        public XmlAttribute FindAttribute(string namespaceName, ReadOnlySpan<char> name) => Attributes.Find(namespaceName, name);
+        public XmlAttribute FindAttribute(string namespaceName, string name) => Attributes.Find(namespaceName, name);
 
         public bool TryFindAttribute(RawString name, out XmlAttribute attribute) => Attributes.TryFind(name, out attribute);
         public bool TryFindAttribute(ReadOnlySpan<byte> name, out XmlAttribute attribute) => Attributes.TryFind(name, out attribute);
         public bool TryFindAttribute(string name, out XmlAttribute attribute) => Attributes.TryFind(name, out attribute);
         public bool TryFindAttribute(ReadOnlySpan<char> name, out XmlAttribute attribute) => Attributes.TryFind(name, out attribute);
+        public bool TryFindAttribute(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        public bool TryFindAttribute(ReadOnlySpan<byte> namespaceName, RawString name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        public bool TryFindAttribute(RawString namespaceName, ReadOnlySpan<byte> name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        public bool TryFindAttribute(RawString namespaceName, RawString name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        public bool TryFindAttribute(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        public bool TryFindAttribute(ReadOnlySpan<char> namespaceName, string name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        public bool TryFindAttribute(string namespaceName, ReadOnlySpan<char> name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        public bool TryFindAttribute(string namespaceName, string name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => obj is XmlNode node && Equals(node);

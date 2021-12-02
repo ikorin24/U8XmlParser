@@ -119,6 +119,64 @@ namespace U8Xml
             return FindOrDefault(source, name.AsSpan());
         }
 
+        [SkipLocalsInit]
+        public unsafe static Option<XmlAttribute> FindOrDefault(this XmlAttributeList source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
+        {
+            var utf8 = Encoding.UTF8;
+            var nsNameByteLen = utf8.GetByteCount(namespaceName);
+            var nameByteLen = utf8.GetByteCount(name);
+            var byteLen = nsNameByteLen + nameByteLen;
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = namespaceName) {
+                    utf8.GetBytes(ptr, namespaceName.Length, buf, nsNameByteLen);
+                }
+                var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, nsNameByteLen);
+                fixed(char* ptr = name) {
+                    utf8.GetBytes(ptr, name.Length, buf + nsNameByteLen, nameByteLen);
+                }
+                var nameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf + nsNameByteLen, nameByteLen);
+                return FindOrDefault(source, nsNameUtf8, nameUtf8);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = namespaceName)
+                    fixed(char* ptr2 = name) {
+                        utf8.GetBytes(ptr, namespaceName.Length, buf, nsNameByteLen);
+                        var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, nsNameByteLen);
+                        utf8.GetBytes(ptr2, name.Length, buf + nsNameByteLen, nameByteLen);
+                        var nameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf + nsNameByteLen, nameByteLen);
+                        return FindOrDefault(source, nsNameUtf8, nameUtf8);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Option<XmlAttribute> FindOrDefault(this XmlAttributeList source, string namespaceName, ReadOnlySpan<char> name)
+        {
+            return FindOrDefault(source, namespaceName.AsSpan(), name);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Option<XmlAttribute> FindOrDefault(this XmlAttributeList source, ReadOnlySpan<char> namespaceName, string name)
+        {
+            return FindOrDefault(source, namespaceName, name.AsSpan());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Option<XmlAttribute> FindOrDefault(this XmlAttributeList source, string namespaceName, string name)
+        {
+            return FindOrDefault(source, namespaceName.AsSpan(), name.AsSpan());
+        }
+
         /// <summary>Find an attribute by name. Returns the first attribute found.</summary>
         /// <param name="source">source list to enumerate</param>
         /// <param name="name">attribute name to find</param>
@@ -140,6 +198,42 @@ namespace U8Xml
         public static XmlAttribute Find<TAttributes>(this TAttributes source, RawString name) where TAttributes : IEnumerable<XmlAttribute>
         {
             if(FindOrDefault(source, name).TryGetValue(out var attr) == false) {
+                ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
+            }
+            return attr;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static XmlAttribute Find(this XmlAttributeList source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
+        {
+            if(FindOrDefault(source, namespaceName, name).TryGetValue(out var attr) == false) {
+                ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
+            }
+            return attr;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static XmlAttribute Find(this XmlAttributeList source, ReadOnlySpan<byte> namespaceName, RawString name)
+        {
+            if(FindOrDefault(source, namespaceName, name).TryGetValue(out var attr) == false) {
+                ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
+            }
+            return attr;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static XmlAttribute Find(this XmlAttributeList source, RawString namespaceName, ReadOnlySpan<byte> name)
+        {
+            if(FindOrDefault(source, namespaceName, name).TryGetValue(out var attr) == false) {
+                ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
+            }
+            return attr;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static XmlAttribute Find(this XmlAttributeList source, RawString namespaceName, RawString name)
+        {
+            if(FindOrDefault(source, namespaceName, name).TryGetValue(out var attr) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
             }
             return attr;
@@ -172,6 +266,42 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static XmlAttribute Find(this XmlAttributeList source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
+        {
+            if(FindOrDefault(source, namespaceName, name).TryGetValue(out var attr) == false) {
+                ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
+            }
+            return attr;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static XmlAttribute Find(this XmlAttributeList source, ReadOnlySpan<char> namespaceName, string name)
+        {
+            if(FindOrDefault(source, namespaceName, name).TryGetValue(out var attr) == false) {
+                ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
+            }
+            return attr;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static XmlAttribute Find(this XmlAttributeList source, string namespaceName, ReadOnlySpan<char> name)
+        {
+            if(FindOrDefault(source, namespaceName, name).TryGetValue(out var attr) == false) {
+                ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
+            }
+            return attr;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static XmlAttribute Find(this XmlAttributeList source, string namespaceName, string name)
+        {
+            if(FindOrDefault(source, namespaceName, name).TryGetValue(out var attr) == false) {
+                ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
+            }
+            return attr;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryFind<TAttributes>(this TAttributes source, RawString name, out XmlAttribute attribute) where TAttributes : IEnumerable<XmlAttribute>
         {
             return FindOrDefault(source, name).TryGetValue(out attribute);
@@ -184,6 +314,30 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFind(this XmlAttributeList source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name, out XmlAttribute attribute)
+        {
+            return FindOrDefault(source, namespaceName, name).TryGetValue(out attribute);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFind(this XmlAttributeList source, ReadOnlySpan<byte> namespaceName, RawString name, out XmlAttribute attribute)
+        {
+            return FindOrDefault(source, namespaceName, name).TryGetValue(out attribute);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFind(this XmlAttributeList source, RawString namespaceName, ReadOnlySpan<byte> name, out XmlAttribute attribute)
+        {
+            return FindOrDefault(source, namespaceName, name).TryGetValue(out attribute);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFind(this XmlAttributeList source, RawString namespaceName, RawString name, out XmlAttribute attribute)
+        {
+            return FindOrDefault(source, namespaceName, name).TryGetValue(out attribute);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryFind<TAttributes>(this TAttributes source, string name, out XmlAttribute attribute) where TAttributes : IEnumerable<XmlAttribute>
         {
             return FindOrDefault(source, name).TryGetValue(out attribute);
@@ -193,6 +347,30 @@ namespace U8Xml
         public static bool TryFind<TAttributes>(this TAttributes source, ReadOnlySpan<char> name, out XmlAttribute attribute) where TAttributes : IEnumerable<XmlAttribute>
         {
             return FindOrDefault(source, name).TryGetValue(out attribute);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFind(this XmlAttributeList source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name, out XmlAttribute attribute)
+        {
+            return FindOrDefault(source, namespaceName, name).TryGetValue(out attribute);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFind(this XmlAttributeList source, ReadOnlySpan<char> namespaceName, string name, out XmlAttribute attribute)
+        {
+            return FindOrDefault(source, namespaceName, name).TryGetValue(out attribute);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFind(this XmlAttributeList source, string namespaceName, ReadOnlySpan<char> name, out XmlAttribute attribute)
+        {
+            return FindOrDefault(source, namespaceName, name).TryGetValue(out attribute);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryFind(this XmlAttributeList source, string namespaceName, string name, out XmlAttribute attribute)
+        {
+            return FindOrDefault(source, namespaceName, name).TryGetValue(out attribute);
         }
     }
 }
