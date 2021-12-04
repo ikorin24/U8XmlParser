@@ -335,47 +335,69 @@ namespace U8Xml
             return false;
         }
 
+        internal bool TryFindXmlnsRecursively(ReadOnlySpan<byte> alias, out RawString nsName)
+        {
+            var current = this;
+            while(true) {
+                if(current.TryFindXmlns(alias, out var nsn)) {
+                    nsName = nsn;
+                    return true;
+                }
+
+                if(current.TryGetParent(out current) == false) {
+                    nsName = RawString.Empty;
+                    return false;
+                }
+            }
+        }
+
         internal static bool TryResolveNamespaceAlias(ReadOnlySpan<byte> nsName, XmlNode node, out RawString alias)
         {
             const uint xmln = (byte)'x' + ((byte)'m' << 8) + ((byte)'l' << 16) + ((byte)'n' << 24);
 
-            var n = node;
+            var currentNode = node;
             while(true) {
-                if(n.HasXmlNamespaceAttr) {
-                    foreach(var attr in n.Attributes) {
+                if(currentNode.HasXmlNamespaceAttr) {
+                    foreach(var attr in currentNode.Attributes) {
                         var attrName = attr.Name;
                         if((attrName.Length >= 5) && (*(uint*)attrName.GetPtr() == xmln)
                                                   && (attrName.At(4) == (byte)'s')) {
                             if(attrName.Length == 5 && attr.Value == nsName) {
-
-                                var a = RawString.Empty;
-                                if(node.TryFindXmlns(a.AsSpan(), out var nsn) && nsn == nsName) {
-                                    alias = a;
-                                    return true;
-                                }
-
-                                //alias = RawString.Empty;
-                                //return true;
+                                // xmlns="[nsName]"
+                                return Validate(RawString.Empty, nsName, node, out alias);
                             }
                             else if(attrName.Length >= 7 && attrName[5] == (byte)':' && attr.Value == nsName) {
-
-                                var a = attrName.Slice(6);
-                                if(node.TryFindXmlns(a.AsSpan(), out var nsn) && nsn == nsName) {
-                                    alias = a;
-                                    return true;
-                                }
-
-                                //alias = attrName.Slice(6);
-                                //return true;
+                                // xmlns:[alias]=[nsName]
+                                return Validate(attrName.Slice(6), nsName, node, out alias);
                             }
                         }
                     }
                 }
-                if(n.TryGetParent(out n) == false) {
+                if(currentNode.TryGetParent(out currentNode) == false) {
                     alias = RawString.Empty;
                     return false;
                 }
             }
+
+            static bool Validate(RawString aliasToValidate, ReadOnlySpan<byte> nsName, XmlNode targetNode, out RawString alias)
+            {
+                if(targetNode.TryFindXmlnsRecursively(aliasToValidate.AsSpan(), out var nsn)) {
+                    if(nsn == nsName) {
+                        alias = aliasToValidate;
+                        return true;
+                    }
+                    else {
+                        alias = RawString.Empty;
+                        return false;
+                    }
+                }
+                else {
+                    Debug.Fail("Why are you getting here?");
+                    alias = RawString.Empty;
+                    return false;
+                }
+            }
+
         }
     }
 

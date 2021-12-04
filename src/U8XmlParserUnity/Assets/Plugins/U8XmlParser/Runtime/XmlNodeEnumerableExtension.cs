@@ -87,7 +87,6 @@ namespace U8Xml
                 var childName = child.Name;
                 if(childName.EndsWith(name)) {
                     if(XmlNode.TryResolveNamespaceAlias(namespaceName, child, out var nsAlias)) {
-
                         if(nsAlias.IsEmpty) {
                             if(childName.Length == name.Length) {
                                 return child;
@@ -102,44 +101,6 @@ namespace U8Xml
                 }
             }
             return Option<XmlNode>.Null;
-
-            // --------
-            //if(source.Parent.TryGetValue(out var parent) == false) {
-            //    return Option<XmlNode>.Null;
-            //}
-            //if(XmlNode.TryResolveNamespaceAlias(namespaceName, parent, out var nsAlias) == false) {
-            //    return Option<XmlNode>.Null;
-            //}
-            //if(nsAlias.IsEmpty) {
-            //    foreach(var child in source) {
-            //        if(child.Name == name) {
-            //            if(child.TryFindXmlns(nsAlias.AsSpan(), out var nsNameActual) == false) {
-            //                return child;
-            //            }
-            //            if(nsNameActual == namespaceName) {
-            //                return child;
-            //            }
-            //        }
-            //    }
-            //}
-            //else {
-            //    var fullNameLength = nsAlias.Length + 1 + name.Length;
-            //    foreach(var child in source) {
-            //        var childName = child.Name;
-            //        if(childName.Length == fullNameLength && childName.StartsWith(nsAlias)
-            //                                              && childName.At(nsAlias.Length) == (byte)':'
-            //                                              && childName.Slice(nsAlias.Length + 1) == name) {
-
-            //            if(child.TryFindXmlns(nsAlias.AsSpan(), out var nsNameActual) == false) {
-            //                return child;
-            //            }
-            //            if(nsNameActual == namespaceName) {
-            //                return child;
-            //            }
-            //        }
-            //    }
-            //}
-            //return Option<XmlNode>.Null;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
