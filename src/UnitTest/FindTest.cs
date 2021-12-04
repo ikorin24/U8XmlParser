@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Text;
 using U8Xml;
 using Xunit;
 
@@ -21,76 +22,268 @@ namespace UnitTest
 </foo>";
 
         [Fact]
-        public void FindChild()
+        public void Test_FindChild()
         {
             using var xml = XmlParser.Parse(SampleXml1);
             var root = xml.Root;
 
-            root.FindChild("test_b", "bar").InnerText.ToInt32().ShouldBe(1);
-            root.FindChild("test_a2", "hoge").InnerText.ToInt32().ShouldBe(2);
-            root.FindChild("test_a", "hoge").InnerText.ToInt32().ShouldBe(3);
-            root.FindChild("test_b2", "piyo").InnerText.ToInt32().ShouldBe(4);
+            CheckInnerValue_FindChild(root, "test_b", "bar", 1);
+            CheckInnerValue_FindChild(root, "test_a2", "hoge", 2);
+            CheckInnerValue_FindChild(root, "test_a", "hoge", 3);
+            CheckInnerValue_FindChild(root, "test_b2", "piyo", 4);
 
-            root.FindChild("aaa")
-                .FindChild("bbb")
-                .FindChild("test_b", "ccc").InnerText.ToInt32().ShouldBe(5);
+            var bbb = root.FindChild("aaa").FindChild("bbb");
+            CheckInnerValue_FindChild(bbb, "test_b", "ccc", 5);
 
-            Assert.Throws<InvalidOperationException>(() => root.FindChild("xxxx", "xxxx"));
-            Assert.Throws<InvalidOperationException>(() => root.FindChild("xxxx"));
+            //CheckThrow_FindChild<InvalidOperationException>(root, "xxxx", "xxxx");
+
+            Assert.Throws<InvalidOperationException>(() => root.FindChild((string?)null!));
         }
 
         [Fact]
-        public void FindChildOrDefault()
+        public void Test_FindChildOrDefault()
         {
             using var xml = XmlParser.Parse(SampleXml1);
             var root = xml.Root;
 
-            root.FindChildOrDefault("test_b", "bar").Value.InnerText.ToInt32().ShouldBe(1);
-            root.FindChildOrDefault("test_a2", "hoge").Value.InnerText.ToInt32().ShouldBe(2);
-            root.FindChildOrDefault("test_a", "hoge").Value.InnerText.ToInt32().ShouldBe(3);
-            root.FindChildOrDefault("test_b2", "piyo").Value.InnerText.ToInt32().ShouldBe(4);
+            CheckInnerValue_FindChildOrDefault(root, "test_b", "bar", 1);
+            CheckInnerValue_FindChildOrDefault(root, "test_a2", "hoge", 2);
+            CheckInnerValue_FindChildOrDefault(root, "test_a", "hoge", 3);
+            CheckInnerValue_FindChildOrDefault(root, "test_b2", "piyo", 4);
 
-            root.FindChildOrDefault("aaa").Value
-                .FindChildOrDefault("bbb").Value
-                .FindChildOrDefault("test_b", "ccc").Value.InnerText.ToInt32().ShouldBe(5);
+            var bbb = root.FindChild("aaa").FindChild("bbb");
+            CheckInnerValue_FindChildOrDefault(bbb, "test_b", "ccc", 5);
 
-            root.FindChildOrDefault("xxxx", "xxxx").HasValue.ShouldBe(false);
-            root.FindChildOrDefault("xxxx").HasValue.ShouldBe(false);
+            CheckNotFound_FindChildOrDefault(root, "xxxx", "xxxx");
         }
 
         [Fact]
-        public void TryFindChild()
+        public void Test_TryFindChild()
         {
             using var xml = XmlParser.Parse(SampleXml1);
             var root = xml.Root;
 
-            {
-                root.TryFindChild("test_b", "bar", out var value).ShouldBe(true);
-                value.InnerText.ToInt32().ShouldBe(1);
+            CheckInnerValue_TryFindChild(root, "test_b", "bar", 1);
+            CheckInnerValue_TryFindChild(root, "test_a2", "hoge", 2);
+            CheckInnerValue_TryFindChild(root, "test_a", "hoge", 3);
+            CheckInnerValue_TryFindChild(root, "test_b2", "piyo", 4);
+
+            var bbb = root.FindChild("aaa").FindChild("bbb");
+            CheckInnerValue_TryFindChild(bbb, "test_b", "ccc", 5);
+
+            CheckNotFound_TryFindChild(root, "xxxx", "xxxx");
+            //CheckNotFound_TryFindChild(root, "", "");
+        }
+
+        private static unsafe void CheckInnerValue_FindChild(XmlNode target, string? nsName, string? name, int innerValue)
+        {
+            var nodeName = new NodeName(nsName, name);
+
+            target.FindChild(nodeName.NsName!, nodeName.Name!).InnerText.ToInt32().ShouldBe(innerValue);
+            target.FindChild(nodeName.NsName!, nodeName.Name_ROSchar).InnerText.ToInt32().ShouldBe(innerValue);
+            target.FindChild(nodeName.NsName_ROSchar, nodeName.Name!).InnerText.ToInt32().ShouldBe(innerValue);
+            target.FindChild(nodeName.NsName_ROSchar, nodeName.Name_ROSchar).InnerText.ToInt32().ShouldBe(innerValue);
+
+            var nsName_ROSbyte = nodeName.NsName_ROSbyte;
+            var name_ROSbyte = nodeName.Name_ROSbyte;
+            fixed(byte* p = nsName_ROSbyte) {
+                fixed(byte* p2 = name_ROSbyte) {
+                    var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
+                    var name_RS = new RawString(p2, name_ROSbyte.Length);
+
+                    target.FindChild(nsName_ROSbyte, name_ROSbyte).InnerText.ToInt32().ShouldBe(innerValue);
+                    target.FindChild(nsName_ROSbyte, name_RS).InnerText.ToInt32().ShouldBe(innerValue);
+                    target.FindChild(nsName_RS, name_ROSbyte).InnerText.ToInt32().ShouldBe(innerValue);
+                    target.FindChild(nsName_RS, name_RS).InnerText.ToInt32().ShouldBe(innerValue);
+                }
             }
-            {
-                root.TryFindChild("test_a2", "hoge", out var value).ShouldBe(true);
-                value.InnerText.ToInt32().ShouldBe(2);
+        }
+
+        private static unsafe void CheckThrow_FindChild<TException>(XmlNode target, string? nsName, string? name) where TException : Exception
+        {
+            var nodeName = new NodeName(nsName, name);
+
+            Assert.Throws<TException>(() => target.FindChild(nodeName.NsName!, nodeName.Name!));
+            Assert.Throws<TException>(() => target.FindChild(nodeName.NsName!, nodeName.Name_ROSchar));
+            Assert.Throws<TException>(() => target.FindChild(nodeName.NsName_ROSchar, nodeName.Name!));
+            Assert.Throws<TException>(() => target.FindChild(nodeName.NsName_ROSchar, nodeName.Name_ROSchar));
+
+            var nsName_ROSbyte = nodeName.NsName_ROSbyte;
+            var name_ROSbyte = nodeName.Name_ROSbyte;
+            fixed(byte* p = nsName_ROSbyte) {
+                fixed(byte* p2 = name_ROSbyte) {
+                    var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
+                    var name_RS = new RawString(p2, name_ROSbyte.Length);
+
+                    Assert.Throws<TException>(() =>
+                    {
+                        target.FindChild(nodeName.NsName_ROSbyte, nodeName.Name_ROSbyte);
+                    });
+                    Assert.Throws<TException>(() =>
+                    {
+                        target.FindChild(nodeName.NsName_ROSbyte, name_RS);
+                    });
+                    Assert.Throws<TException>(() =>
+                    {
+                        target.FindChild(nsName_RS, nodeName.Name_ROSbyte);
+                    });
+                    Assert.Throws<TException>(() =>
+                    {
+                        target.FindChild(nsName_RS, name_RS);
+                    });
+                }
             }
-            {
-                root.TryFindChild("test_a", "hoge", out var value).ShouldBe(true);
-                value.InnerText.ToInt32().ShouldBe(3);
-            }
-            {
-                root.TryFindChild("test_b2", "piyo", out var value).ShouldBe(true);
-                value.InnerText.ToInt32().ShouldBe(4);
-            }
-            {
-                root.TryFindChild("aaa", out var node1).ShouldBe(true);
-                node1.TryFindChild("bbb", out var node2).ShouldBe(true);
-                node2.TryFindChild("test_b", "ccc", out var node3).ShouldBe(true);
-                node3.InnerText.ToInt32().ShouldBe(5);
-            }
+        }
+
+        private static unsafe void CheckInnerValue_FindChildOrDefault(XmlNode target, string? nsName, string? name, int innerValue)
+        {
+            var nodeName = new NodeName(nsName, name);
+
+            target.FindChildOrDefault(nodeName.NsName!, nodeName.Name!)
+                .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+            target.FindChildOrDefault(nodeName.NsName!, nodeName.Name_ROSchar)
+                .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+            target.FindChildOrDefault(nodeName.NsName_ROSchar, nodeName.Name!)
+                .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+            target.FindChildOrDefault(nodeName.NsName_ROSchar, nodeName.Name_ROSchar)
+                .Value.InnerText.ToInt32().ShouldBe(innerValue);
 
 
+            var nsName_ROSbyte = nodeName.NsName_ROSbyte;
+            var name_ROSbyte = nodeName.Name_ROSbyte;
+            fixed(byte* p = nsName_ROSbyte) {
+                fixed(byte* p2 = name_ROSbyte) {
+                    var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
+                    var name_RS = new RawString(p2, name_ROSbyte.Length);
+
+                    target.FindChildOrDefault(nsName_ROSbyte, name_ROSbyte)
+                        .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+                    target.FindChildOrDefault(nsName_ROSbyte, name_RS)
+                        .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+                    target.FindChildOrDefault(nsName_RS, name_ROSbyte)
+                        .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+                    target.FindChildOrDefault(nsName_RS, name_RS)
+                        .Value.InnerText.ToInt32().ShouldBe(innerValue);
+                }
+            }
+        }
+
+        private static unsafe void CheckNotFound_FindChildOrDefault(XmlNode target, string? nsName, string? name)
+        {
+            var nodeName = new NodeName(nsName, name);
+
+            target.FindChildOrDefault(nodeName.NsName!, nodeName.Name!).HasValue.ShouldBe(false);
+            target.FindChildOrDefault(nodeName.NsName!, nodeName.Name_ROSchar).HasValue.ShouldBe(false);
+            target.FindChildOrDefault(nodeName.NsName_ROSchar, nodeName.Name!).HasValue.ShouldBe(false);
+            target.FindChildOrDefault(nodeName.NsName_ROSchar, nodeName.Name_ROSchar).HasValue.ShouldBe(false);
+
+            var nsName_ROSbyte = nodeName.NsName_ROSbyte;
+            var name_ROSbyte = nodeName.Name_ROSbyte;
+            fixed(byte* p = nsName_ROSbyte) {
+                fixed(byte* p2 = name_ROSbyte) {
+                    var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
+                    var name_RS = new RawString(p2, name_ROSbyte.Length);
+
+                    target.FindChildOrDefault(nsName_ROSbyte, name_ROSbyte).HasValue.ShouldBe(false);
+                    target.FindChildOrDefault(nsName_ROSbyte, name_RS).HasValue.ShouldBe(false);
+                    target.FindChildOrDefault(nsName_RS, name_ROSbyte).HasValue.ShouldBe(false);
+                    target.FindChildOrDefault(nsName_RS, name_RS).HasValue.ShouldBe(false);
+                }
+            }
+        }
+
+        private static unsafe void CheckInnerValue_TryFindChild(XmlNode target, string? nsName, string? name, int innerValue)
+        {
+            var nodeName = new NodeName(nsName, name);
+
             {
-                root.TryFindChild("xxxx", "xxxx", out _).ShouldBe(false);
-                root.TryFindChild("xxxx", out _).ShouldBe(false);
+                target.TryFindChild(nodeName.NsName!, nodeName.Name!, out var value).ShouldBe(true);
+                value.InnerText.ToInt32().ShouldBe(innerValue);
+            }
+            {
+                target.TryFindChild(nodeName.NsName!, nodeName.Name_ROSchar, out var value).ShouldBe(true);
+                value.InnerText.ToInt32().ShouldBe(innerValue);
+            }
+            {
+                target.TryFindChild(nodeName.NsName_ROSchar, nodeName.Name!, out var value).ShouldBe(true);
+                value.InnerText.ToInt32().ShouldBe(innerValue);
+            }
+            {
+                target.TryFindChild(nodeName.NsName_ROSchar, nodeName.Name_ROSchar, out var value).ShouldBe(true);
+                value.InnerText.ToInt32().ShouldBe(innerValue);
+            }
+
+            var nsName_ROSbyte = nodeName.NsName_ROSbyte;
+            var name_ROSbyte = nodeName.Name_ROSbyte;
+            fixed(byte* p = nsName_ROSbyte) {
+                fixed(byte* p2 = name_ROSbyte) {
+                    var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
+                    var name_RS = new RawString(p2, name_ROSbyte.Length);
+
+                    {
+                        target.TryFindChild(nsName_ROSbyte, name_ROSbyte, out var value).ShouldBe(true);
+                        value.InnerText.ToInt32().ShouldBe(innerValue);
+                    }
+                    {
+                        target.TryFindChild(nsName_ROSbyte, name_RS, out var value).ShouldBe(true);
+                        value.InnerText.ToInt32().ShouldBe(innerValue);
+                    }
+                    {
+                        target.TryFindChild(nsName_RS, name_ROSbyte, out var value).ShouldBe(true);
+                        value.InnerText.ToInt32().ShouldBe(innerValue);
+                    }
+                    {
+                        target.TryFindChild(nsName_RS, name_RS, out var value).ShouldBe(true);
+                        value.InnerText.ToInt32().ShouldBe(innerValue);
+                    }
+                }
+            }
+        }
+
+        private static unsafe void CheckNotFound_TryFindChild(XmlNode target, string? nsName, string? name)
+        {
+            var nodeName = new NodeName(nsName, name);
+
+            target.TryFindChild(nodeName.NsName!, nodeName.Name!, out _).ShouldBe(false);
+            target.TryFindChild(nodeName.NsName!, nodeName.Name_ROSchar, out _).ShouldBe(false);
+            target.TryFindChild(nodeName.NsName_ROSchar, nodeName.Name!, out _).ShouldBe(false);
+            target.TryFindChild(nodeName.NsName_ROSchar, nodeName.Name_ROSchar, out _).ShouldBe(false);
+
+            var nsName_ROSbyte = nodeName.NsName_ROSbyte;
+            var name_ROSbyte = nodeName.Name_ROSbyte;
+            fixed(byte* p = nsName_ROSbyte) {
+                fixed(byte* p2 = name_ROSbyte) {
+                    var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
+                    var name_RS = new RawString(p2, name_ROSbyte.Length);
+
+                    target.TryFindChild(nsName_ROSbyte, name_ROSbyte, out _).ShouldBe(false);
+                    target.TryFindChild(nsName_ROSbyte, name_RS, out _).ShouldBe(false);
+                    target.TryFindChild(nsName_RS, name_ROSbyte, out _).ShouldBe(false);
+                    target.TryFindChild(nsName_RS, name_RS, out _).ShouldBe(false);
+                }
+            }
+        }
+
+        internal class NodeName
+        {
+            public string? NsName { get; }
+            public string? Name { get; }
+
+            public ReadOnlySpan<char> NsName_ROSchar => NsName.AsSpan();
+            public ReadOnlySpan<byte> NsName_ROSbyte => Encoding.UTF8.GetBytes(NsName?.ToCharArray() ?? Array.Empty<char>());
+            public ReadOnlySpan<char> Name_ROSchar => Name.AsSpan();
+            public ReadOnlySpan<byte> Name_ROSbyte => Encoding.UTF8.GetBytes(Name?.ToCharArray() ?? Array.Empty<char>());
+
+            public NodeName(string? nsName, string? name)
+            {
+                NsName = nsName;
+                Name = name;
             }
         }
     }
