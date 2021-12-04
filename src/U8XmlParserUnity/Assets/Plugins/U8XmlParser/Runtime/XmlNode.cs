@@ -304,6 +304,18 @@ namespace U8Xml
 
         /// <inheritdoc/>
         public override string ToString() => _node != IntPtr.Zero ? ((XmlNode_*)_node)->Name.ToString() : "";
+
+        /// <summary>Returns true if both <see cref="XmlNode"/>s are same objects.</summary>
+        /// <param name="left">left operand</param>
+        /// <param name="right">right operand</param>
+        /// <returns>true if both <see cref="XmlNode"/>s are same objects</returns>
+        public static bool operator ==(XmlNode left, XmlNode right) => left.Equals(right);
+
+        /// <summary>Returns true if both <see cref="XmlNode"/>s are not same objects.</summary>
+        /// <param name="left">left operand</param>
+        /// <param name="right">right operand</param>
+        /// <returns>true if both <see cref="XmlNode"/>s are not same objects</returns>
+        public static bool operator !=(XmlNode left, XmlNode right) => !(left == right);
     }
 
     [DebuggerDisplay("{ToString(),nq}")]

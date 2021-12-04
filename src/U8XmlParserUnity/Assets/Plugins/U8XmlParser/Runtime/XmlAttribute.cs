@@ -20,6 +20,8 @@ namespace U8Xml
         /// <summary>Get attribute value</summary>
         public ref readonly RawString Value => ref ((XmlAttribute_*)_attr)->Value;
 
+        internal Option<XmlNode> Node => ((XmlAttribute_*)_attr)->Node;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlAttribute(XmlAttribute_* attr) => _attr = (IntPtr)attr;
 
@@ -59,11 +61,17 @@ namespace U8Xml
         /// <summary>Attribute value</summary>
         public readonly RawString Value;
 
+        public readonly Option<XmlNode> Node;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public XmlAttribute_(RawString name, RawString value)
+        public XmlAttribute_(RawString name, RawString value, XmlNode_* node)
         {
+            // [NOTE]
+            // 'node' is null when the attribute is belonging to the xml declaration.
+
             Name = name;
             Value = value;
+            Node = new XmlNode(node);
         }
 
         public override string ToString() => $"{Name.ToString()}=\"{Value.ToString()}\"";
