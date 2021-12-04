@@ -6,7 +6,7 @@ using Xunit;
 
 namespace UnitTest
 {
-    public class FindTest
+    public class FindTestChild
     {
         private const string SampleXml1 =
 @"<foo xmlns='test_a' xmlns:b='test_b'>
