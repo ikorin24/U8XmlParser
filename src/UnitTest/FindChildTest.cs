@@ -42,6 +42,15 @@ namespace UnitTest
         }
 
         [Fact]
+        public void Test_FindChild2()
+        {
+            using var xml = XmlParser.Parse(SampleXml1);
+            var root = xml.Root;
+
+            root.Children.Find("test_b", "bar").InnerText.ToInt32().ShouldBe(1);
+        }
+
+        [Fact]
         public void Test_FindChildOrDefault()
         {
             using var xml = XmlParser.Parse(SampleXml1);
@@ -90,6 +99,11 @@ namespace UnitTest
             target.FindChild(nodeName.NsName_ROSchar, nodeName.Name!).InnerText.ToInt32().ShouldBe(innerValue);
             target.FindChild(nodeName.NsName_ROSchar, nodeName.Name_ROSchar).InnerText.ToInt32().ShouldBe(innerValue);
 
+            target.Children.Find(nodeName.NsName!, nodeName.Name!).InnerText.ToInt32().ShouldBe(innerValue);
+            target.Children.Find(nodeName.NsName!, nodeName.Name_ROSchar).InnerText.ToInt32().ShouldBe(innerValue);
+            target.Children.Find(nodeName.NsName_ROSchar, nodeName.Name!).InnerText.ToInt32().ShouldBe(innerValue);
+            target.Children.Find(nodeName.NsName_ROSchar, nodeName.Name_ROSchar).InnerText.ToInt32().ShouldBe(innerValue);
+
             var nsName_ROSbyte = nodeName.NsName_ROSbyte;
             var name_ROSbyte = nodeName.Name_ROSbyte;
             fixed(byte* p = nsName_ROSbyte) {
@@ -101,6 +115,11 @@ namespace UnitTest
                     target.FindChild(nsName_ROSbyte, name_RS).InnerText.ToInt32().ShouldBe(innerValue);
                     target.FindChild(nsName_RS, name_ROSbyte).InnerText.ToInt32().ShouldBe(innerValue);
                     target.FindChild(nsName_RS, name_RS).InnerText.ToInt32().ShouldBe(innerValue);
+
+                    target.Children.Find(nsName_ROSbyte, name_ROSbyte).InnerText.ToInt32().ShouldBe(innerValue);
+                    target.Children.Find(nsName_ROSbyte, name_RS).InnerText.ToInt32().ShouldBe(innerValue);
+                    target.Children.Find(nsName_RS, name_ROSbyte).InnerText.ToInt32().ShouldBe(innerValue);
+                    target.Children.Find(nsName_RS, name_RS).InnerText.ToInt32().ShouldBe(innerValue);
                 }
             }
         }
@@ -114,6 +133,11 @@ namespace UnitTest
             Assert.Throws<TException>(() => target.FindChild(nodeName.NsName_ROSchar, nodeName.Name!));
             Assert.Throws<TException>(() => target.FindChild(nodeName.NsName_ROSchar, nodeName.Name_ROSchar));
 
+            Assert.Throws<TException>(() => target.Children.Find(nodeName.NsName!, nodeName.Name!));
+            Assert.Throws<TException>(() => target.Children.Find(nodeName.NsName!, nodeName.Name_ROSchar));
+            Assert.Throws<TException>(() => target.Children.Find(nodeName.NsName_ROSchar, nodeName.Name!));
+            Assert.Throws<TException>(() => target.Children.Find(nodeName.NsName_ROSchar, nodeName.Name_ROSchar));
+
             var nsName_ROSbyte = nodeName.NsName_ROSbyte;
             var name_ROSbyte = nodeName.Name_ROSbyte;
             fixed(byte* p = nsName_ROSbyte) {
@@ -121,22 +145,15 @@ namespace UnitTest
                     var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
                     var name_RS = new RawString(p2, name_ROSbyte.Length);
 
-                    Assert.Throws<TException>(() =>
-                    {
-                        target.FindChild(nodeName.NsName_ROSbyte, nodeName.Name_ROSbyte);
-                    });
-                    Assert.Throws<TException>(() =>
-                    {
-                        target.FindChild(nodeName.NsName_ROSbyte, name_RS);
-                    });
-                    Assert.Throws<TException>(() =>
-                    {
-                        target.FindChild(nsName_RS, nodeName.Name_ROSbyte);
-                    });
-                    Assert.Throws<TException>(() =>
-                    {
-                        target.FindChild(nsName_RS, name_RS);
-                    });
+                    Assert.Throws<TException>(() => target.FindChild(nodeName.NsName_ROSbyte, nodeName.Name_ROSbyte));
+                    Assert.Throws<TException>(() => target.FindChild(nodeName.NsName_ROSbyte, name_RS));
+                    Assert.Throws<TException>(() => target.FindChild(nsName_RS, nodeName.Name_ROSbyte));
+                    Assert.Throws<TException>(() => target.FindChild(nsName_RS, name_RS));
+
+                    Assert.Throws<TException>(() => target.Children.Find(nodeName.NsName_ROSbyte, nodeName.Name_ROSbyte));
+                    Assert.Throws<TException>(() => target.Children.Find(nodeName.NsName_ROSbyte, name_RS));
+                    Assert.Throws<TException>(() => target.Children.Find(nsName_RS, nodeName.Name_ROSbyte));
+                    Assert.Throws<TException>(() => target.Children.Find(nsName_RS, name_RS));
                 }
             }
         }
@@ -158,6 +175,19 @@ namespace UnitTest
                 .Value.InnerText.ToInt32().ShouldBe(innerValue);
 
 
+            target.Children.FindOrDefault(nodeName.NsName!, nodeName.Name!)
+                .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+            target.Children.FindOrDefault(nodeName.NsName!, nodeName.Name_ROSchar)
+                .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+            target.Children.FindOrDefault(nodeName.NsName_ROSchar, nodeName.Name!)
+                .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+            target.Children.FindOrDefault(nodeName.NsName_ROSchar, nodeName.Name_ROSchar)
+                .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+
             var nsName_ROSbyte = nodeName.NsName_ROSbyte;
             var name_ROSbyte = nodeName.Name_ROSbyte;
             fixed(byte* p = nsName_ROSbyte) {
@@ -176,6 +206,19 @@ namespace UnitTest
 
                     target.FindChildOrDefault(nsName_RS, name_RS)
                         .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+
+                    target.Children.FindOrDefault(nsName_ROSbyte, name_ROSbyte)
+                        .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+                    target.Children.FindOrDefault(nsName_ROSbyte, name_RS)
+                        .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+                    target.Children.FindOrDefault(nsName_RS, name_ROSbyte)
+                        .Value.InnerText.ToInt32().ShouldBe(innerValue);
+
+                    target.Children.FindOrDefault(nsName_RS, name_RS)
+                        .Value.InnerText.ToInt32().ShouldBe(innerValue);
                 }
             }
         }
@@ -189,6 +232,11 @@ namespace UnitTest
             target.FindChildOrDefault(nodeName.NsName_ROSchar, nodeName.Name!).HasValue.ShouldBe(false);
             target.FindChildOrDefault(nodeName.NsName_ROSchar, nodeName.Name_ROSchar).HasValue.ShouldBe(false);
 
+            target.Children.FindOrDefault(nodeName.NsName!, nodeName.Name!).HasValue.ShouldBe(false);
+            target.Children.FindOrDefault(nodeName.NsName!, nodeName.Name_ROSchar).HasValue.ShouldBe(false);
+            target.Children.FindOrDefault(nodeName.NsName_ROSchar, nodeName.Name!).HasValue.ShouldBe(false);
+            target.Children.FindOrDefault(nodeName.NsName_ROSchar, nodeName.Name_ROSchar).HasValue.ShouldBe(false);
+
             var nsName_ROSbyte = nodeName.NsName_ROSbyte;
             var name_ROSbyte = nodeName.Name_ROSbyte;
             fixed(byte* p = nsName_ROSbyte) {
@@ -200,6 +248,11 @@ namespace UnitTest
                     target.FindChildOrDefault(nsName_ROSbyte, name_RS).HasValue.ShouldBe(false);
                     target.FindChildOrDefault(nsName_RS, name_ROSbyte).HasValue.ShouldBe(false);
                     target.FindChildOrDefault(nsName_RS, name_RS).HasValue.ShouldBe(false);
+
+                    target.Children.FindOrDefault(nsName_ROSbyte, name_ROSbyte).HasValue.ShouldBe(false);
+                    target.Children.FindOrDefault(nsName_ROSbyte, name_RS).HasValue.ShouldBe(false);
+                    target.Children.FindOrDefault(nsName_RS, name_ROSbyte).HasValue.ShouldBe(false);
+                    target.Children.FindOrDefault(nsName_RS, name_RS).HasValue.ShouldBe(false);
                 }
             }
         }
@@ -222,6 +275,23 @@ namespace UnitTest
             }
             {
                 target.TryFindChild(nodeName.NsName_ROSchar, nodeName.Name_ROSchar, out var value).ShouldBe(true);
+                value.InnerText.ToInt32().ShouldBe(innerValue);
+            }
+
+            {
+                target.Children.TryFind(nodeName.NsName!, nodeName.Name!, out var value).ShouldBe(true);
+                value.InnerText.ToInt32().ShouldBe(innerValue);
+            }
+            {
+                target.Children.TryFind(nodeName.NsName!, nodeName.Name_ROSchar, out var value).ShouldBe(true);
+                value.InnerText.ToInt32().ShouldBe(innerValue);
+            }
+            {
+                target.Children.TryFind(nodeName.NsName_ROSchar, nodeName.Name!, out var value).ShouldBe(true);
+                value.InnerText.ToInt32().ShouldBe(innerValue);
+            }
+            {
+                target.Children.TryFind(nodeName.NsName_ROSchar, nodeName.Name_ROSchar, out var value).ShouldBe(true);
                 value.InnerText.ToInt32().ShouldBe(innerValue);
             }
 
@@ -248,6 +318,23 @@ namespace UnitTest
                         target.TryFindChild(nsName_RS, name_RS, out var value).ShouldBe(true);
                         value.InnerText.ToInt32().ShouldBe(innerValue);
                     }
+
+                    {
+                        target.Children.TryFind(nsName_ROSbyte, name_ROSbyte, out var value).ShouldBe(true);
+                        value.InnerText.ToInt32().ShouldBe(innerValue);
+                    }
+                    {
+                        target.Children.TryFind(nsName_ROSbyte, name_RS, out var value).ShouldBe(true);
+                        value.InnerText.ToInt32().ShouldBe(innerValue);
+                    }
+                    {
+                        target.Children.TryFind(nsName_RS, name_ROSbyte, out var value).ShouldBe(true);
+                        value.InnerText.ToInt32().ShouldBe(innerValue);
+                    }
+                    {
+                        target.Children.TryFind(nsName_RS, name_RS, out var value).ShouldBe(true);
+                        value.InnerText.ToInt32().ShouldBe(innerValue);
+                    }
                 }
             }
         }
@@ -261,6 +348,11 @@ namespace UnitTest
             target.TryFindChild(nodeName.NsName_ROSchar, nodeName.Name!, out _).ShouldBe(false);
             target.TryFindChild(nodeName.NsName_ROSchar, nodeName.Name_ROSchar, out _).ShouldBe(false);
 
+            target.Children.TryFind(nodeName.NsName!, nodeName.Name!, out _).ShouldBe(false);
+            target.Children.TryFind(nodeName.NsName!, nodeName.Name_ROSchar, out _).ShouldBe(false);
+            target.Children.TryFind(nodeName.NsName_ROSchar, nodeName.Name!, out _).ShouldBe(false);
+            target.Children.TryFind(nodeName.NsName_ROSchar, nodeName.Name_ROSchar, out _).ShouldBe(false);
+
             var nsName_ROSbyte = nodeName.NsName_ROSbyte;
             var name_ROSbyte = nodeName.Name_ROSbyte;
             fixed(byte* p = nsName_ROSbyte) {
@@ -272,6 +364,11 @@ namespace UnitTest
                     target.TryFindChild(nsName_ROSbyte, name_RS, out _).ShouldBe(false);
                     target.TryFindChild(nsName_RS, name_ROSbyte, out _).ShouldBe(false);
                     target.TryFindChild(nsName_RS, name_RS, out _).ShouldBe(false);
+
+                    target.Children.TryFind(nsName_ROSbyte, name_ROSbyte, out _).ShouldBe(false);
+                    target.Children.TryFind(nsName_ROSbyte, name_RS, out _).ShouldBe(false);
+                    target.Children.TryFind(nsName_RS, name_ROSbyte, out _).ShouldBe(false);
+                    target.Children.TryFind(nsName_RS, name_RS, out _).ShouldBe(false);
                 }
             }
         }
