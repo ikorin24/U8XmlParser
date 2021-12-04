@@ -35,9 +35,10 @@ namespace UnitTest
             var bbb = root.FindChild("aaa").FindChild("bbb");
             CheckInnerValue_FindChild(bbb, "test_b", "ccc", 5);
 
-            //CheckThrow_FindChild<InvalidOperationException>(root, "xxxx", "xxxx");
-
-            Assert.Throws<InvalidOperationException>(() => root.FindChild((string?)null!));
+            CheckThrow_FindChild<InvalidOperationException>(root, "xxxx", "xxxx");
+            CheckThrow_FindChild<InvalidOperationException>(root, "xxxx", null);
+            CheckThrow_FindChild<InvalidOperationException>(root, null, "xxxx");
+            CheckThrow_FindChild<InvalidOperationException>(root, null, null);
         }
 
         [Fact]
@@ -55,6 +56,9 @@ namespace UnitTest
             CheckInnerValue_FindChildOrDefault(bbb, "test_b", "ccc", 5);
 
             CheckNotFound_FindChildOrDefault(root, "xxxx", "xxxx");
+            CheckNotFound_FindChildOrDefault(root, "xxxx", null);
+            CheckNotFound_FindChildOrDefault(root, null, "xxxx");
+            CheckNotFound_FindChildOrDefault(root, null, null);
         }
 
         [Fact]
@@ -72,7 +76,9 @@ namespace UnitTest
             CheckInnerValue_TryFindChild(bbb, "test_b", "ccc", 5);
 
             CheckNotFound_TryFindChild(root, "xxxx", "xxxx");
-            //CheckNotFound_TryFindChild(root, "", "");
+            CheckNotFound_TryFindChild(root, "xxxx", null);
+            CheckNotFound_TryFindChild(root, null, "xxxx");
+            CheckNotFound_TryFindChild(root, null, null);
         }
 
         private static unsafe void CheckInnerValue_FindChild(XmlNode target, string? nsName, string? name, int innerValue)

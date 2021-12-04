@@ -43,6 +43,10 @@ namespace U8Xml
         /// <returns>a found node as <see cref="Option{T}"/></returns>
         public unsafe static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, ReadOnlySpan<char> name) where TNodes : IEnumerable<XmlNode>
         {
+            if(name.IsEmpty) {
+                return Option<XmlNode>.Null;
+            }
+
             var utf8 = Encoding.UTF8;
             var byteLen = utf8.GetByteCount(name);
 
@@ -115,6 +119,10 @@ namespace U8Xml
         [SkipLocalsInit]
         public unsafe static Option<XmlNode> FindOrDefault(this XmlNodeList source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
         {
+            if(namespaceName.IsEmpty || name.IsEmpty) {
+                return Option<XmlNode>.Null;
+            }
+
             var utf8 = Encoding.UTF8;
             var nsNameByteLen = utf8.GetByteCount(namespaceName);
             var nameByteLen = utf8.GetByteCount(name);

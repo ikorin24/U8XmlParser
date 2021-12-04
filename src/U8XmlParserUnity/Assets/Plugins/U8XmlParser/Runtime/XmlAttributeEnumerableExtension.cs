@@ -81,6 +81,10 @@ namespace U8Xml
         /// <returns>a found attribute as <see cref="Option{T}"/></returns>
         public unsafe static Option<XmlAttribute> FindOrDefault<TAttributes>(this TAttributes source, ReadOnlySpan<char> name) where TAttributes : IEnumerable<XmlAttribute>
         {
+            if(name.IsEmpty) {
+                return Option<XmlAttribute>.Null;
+            }
+
             var utf8 = Encoding.UTF8;
             var byteLen = utf8.GetByteCount(name);
 
@@ -122,6 +126,10 @@ namespace U8Xml
         [SkipLocalsInit]
         public unsafe static Option<XmlAttribute> FindOrDefault(this XmlAttributeList source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
         {
+            if(namespaceName.IsEmpty || name.IsEmpty) {
+                return Option<XmlAttribute>.Null;
+            }
+
             var utf8 = Encoding.UTF8;
             var nsNameByteLen = utf8.GetByteCount(namespaceName);
             var nameByteLen = utf8.GetByteCount(name);
