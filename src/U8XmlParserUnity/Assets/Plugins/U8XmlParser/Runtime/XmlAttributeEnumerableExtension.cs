@@ -39,7 +39,7 @@ namespace U8Xml
 
         public static Option<XmlAttribute> FindOrDefault(this XmlAttributeList source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
         {
-            if(XmlNode.TryResolveNamespaceAlias(namespaceName, source.Node, out var nsAlias) == false) {
+            if(XmlnsHelper.TryResolveNamespaceAlias(namespaceName, source.Node, out var nsAlias) == false) {
                 return Option<XmlAttribute>.Null;
             }
             if(nsAlias.IsEmpty) {

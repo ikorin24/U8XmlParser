@@ -86,7 +86,7 @@ namespace U8Xml
             foreach(var child in source) {
                 var childName = child.Name;
                 if(childName.EndsWith(name)) {
-                    if(XmlNode.TryResolveNamespaceAlias(namespaceName, child, out var nsAlias)) {
+                    if(XmlnsHelper.TryResolveNamespaceAlias(namespaceName, child, out var nsAlias)) {
                         if(nsAlias.IsEmpty) {
                             if(childName.Length == name.Length) {
                                 return child;
