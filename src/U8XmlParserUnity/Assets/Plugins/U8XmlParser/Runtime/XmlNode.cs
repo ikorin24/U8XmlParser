@@ -58,16 +58,22 @@ namespace U8Xml
 
         internal bool HasXmlNamespaceAttr => ((XmlNode_*)_node)->HasXmlNamespaceAttr;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetParent(out XmlNode parent) => Parent.TryGetValue(out parent);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetFirstChild(out XmlNode firstChild) => FirstChild.TryGetValue(out firstChild);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetLastChild(out XmlNode lastChild) => LastChild.TryGetValue(out lastChild);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryNextSibling(out XmlNode nextSibling) => NextSibling.TryGetValue(out nextSibling);
 
         /// <summary>Find a child by name. Returns the first child found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node as <see cref="Option{T}"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlNode> FindChildOrDefault(RawString name) => FindChildOrDefault(name.AsSpan());
 
         /// <summary>Find a child by name. Returns the first child found.</summary>
@@ -83,107 +89,52 @@ namespace U8Xml
             return Option<XmlNode>.Null;
         }
 
-        public Option<XmlNode> FindChildOrDefault(RawString namespaceName, RawString name) => FindChildOrDefault(namespaceName.AsSpan(), name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option<XmlNode> FindChildOrDefault(RawString namespaceName, RawString name) => Children.FindOrDefault(namespaceName.AsSpan(), name.AsSpan());
 
-        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> namespaceName, RawString name) => FindChildOrDefault(namespaceName, name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> namespaceName, RawString name) => Children.FindOrDefault(namespaceName, name.AsSpan());
 
-        public Option<XmlNode> FindChildOrDefault(RawString namespaceName, ReadOnlySpan<byte> name) => FindChildOrDefault(namespaceName.AsSpan(), name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option<XmlNode> FindChildOrDefault(RawString namespaceName, ReadOnlySpan<byte> name) => Children.FindOrDefault(namespaceName.AsSpan(), name);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name) => Children.FindOrDefault(namespaceName, name);
 
         /// <summary>Find a child by name. Returns the first child found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node as <see cref="Option{T}"/></returns>
-        public Option<XmlNode> FindChildOrDefault(string name) => FindChildOrDefault(name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option<XmlNode> FindChildOrDefault(string name) => Children.FindOrDefault(name.AsSpan());
 
         /// <summary>Find a child by name. Returns the first child found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node as <see cref="Option{T}"/></returns>
-        [SkipLocalsInit]
-        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> name)
-        {
-            var utf8 = Encoding.UTF8;
-            var byteLen = utf8.GetByteCount(name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> name) => Children.FindOrDefault(name);
 
-            const int Threshold = 128;
-            if(byteLen <= Threshold) {
-                byte* buf = stackalloc byte[Threshold];
-                fixed(char* ptr = name) {
-                    utf8.GetBytes(ptr, name.Length, buf, byteLen);
-                }
-                var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
-                return FindChildOrDefault(span);
-            }
-            else {
-                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
-                try {
-                    fixed(byte* buf = rentArray)
-                    fixed(char* ptr = name) {
-                        utf8.GetBytes(ptr, name.Length, buf, byteLen);
-                        var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
-                        return FindChildOrDefault(span);
-                    }
-                }
-                finally {
-                    ArrayPool<byte>.Shared.Return(rentArray);
-                }
-            }
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option<XmlNode> FindChildOrDefault(string namespaceName, string name) => Children.FindOrDefault(namespaceName.AsSpan(), name.AsSpan());
 
-        public Option<XmlNode> FindChildOrDefault(string namespaceName, string name) => FindChildOrDefault(namespaceName.AsSpan(), name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> namespaceName, string name) => Children.FindOrDefault(namespaceName, name.AsSpan());
 
-        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> namespaceName, string name) => FindChildOrDefault(namespaceName, name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option<XmlNode> FindChildOrDefault(string namespaceName, ReadOnlySpan<char> name) => Children.FindOrDefault(namespaceName.AsSpan(), name);
 
-        public Option<XmlNode> FindChildOrDefault(string namespaceName, ReadOnlySpan<char> name) => FindChildOrDefault(namespaceName.AsSpan(), name);
-
-        [SkipLocalsInit]
-        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
-        {
-            var utf8 = Encoding.UTF8;
-            var nsNameByteLen = utf8.GetByteCount(namespaceName);
-            var nameByteLen = utf8.GetByteCount(name);
-            var byteLen = nsNameByteLen + nameByteLen;
-
-            const int Threshold = 128;
-            if(byteLen <= Threshold) {
-                byte* buf = stackalloc byte[Threshold];
-                fixed(char* ptr = namespaceName) {
-                    utf8.GetBytes(ptr, namespaceName.Length, buf, nsNameByteLen);
-                }
-                var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, nsNameByteLen);
-                fixed(char* ptr = name) {
-                    utf8.GetBytes(ptr, name.Length, buf + nsNameByteLen, nameByteLen);
-                }
-                var nameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf + nsNameByteLen, nameByteLen);
-                return FindChildOrDefault(nsNameUtf8, nameUtf8);
-            }
-            else {
-                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
-                try {
-                    fixed(byte* buf = rentArray)
-                    fixed(char* ptr = namespaceName)
-                    fixed(char* ptr2 = name) {
-                        utf8.GetBytes(ptr, namespaceName.Length, buf, nsNameByteLen);
-                        var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, nsNameByteLen);
-                        utf8.GetBytes(ptr2, name.Length, buf + nsNameByteLen, nameByteLen);
-                        var nameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf + nsNameByteLen, nameByteLen);
-                        return FindChildOrDefault(nsNameUtf8, nameUtf8);
-                    }
-                }
-                finally {
-                    ArrayPool<byte>.Shared.Return(rentArray);
-                }
-            }
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name) => Children.FindOrDefault(namespaceName, name);
 
         /// <summary>Find a child by name. Returns the first child found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(RawString name) => FindChild(name.AsSpan());
 
         /// <summary>Find a child by name. Returns the first child found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(ReadOnlySpan<byte> name)
         {
             if(FindChildOrDefault(name).TryGetValue(out var node) == false) {
@@ -192,9 +143,13 @@ namespace U8Xml
             return node;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(RawString namespaceName, RawString name) => FindChild(namespaceName.AsSpan(), name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(ReadOnlySpan<byte> namespaceName, RawString name) => FindChild(namespaceName, name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(RawString namespaceName, ReadOnlySpan<byte> name) => FindChild(namespaceName.AsSpan(), name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
         {
             if(FindChildOrDefault(namespaceName, name).TryGetValue(out var node) == false) {
@@ -206,11 +161,13 @@ namespace U8Xml
         /// <summary>Find a child by name. Returns the first child found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(string name) => FindChild(name.AsSpan());
 
         /// <summary>Find a child by name. Returns the first child found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
         /// <param name="name">child name to find</param>
         /// <returns>a found child node</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(ReadOnlySpan<char> name)
         {
             if(FindChildOrDefault(name).TryGetValue(out var node) == false) {
@@ -219,9 +176,13 @@ namespace U8Xml
             return node;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(string namespaceName, string name) => FindChild(namespaceName.AsSpan(), name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(ReadOnlySpan<char> namespaceName, string name) => FindChild(namespaceName, name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(string namespaceName, ReadOnlySpan<char> name) => FindChild(namespaceName.AsSpan(), name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlNode FindChild(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
         {
             if(FindChildOrDefault(namespaceName, name).TryGetValue(out var node) == false) {
@@ -230,56 +191,104 @@ namespace U8Xml
             return node;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(ReadOnlySpan<byte> name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(RawString name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(RawString namespaceName, RawString name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(ReadOnlySpan<byte> namespaceName, RawString name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(RawString namespaceName, ReadOnlySpan<byte> name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(ReadOnlySpan<char> name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(string name, out XmlNode node) => FindChildOrDefault(name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(string namespaceName, string name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(ReadOnlySpan<char> namespaceName, string name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(string namespaceName, ReadOnlySpan<char> name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindChild(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name, out XmlNode node) => FindChildOrDefault(namespaceName, name).TryGetValue(out node);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(RawString name) => Attributes.FindOrDefault(name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<byte> name) => Attributes.FindOrDefault(name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(string name) => Attributes.FindOrDefault(name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<char> name) => Attributes.FindOrDefault(name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name) => Attributes.FindOrDefault(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<byte> namespaceName, RawString name) => Attributes.FindOrDefault(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(RawString namespaceName, ReadOnlySpan<byte> name) => Attributes.FindOrDefault(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(RawString namespaceName, RawString name) => Attributes.FindOrDefault(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name) => Attributes.FindOrDefault(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(ReadOnlySpan<char> namespaceName, string name) => Attributes.FindOrDefault(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(string namespaceName, ReadOnlySpan<char> name) => Attributes.FindOrDefault(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Option<XmlAttribute> FindAttributeOrDefault(string namespaceName, string name) => Attributes.FindOrDefault(namespaceName, name);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(RawString name) => Attributes.Find(name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(ReadOnlySpan<byte> name) => Attributes.Find(name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(string name) => Attributes.Find(name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(ReadOnlySpan<char> name) => Attributes.Find(name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name) => Attributes.Find(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(ReadOnlySpan<byte> namespaceName, RawString name) => Attributes.Find(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(RawString namespaceName, ReadOnlySpan<byte> name) => Attributes.Find(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(RawString namespaceName, RawString name) => Attributes.Find(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name) => Attributes.Find(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(ReadOnlySpan<char> namespaceName, string name) => Attributes.Find(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(string namespaceName, ReadOnlySpan<char> name) => Attributes.Find(namespaceName, name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public XmlAttribute FindAttribute(string namespaceName, string name) => Attributes.Find(namespaceName, name);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(RawString name, out XmlAttribute attribute) => Attributes.TryFind(name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(ReadOnlySpan<byte> name, out XmlAttribute attribute) => Attributes.TryFind(name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(string name, out XmlAttribute attribute) => Attributes.TryFind(name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(ReadOnlySpan<char> name, out XmlAttribute attribute) => Attributes.TryFind(name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(ReadOnlySpan<byte> namespaceName, RawString name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(RawString namespaceName, ReadOnlySpan<byte> name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(RawString namespaceName, RawString name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(ReadOnlySpan<char> namespaceName, string name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(string namespaceName, ReadOnlySpan<char> name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(string namespaceName, string name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
 
         /// <inheritdoc/>
@@ -296,7 +305,37 @@ namespace U8Xml
         /// <inheritdoc/>
         public override string ToString() => _node != IntPtr.Zero ? ((XmlNode_*)_node)->Name.ToString() : "";
 
-        internal static bool TryGetNamespaceAlias(ReadOnlySpan<byte> nsName, XmlNode node, out RawString alias)
+        internal bool TryFindXmlns(ReadOnlySpan<byte> alias, out RawString nsName)
+        {
+            const uint xmln = (byte)'x' + ((byte)'m' << 8) + ((byte)'l' << 16) + ((byte)'n' << 24);
+            const ushort s_colon = (byte)'s' + ((byte)':' << 8);
+
+            if(alias.IsEmpty) {
+                foreach(var attr in Attributes) {
+                    var attrName = attr.Name;
+                    if((attrName.Length == 5) && (*(uint*)attrName.GetPtr() == xmln)
+                                              && (attrName.At(4) == (byte)'s')) {
+                        nsName = attr.Value;
+                        return true;
+                    }
+                }
+            }
+            else {
+                foreach(var attr in Attributes) {
+                    var attrName = attr.Name;
+                    if((attrName.Length >= 7) && (*(uint*)attrName.GetPtr() == xmln)
+                                              && (*(ushort*)(attrName.GetPtr() + 4) == s_colon)
+                                              && attrName.Slice(6) == alias) {
+                        nsName = attr.Value;
+                        return true;
+                    }
+                }
+            }
+            nsName = RawString.Empty;
+            return false;
+        }
+
+        internal static bool TryResolveNamespaceAlias(ReadOnlySpan<byte> nsName, XmlNode node, out RawString alias)
         {
             const uint xmln = (byte)'x' + ((byte)'m' << 8) + ((byte)'l' << 16) + ((byte)'n' << 24);
 
@@ -308,12 +347,26 @@ namespace U8Xml
                         if((attrName.Length >= 5) && (*(uint*)attrName.GetPtr() == xmln)
                                                   && (attrName.At(4) == (byte)'s')) {
                             if(attrName.Length == 5 && attr.Value == nsName) {
-                                alias = RawString.Empty;
-                                return true;
+
+                                var a = RawString.Empty;
+                                if(node.TryFindXmlns(a.AsSpan(), out var nsn) && nsn == nsName) {
+                                    alias = a;
+                                    return true;
+                                }
+
+                                //alias = RawString.Empty;
+                                //return true;
                             }
                             else if(attrName.Length >= 7 && attrName[5] == (byte)':' && attr.Value == nsName) {
-                                alias = attrName.Slice(6);
-                                return true;
+
+                                var a = attrName.Slice(6);
+                                if(node.TryFindXmlns(a.AsSpan(), out var nsn) && nsn == nsName) {
+                                    alias = a;
+                                    return true;
+                                }
+
+                                //alias = attrName.Slice(6);
+                                //return true;
                             }
                         }
                     }

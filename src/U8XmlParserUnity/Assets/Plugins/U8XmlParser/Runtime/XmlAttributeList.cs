@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 namespace U8Xml
 {
     /// <summary>Provides list of <see cref="XmlAttribute"/></summary>
-    [DebuggerDisplay("XmlAttribute[{_length}]")]
+    [DebuggerDisplay("XmlAttribute[{Count}]")]
     [DebuggerTypeProxy(typeof(XmlAttributeListTypeProxy))]
     public unsafe readonly struct XmlAttributeList : IEnumerable<XmlAttribute>, ICollection<XmlAttribute>
     {

@@ -20,6 +20,7 @@ namespace U8Xml
         /// <summary>Get attribute value</summary>
         public ref readonly RawString Value => ref ((XmlAttribute_*)_attr)->Value;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlAttribute(XmlAttribute_* attr) => _attr = (IntPtr)attr;
 
         [EditorBrowsable(EditorBrowsableState.Never)]
