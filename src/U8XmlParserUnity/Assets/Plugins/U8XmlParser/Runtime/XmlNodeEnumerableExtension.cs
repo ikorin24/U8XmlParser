@@ -85,7 +85,7 @@ namespace U8Xml
             return FindOrDefault(source, name.AsSpan());
         }
 
-        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name) where TNodes : IEnumerable<XmlNode>
         {
             foreach(var child in source) {
                 var childName = child.Name;
@@ -108,16 +108,19 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, ReadOnlySpan<byte> namespaceName, RawString name) => FindOrDefault(source, namespaceName, name.AsSpan());
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, ReadOnlySpan<byte> namespaceName, RawString name) where TNodes : IEnumerable<XmlNode>
+            => FindOrDefault(source, namespaceName, name.AsSpan());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, RawString namespaceName, ReadOnlySpan<byte> name) => FindOrDefault(source, namespaceName.AsSpan(), name);
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, RawString namespaceName, ReadOnlySpan<byte> name) where TNodes : IEnumerable<XmlNode>
+            => FindOrDefault(source, namespaceName.AsSpan(), name);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, RawString namespaceName, RawString name) => FindOrDefault(source, namespaceName.AsSpan(), name.AsSpan());
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, RawString namespaceName, RawString name) where TNodes : IEnumerable<XmlNode>
+            => FindOrDefault(source, namespaceName.AsSpan(), name.AsSpan());
 
         [SkipLocalsInit]
-        public unsafe static Option<XmlNode> FindOrDefault(this XmlNodeList source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
+        public unsafe static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name) where TNodes : IEnumerable<XmlNode>
         {
             if(namespaceName.IsEmpty || name.IsEmpty) {
                 return Option<XmlNode>.Null;
@@ -161,13 +164,16 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, ReadOnlySpan<char> namespaceName, string name) => FindOrDefault(source, namespaceName, name.AsSpan());
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, ReadOnlySpan<char> namespaceName, string name) where TNodes : IEnumerable<XmlNode>
+            => FindOrDefault(source, namespaceName, name.AsSpan());
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, string namespaceName, ReadOnlySpan<char> name) => FindOrDefault(source, namespaceName.AsSpan(), name);
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, string namespaceName, ReadOnlySpan<char> name) where TNodes : IEnumerable<XmlNode>
+            => FindOrDefault(source, namespaceName.AsSpan(), name);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Option<XmlNode> FindOrDefault(this XmlNodeList source, string namespaceName, string name) => FindOrDefault(source, namespaceName.AsSpan(), name.AsSpan());
+        public static Option<XmlNode> FindOrDefault<TNodes>(this TNodes source, string namespaceName, string name) where TNodes : IEnumerable<XmlNode>
+            => FindOrDefault(source, namespaceName.AsSpan(), name.AsSpan());
 
         /// <summary>Find a node by name. Returns the first node found, or throws <see cref="InvalidOperationException"/> if not found.</summary>
         /// <param name="source">source node list to enumerate</param>
@@ -222,7 +228,7 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static XmlNode Find(this XmlNodeList source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
+        public static XmlNode Find<TNodes>(this TNodes source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name) where TNodes : IEnumerable<XmlNode>
         {
             if(FindOrDefault(source, namespaceName, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
@@ -231,7 +237,7 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static XmlNode Find(this XmlNodeList source, ReadOnlySpan<byte> namespaceName, RawString name)
+        public static XmlNode Find<TNodes>(this TNodes source, ReadOnlySpan<byte> namespaceName, RawString name) where TNodes : IEnumerable<XmlNode>
         {
             if(FindOrDefault(source, namespaceName, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
@@ -240,7 +246,7 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static XmlNode Find(this XmlNodeList source, RawString namespaceName, ReadOnlySpan<byte> name)
+        public static XmlNode Find<TNodes>(this TNodes source, RawString namespaceName, ReadOnlySpan<byte> name) where TNodes : IEnumerable<XmlNode>
         {
             if(FindOrDefault(source, namespaceName, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
@@ -249,7 +255,7 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static XmlNode Find(this XmlNodeList source, RawString namespaceName, RawString name)
+        public static XmlNode Find<TNodes>(this TNodes source, RawString namespaceName, RawString name) where TNodes : IEnumerable<XmlNode>
         {
             if(FindOrDefault(source, namespaceName, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
@@ -258,7 +264,7 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static XmlNode Find(this XmlNodeList source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
+        public static XmlNode Find<TNodes>(this TNodes source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name) where TNodes : IEnumerable<XmlNode>
         {
             if(FindOrDefault(source, namespaceName, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
@@ -267,7 +273,7 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static XmlNode Find(this XmlNodeList source, ReadOnlySpan<char> namespaceName, string name)
+        public static XmlNode Find<TNodes>(this TNodes source, ReadOnlySpan<char> namespaceName, string name) where TNodes : IEnumerable<XmlNode>
         {
             if(FindOrDefault(source, namespaceName, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
@@ -276,7 +282,7 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static XmlNode Find(this XmlNodeList source, string namespaceName, ReadOnlySpan<char> name)
+        public static XmlNode Find<TNodes>(this TNodes source, string namespaceName, ReadOnlySpan<char> name) where TNodes : IEnumerable<XmlNode>
         {
             if(FindOrDefault(source, namespaceName, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
@@ -285,7 +291,7 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static XmlNode Find(this XmlNodeList source, string namespaceName, string name)
+        public static XmlNode Find<TNodes>(this TNodes source, string namespaceName, string name) where TNodes : IEnumerable<XmlNode>
         {
             if(FindOrDefault(source, namespaceName, name).TryGetValue(out var node) == false) {
                 ThrowHelper.ThrowInvalidOperation(NoMatchingMessage);
@@ -318,49 +324,49 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryFind(this XmlNodeList source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name, out XmlNode node)
+        public static bool TryFind<TNodes>(this TNodes source, ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
             return FindOrDefault(source, namespaceName, name).TryGetValue(out node);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryFind(this XmlNodeList source, ReadOnlySpan<byte> namespaceName, RawString name, out XmlNode node)
+        public static bool TryFind<TNodes>(this TNodes source, ReadOnlySpan<byte> namespaceName, RawString name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
             return FindOrDefault(source, namespaceName, name).TryGetValue(out node);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryFind(this XmlNodeList source, RawString namespaceName, ReadOnlySpan<byte> name, out XmlNode node)
+        public static bool TryFind<TNodes>(this TNodes source, RawString namespaceName, ReadOnlySpan<byte> name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
             return FindOrDefault(source, namespaceName, name).TryGetValue(out node);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryFind(this XmlNodeList source, RawString namespaceName, RawString name, out XmlNode node)
+        public static bool TryFind<TNodes>(this TNodes source, RawString namespaceName, RawString name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
             return FindOrDefault(source, namespaceName, name).TryGetValue(out node);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryFind(this XmlNodeList source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name, out XmlNode node)
+        public static bool TryFind<TNodes>(this TNodes source, ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
             return FindOrDefault(source, namespaceName, name).TryGetValue(out node);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryFind(this XmlNodeList source, ReadOnlySpan<char> namespaceName, string name, out XmlNode node)
+        public static bool TryFind<TNodes>(this TNodes source, ReadOnlySpan<char> namespaceName, string name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
             return FindOrDefault(source, namespaceName, name).TryGetValue(out node);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryFind(this XmlNodeList source, string namespaceName, ReadOnlySpan<char> name, out XmlNode node)
+        public static bool TryFind<TNodes>(this TNodes source, string namespaceName, ReadOnlySpan<char> name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
             return FindOrDefault(source, namespaceName, name).TryGetValue(out node);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryFind(this XmlNodeList source, string namespaceName, string name, out XmlNode node)
+        public static bool TryFind<TNodes>(this TNodes source, string namespaceName, string name, out XmlNode node) where TNodes : IEnumerable<XmlNode>
         {
             return FindOrDefault(source, namespaceName, name).TryGetValue(out node);
         }
