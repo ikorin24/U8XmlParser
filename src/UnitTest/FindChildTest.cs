@@ -42,15 +42,6 @@ namespace UnitTest
         }
 
         [Fact]
-        public void Test_FindChild2()
-        {
-            using var xml = XmlParser.Parse(SampleXml1);
-            var root = xml.Root;
-
-            root.Children.Find("test_b", "bar").InnerText.ToInt32().ShouldBe(1);
-        }
-
-        [Fact]
         public void Test_FindChildOrDefault()
         {
             using var xml = XmlParser.Parse(SampleXml1);
