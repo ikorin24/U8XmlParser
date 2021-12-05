@@ -13,21 +13,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: ['5.0', '6.0' ]
+        target-framework: [ 'net48', 'netcoreapp3.1', 'net5.0', 'net6.0' ]
 
     steps:
     - uses: actions/checkout@v2
-    - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+    - name: Setup .NET Core SDK
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '6.0.100'
     - name: Restore dependencies
       run: dotnet restore src/U8XmlParser/U8XmlParser.csproj
     - name: Build Debug
-      run: dotnet build --no-restore -c Debug --framework net${{ matrix.dotnet-version }} src/U8XmlParser/U8XmlParser.csproj
+      run: dotnet build --no-restore -c Debug --framework ${{ matrix.target-framework }} src/U8XmlParser/U8XmlParser.csproj
     - name: Test Debug
-      run: dotnet test --no-build --verbosity normal -c Debug --framework net${{ matrix.dotnet-version }} src/UnitTest/UnitTest.csproj
+      run: dotnet test --no-build --verbosity normal -c Debug --framework ${{ matrix.target-framework }} src/UnitTest/UnitTest.csproj
     - name: Build Release
-      run: dotnet build --no-restore -c Release --framework net${{ matrix.dotnet-version }} src/U8XmlParser/U8XmlParser.csproj
+      run: dotnet build --no-restore -c Release --framework ${{ matrix.target-framework }} src/U8XmlParser/U8XmlParser.csproj
     - name: Test Release
-      run: dotnet test --no-build --verbosity normal -c Release --framework net${{ matrix.dotnet-version }} src/UnitTest/UnitTest.csproj
+      run: dotnet test --no-build --verbosity normal -c Release --framework ${{ matrix.target-framework }} src/UnitTest/UnitTest.csproj
