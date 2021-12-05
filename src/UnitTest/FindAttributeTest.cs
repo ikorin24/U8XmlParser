@@ -22,6 +22,43 @@ namespace UnitTest
 </foo>";
 
         [Fact]
+        public unsafe void Test_IsName()
+        {
+            using var xml = XmlParser.Parse(SampleXml1);
+            var root = xml.Root;
+
+            var testCases = new[]
+            {
+                ("test_b", "hoge", root.FindChild("bar").FindAttribute("test_b", "hoge")),
+                ("test_a", "hoge", root.FindChild("bar").FindAttribute("test_a", "hoge")),
+                ("test_a2", "piyo", root.FindChild("hoge").FindAttribute("test_a2", "piyo")),
+                ("test_b", "abc", root.FindChild("hoge").FindChild("baz").FindAttribute("test_b", "abc")),
+                ("test_a2", "xyz", root.FindChild("hoge").FindChild("baz").FindAttribute("test_a2", "xyz")),
+                ("test_b", "aaaa", root.FindChild("aaa").FindChild("bbb").FindChild("ccc").FindAttribute("test_b", "aaaa")),
+            };
+
+            foreach(var (nsName, name, attr) in testCases) {
+                attr.IsName(nsName, name).ShouldBe(true);
+                attr.IsName(nsName.AsSpan(), name).ShouldBe(true);
+                attr.IsName(nsName.AsSpan(), name.AsSpan()).ShouldBe(true);
+                attr.IsName(nsName, name.AsSpan()).ShouldBe(true);
+
+                var nsName_ROSbyte = Encoding.UTF8.GetBytes(nsName).AsSpan();
+                var name_ROSbyte = Encoding.UTF8.GetBytes(name).AsSpan();
+                fixed(byte* p = nsName_ROSbyte)
+                fixed(byte* p2 = name_ROSbyte) {
+                    var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
+                    var name_RS = new RawString(p2, name_ROSbyte.Length);
+
+                    attr.IsName(nsName_ROSbyte, name_ROSbyte).ShouldBe(true);
+                    attr.IsName(nsName_RS, name_ROSbyte).ShouldBe(true);
+                    attr.IsName(nsName_ROSbyte, name_RS).ShouldBe(true);
+                    attr.IsName(nsName_RS, name_RS).ShouldBe(true);
+                }
+            }
+        }
+
+        [Fact]
         public void Test_FindAttribute()
         {
             using var xml = XmlParser.Parse(SampleXml1);
