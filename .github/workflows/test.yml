@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: ['5.0', '6.0' ]
+        dotnet-version: ['5.0' ]
 
     steps:
     - uses: actions/checkout@v2
@@ -21,7 +21,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: ${{ matrix.dotnet-version }}
-        include-prerelease: true
     - name: Restore dependencies
       run: dotnet restore src/U8XmlParser/U8XmlParser.csproj
     - name: Build Debug
