@@ -22,6 +22,43 @@ namespace UnitTest
 </foo>";
 
         [Fact]
+        public unsafe void Test_IsName()
+        {
+            using var xml = XmlParser.Parse(SampleXml1);
+            var root = xml.Root;
+
+            var testCases = new[]
+            {
+                ("test_a", "foo", xml.Root),
+                ("test_b", "bar", xml.Root.FindChild("test_b", "bar")),
+                ("test_a2", "hoge", xml.Root.FindChild("test_a2", "hoge")),
+                ("test_a", "hoge", xml.Root.FindChild("test_a", "hoge")),
+                ("test_b2", "piyo", xml.Root.FindChild("test_b2", "piyo")),
+                ("test_b", "ccc", xml.Root.FindChild("aaa").FindChild("bbb").FindChild("test_b", "ccc")),
+            };
+
+            foreach(var (nsName, name, node) in testCases) {
+                node.IsName(nsName, name).ShouldBe(true);
+                node.IsName(nsName.AsSpan(), name).ShouldBe(true);
+                node.IsName(nsName.AsSpan(), name.AsSpan()).ShouldBe(true);
+                node.IsName(nsName, name.AsSpan()).ShouldBe(true);
+
+                var nsName_ROSbyte = Encoding.UTF8.GetBytes(nsName).AsSpan();
+                var name_ROSbyte = Encoding.UTF8.GetBytes(name).AsSpan();
+                fixed(byte* p = nsName_ROSbyte)
+                fixed(byte* p2 = name_ROSbyte) {
+                    var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
+                    var name_RS = new RawString(p2, name_ROSbyte.Length);
+
+                    node.IsName(nsName_ROSbyte, name_ROSbyte).ShouldBe(true);
+                    node.IsName(nsName_RS, name_ROSbyte).ShouldBe(true);
+                    node.IsName(nsName_ROSbyte, name_RS).ShouldBe(true);
+                    node.IsName(nsName_RS, name_RS).ShouldBe(true);
+                }
+            }
+        }
+
+        [Fact]
         public void Test_FindChild()
         {
             using var xml = XmlParser.Parse(SampleXml1);

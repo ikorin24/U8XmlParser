@@ -78,11 +78,16 @@ namespace U8Xml
             if(XmlnsHelper.TryResolveNamespaceAlias(namespaceName, this, out var alias) == false) {
                 return false;
             }
-            var nodeName = Name;
-            return (nodeName.Length == alias.Length + 1 + name.Length)
-                && nodeName.StartsWith(alias)
-                && nodeName.At(alias.Length) == (byte)':'
-                && nodeName.EndsWith(name);
+            if(alias.IsEmpty) {
+                return Name == name;
+            }
+            else {
+                var nodeName = Name;
+                return (nodeName.Length == alias.Length + 1 + name.Length)
+                    && nodeName.StartsWith(alias)
+                    && nodeName.At(alias.Length) == (byte)':'
+                    && nodeName.EndsWith(name);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
