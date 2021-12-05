@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: ['5.0' ]
+        dotnet-version: ['5.0', '6.0' ]
 
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: ${{ matrix.dotnet-version }}
+        dotnet-version: '6.0.100'
     - name: Restore dependencies
       run: dotnet restore src/U8XmlParser/U8XmlParser.csproj
     - name: Build Debug
