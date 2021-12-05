@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dotnet-version: ['3.1.x', '5.0.x' ]
+        dotnet-version: ['5.0', '6.0' ]
 
     steps:
     - uses: actions/checkout@v2
@@ -22,12 +22,12 @@ jobs:
       with:
         dotnet-version: ${{ matrix.dotnet-version }}
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore src/U8XmlParser/U8XmlParser.csproj
     - name: Build Debug
-      run: dotnet build --no-restore -c Debug
+      run: dotnet build --no-restore -c Debug --framework net${{ matrix.dotnet-version }} src/U8XmlParser/U8XmlParser.csproj
     - name: Test Debug
-      run: dotnet test --no-build --verbosity normal -c Debug
+      run: dotnet test --no-build --verbosity normal -c Debug --framework net${{ matrix.dotnet-version }} src/UnitTest/UnitTest.csproj
     - name: Build Release
-      run: dotnet build --no-restore -c Release
+      run: dotnet build --no-restore -c Release --framework net${{ matrix.dotnet-version }} src/U8XmlParser/U8XmlParser.csproj
     - name: Test Release
-      run: dotnet test --no-build --verbosity normal -c Release
+      run: dotnet test --no-build --verbosity normal -c Release --framework net${{ matrix.dotnet-version }} src/UnitTest/UnitTest.csproj
