@@ -80,7 +80,7 @@ namespace UnitTest
             var ccc = foo.FindChild("aaa").FindChild("bbb").FindChild("ccc");
             CheckInnerValue_FindAttribtue(ccc, "test_b", "aaaa", 6);
 
-            Assert.Throws<InvalidOperationException>(() => hoge.FindAttribute("test_a", "piyo"));
+            Throw_FindAttribtue<InvalidOperationException>(hoge, "test_a", "piyo");
         }
 
         private unsafe static void CheckInnerValue_FindAttribtue(XmlNode target, string? name, int value)
@@ -133,6 +133,40 @@ namespace UnitTest
                     target.Attributes.Find(nsName_ROSbyte, name_RS).Value.ToInt32().ShouldBe(value);
                     target.Attributes.Find(nsName_RS, name_ROSbyte).Value.ToInt32().ShouldBe(value);
                     target.Attributes.Find(nsName_RS, name_RS).Value.ToInt32().ShouldBe(value);
+                }
+            }
+        }
+
+        private unsafe static void Throw_FindAttribtue<TException>(XmlNode target, string? nsName, string? name) where TException : Exception
+        {
+            var attrName = new AttrName(nsName, name);
+
+            Assert.Throws<TException>(() => target.FindAttribute(attrName.NsName!, attrName.Name!));
+            Assert.Throws<TException>(() => target.FindAttribute(attrName.NsName!, attrName.Name_ROSchar));
+            Assert.Throws<TException>(() => target.FindAttribute(attrName.NsName_ROSchar, attrName.Name!));
+            Assert.Throws<TException>(() => target.FindAttribute(attrName.NsName_ROSchar, attrName.Name_ROSchar));
+
+            Assert.Throws<TException>(() => target.Attributes.Find(attrName.NsName!, attrName.Name!));
+            Assert.Throws<TException>(() => target.Attributes.Find(attrName.NsName!, attrName.Name_ROSchar));
+            Assert.Throws<TException>(() => target.Attributes.Find(attrName.NsName_ROSchar, attrName.Name!));
+            Assert.Throws<TException>(() => target.Attributes.Find(attrName.NsName_ROSchar, attrName.Name_ROSchar));
+
+            var nsName_ROSbyte = attrName.NsName_ROSbyte;
+            var name_ROSbyte = attrName.Name_ROSbyte;
+            fixed(byte* p = nsName_ROSbyte) {
+                fixed(byte* p2 = name_ROSbyte) {
+                    var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
+                    var name_RS = new RawString(p2, name_ROSbyte.Length);
+
+                    Assert.Throws<TException>(() => target.FindAttribute(attrName.NsName_ROSbyte, attrName.Name_ROSbyte));
+                    Assert.Throws<TException>(() => target.FindAttribute(attrName.NsName_ROSbyte, name_RS));
+                    Assert.Throws<TException>(() => target.FindAttribute(nsName_RS, attrName.Name_ROSbyte));
+                    Assert.Throws<TException>(() => target.FindAttribute(nsName_RS, name_RS));
+
+                    Assert.Throws<TException>(() => target.Attributes.Find(attrName.NsName_ROSbyte, attrName.Name_ROSbyte));
+                    Assert.Throws<TException>(() => target.Attributes.Find(attrName.NsName_ROSbyte, name_RS));
+                    Assert.Throws<TException>(() => target.Attributes.Find(nsName_RS, attrName.Name_ROSbyte));
+                    Assert.Throws<TException>(() => target.Attributes.Find(nsName_RS, name_RS));
                 }
             }
         }
