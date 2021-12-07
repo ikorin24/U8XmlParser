@@ -3,6 +3,9 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.ComponentModel;
+using System.Text;
+using U8Xml.Internal;
+using System.Buffers;
 
 namespace U8Xml
 {
@@ -20,6 +23,9 @@ namespace U8Xml
         /// <summary>Get attribute value</summary>
         public ref readonly RawString Value => ref ((XmlAttribute_*)_attr)->Value;
 
+        internal Option<XmlNode> Node => ((XmlAttribute_*)_attr)->Node;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlAttribute(XmlAttribute_* attr) => _attr = (IntPtr)attr;
 
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -28,6 +34,87 @@ namespace U8Xml
             name = Name;
             value = Value;
         }
+
+        public bool IsName(ReadOnlySpan<byte> namespaceName, ReadOnlySpan<byte> name)
+        {
+            if(namespaceName.IsEmpty || name.IsEmpty) {
+                return false;
+            }
+            if(Node.TryGetValue(out var node) == false) {
+                return false;
+            }
+            if(XmlnsHelper.TryResolveNamespaceAlias(namespaceName, node, out var alias) == false) {
+                return false;
+            }
+            if(alias.IsEmpty) {
+                return Name == name;
+            }
+            else {
+                var nodeName = Name;
+                return (nodeName.Length == alias.Length + 1 + name.Length)
+                    && nodeName.StartsWith(alias)
+                    && nodeName.At(alias.Length) == (byte)':'
+                    && nodeName.EndsWith(name);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsName(ReadOnlySpan<byte> namespaceName, RawString name) => IsName(namespaceName, name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsName(RawString namespaceName, ReadOnlySpan<byte> name) => IsName(namespaceName.AsSpan(), name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsName(RawString namespaceName, RawString name) => IsName(namespaceName.AsSpan(), name.AsSpan());
+
+        [SkipLocalsInit]
+        public bool IsName(ReadOnlySpan<char> namespaceName, ReadOnlySpan<char> name)
+        {
+            if(namespaceName.IsEmpty || name.IsEmpty) {
+                return false;
+            }
+
+            var utf8 = Encoding.UTF8;
+            var nsNameByteLen = utf8.GetByteCount(namespaceName);
+            var nameByteLen = utf8.GetByteCount(name);
+            var byteLen = nsNameByteLen + nameByteLen;
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = namespaceName) {
+                    utf8.GetBytes(ptr, namespaceName.Length, buf, nsNameByteLen);
+                }
+                var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, nsNameByteLen);
+                fixed(char* ptr = name) {
+                    utf8.GetBytes(ptr, name.Length, buf + nsNameByteLen, nameByteLen);
+                }
+                var nameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf + nsNameByteLen, nameByteLen);
+                return IsName(nsNameUtf8, nameUtf8);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = namespaceName)
+                    fixed(char* ptr2 = name) {
+                        utf8.GetBytes(ptr, namespaceName.Length, buf, nsNameByteLen);
+                        var nsNameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf, nsNameByteLen);
+                        utf8.GetBytes(ptr2, name.Length, buf + nsNameByteLen, nameByteLen);
+                        var nameUtf8 = SpanHelper.CreateReadOnlySpan<byte>(buf + nsNameByteLen, nameByteLen);
+                        return IsName(nsNameUtf8, nameUtf8);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsName(ReadOnlySpan<char> namespaceName, string name) => IsName(namespaceName, name.AsSpan());
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsName(string namespaceName, ReadOnlySpan<char> name) => IsName(namespaceName.AsSpan(), name);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsName(string namespaceName, string name) => IsName(namespaceName.AsSpan(), name.AsSpan());
 
         public override bool Equals(object? obj) => obj is XmlAttribute attribute && Equals(attribute);
 
@@ -58,11 +145,17 @@ namespace U8Xml
         /// <summary>Attribute value</summary>
         public readonly RawString Value;
 
+        public readonly Option<XmlNode> Node;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public XmlAttribute_(RawString name, RawString value)
+        public XmlAttribute_(RawString name, RawString value, XmlNode_* node)
         {
+            // [NOTE]
+            // 'node' is null when the attribute is belonging to the xml declaration.
+
             Name = name;
             Value = value;
+            Node = new XmlNode(node);
         }
 
         public override string ToString() => $"{Name.ToString()}=\"{Value.ToString()}\"";

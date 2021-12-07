@@ -276,7 +276,6 @@ namespace U8Xml
         public (RawString, RawString) Split2(string separator) => Split2(separator.AsSpan());
 
         [SkipLocalsInit]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (RawString, RawString) Split2(ReadOnlySpan<char> separator)
         {
             const int CharMaxByteCount = 6;

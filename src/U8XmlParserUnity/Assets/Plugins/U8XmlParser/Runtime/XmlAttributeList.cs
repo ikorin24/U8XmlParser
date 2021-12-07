@@ -10,31 +10,32 @@ using System.Runtime.InteropServices;
 namespace U8Xml
 {
     /// <summary>Provides list of <see cref="XmlAttribute"/></summary>
-    [DebuggerDisplay("XmlAttribute[{_length}]")]
+    [DebuggerDisplay("XmlAttribute[{Count}]")]
     [DebuggerTypeProxy(typeof(XmlAttributeListTypeProxy))]
     public unsafe readonly struct XmlAttributeList : IEnumerable<XmlAttribute>, ICollection<XmlAttribute>
     {
-        private readonly CustomList<XmlAttribute_> _list;
-        private readonly int _start;
-        private readonly int _length;
+        private readonly IntPtr _node;  // XmlNode_*
+
+        private readonly int StartIndex => ((XmlNode_*)_node)->AttrIndex;
+        private CustomList<XmlAttribute_> List => ((XmlNode_*)_node)->WholeAttrs;
 
         /// <summary>Get count of attributes</summary>
-        public int Count => _length;
+        public int Count => ((XmlNode_*)_node)->AttrCount;
+
+        internal XmlNode Node => new XmlNode((XmlNode_*)_node);
 
         bool ICollection<XmlAttribute>.IsReadOnly => true;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal XmlAttributeList(CustomList<XmlAttribute_> list, int start, int length)
+        internal XmlAttributeList(XmlNode_* node)
         {
-            _list = list;
-            _start = start;
-            _length = length;
+            _node = (IntPtr)node;
         }
 
         public XmlAttribute First()
         {
             if(Count == 0) { ThrowHelper.ThrowInvalidOperation("Sequence contains no elements."); }
-            return new XmlAttribute(_list.At(_start));
+            return new XmlAttribute(List.At(StartIndex));
         }
 
         public XmlAttribute First(Func<XmlAttribute, bool> predicate)
@@ -47,7 +48,7 @@ namespace U8Xml
 
         public Option<XmlAttribute> FirstOrDefault()
         {
-            return Count == 0 ? default : new XmlAttribute(_list.At(_start));
+            return Count == 0 ? default : new XmlAttribute(List.At(StartIndex));
         }
 
         public Option<XmlAttribute> FirstOrDefault(Func<XmlAttribute, bool> predicate)
@@ -77,15 +78,15 @@ namespace U8Xml
 
             var dest = MemoryMarshal.Cast<XmlAttribute, IntPtr>(span);
             fixed(IntPtr* buf = dest) {
-                _list.CopyItemsPointer((XmlAttribute_**)buf, dest.Length, _start, _length);
+                List.CopyItemsPointer((XmlAttribute_**)buf, dest.Length, StartIndex, Count);
             }
         }
 
-        public Enumerator GetEnumerator() => new Enumerator(_list.GetEnumerator(_start, _length));
+        public Enumerator GetEnumerator() => new Enumerator(List.GetEnumerator(StartIndex, Count));
 
-        IEnumerator<XmlAttribute> IEnumerable<XmlAttribute>.GetEnumerator() => new EnumeratorClass(_list.GetEnumerator(_start, _length));
+        IEnumerator<XmlAttribute> IEnumerable<XmlAttribute>.GetEnumerator() => new EnumeratorClass(List.GetEnumerator(StartIndex, Count));
 
-        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_list.GetEnumerator(_start, _length));
+        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(List.GetEnumerator(StartIndex, Count));
 
         public struct Enumerator : IEnumerator<XmlAttribute>
         {

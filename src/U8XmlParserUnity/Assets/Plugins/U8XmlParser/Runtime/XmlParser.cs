@@ -244,7 +244,14 @@ namespace U8Xml
                         }
                         else {
                             var attr = attrs.GetPointerToAdd(out _);
-                            *attr = GetAttr(data, ref i);
+                            *attr = GetAttr(data, ref i, node);
+                            var attrName = attr->Name;
+                            const uint xmln = (byte)'x' + ((byte)'m' << 8) + ((byte)'l' << 16) + ((byte)'n' << 24);
+                            if((attrName.Length >= 5) && (*(uint*)attrName.GetPtr() == xmln)
+                                                      && (attrName.At(4) == (byte)'s')) {
+                                node->HasXmlNamespaceAttr = true;
+                            }
+
                             if(node->HasAttribute == false) {
                                 node->AttrIndex = attrs.Count - 1;
                             }
@@ -502,7 +509,7 @@ namespace U8Xml
                 }
                 else {
                     var attr = attrs.GetPointerToAdd(out _);
-                    *attr = GetAttr(data, ref i);
+                    *attr = GetAttr(data, ref i, null);
 
                     // const utf-8 string. They are embedded in the dll.
                     ReadOnlySpan<byte> version = new byte[] { (byte)'v', (byte)'e', (byte)'r', (byte)'s', (byte)'i', (byte)'o', (byte)'n' };
@@ -547,8 +554,11 @@ namespace U8Xml
             if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
         }
 
-        private static XmlAttribute_ GetAttr(RawString data, ref int i)
+        private static XmlAttribute_ GetAttr(RawString data, ref int i, XmlNode_* node)
         {
+            // [NOTE]
+            // 'node' is null when the attribute is belonging to the xml declaration.
+
             // Get attribute name
             var nameStart = i;
             while(true) {
@@ -574,7 +584,7 @@ namespace U8Xml
             var value = data.Slice(valueStart, i - valueStart);
             i++;
             if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
-            return new XmlAttribute_(name, value);
+            return new XmlAttribute_(name, value, node);
         }
 
         private static FormatException NewFormatException(string? message = null) => new FormatException(message);
