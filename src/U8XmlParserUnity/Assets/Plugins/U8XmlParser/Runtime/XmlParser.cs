@@ -22,7 +22,7 @@ namespace U8Xml
         /// <returns>xml object</returns>
         public static XmlObject Parse(string text) => Parse(text.AsSpan());
 
-        /// <summary>Parse xml of <see cref="ReadOnlySpan{char}"/></summary>
+        /// <summary>Parse xml of <see cref="ReadOnlySpan{T}"/> of type <see cref="char"/> </summary>
         /// <param name="text">text of xml</param>
         /// <returns>xml object</returns>
         public static XmlObject Parse(ReadOnlySpan<char> text)
@@ -96,6 +96,7 @@ namespace U8Xml
         /// <summary>Parse xml file encoded as specified encoding.</summary>
         /// <param name="stream">stream to read</param>
         /// <param name="encoding">encoding of <paramref name="stream"/></param>
+        /// <param name="fileSizeHint">file size hint</param>
         /// <returns>xml object</returns>
         public static XmlObject Parse(Stream stream, Encoding encoding, int fileSizeHint)
         {
