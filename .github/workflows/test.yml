@@ -24,10 +24,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore src/U8XmlParser/U8XmlParser.csproj
     - name: Build Debug
-      run: dotnet build --no-restore -c Debug --framework ${{ matrix.target-framework }} src/U8XmlParser/U8XmlParser.csproj
+      run: dotnet build --no-restore -c Debug --framework ${{ matrix.target-framework }} /nowarn:cs1591 src/U8XmlParser/U8XmlParser.csproj
     - name: Test Debug
       run: dotnet test --no-build --verbosity normal -c Debug --framework ${{ matrix.target-framework }} src/UnitTest/UnitTest.csproj
     - name: Build Release
-      run: dotnet build --no-restore -c Release --framework ${{ matrix.target-framework }} src/U8XmlParser/U8XmlParser.csproj
+      run: dotnet build --no-restore -c Release --framework ${{ matrix.target-framework }} /nowarn:cs1591 src/U8XmlParser/U8XmlParser.csproj
     - name: Test Release
       run: dotnet test --no-build --verbosity normal -c Release --framework ${{ matrix.target-framework }} src/UnitTest/UnitTest.csproj
