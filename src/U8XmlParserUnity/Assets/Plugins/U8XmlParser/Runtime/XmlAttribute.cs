@@ -116,6 +116,35 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsName(string namespaceName, string name) => IsName(namespaceName.AsSpan(), name.AsSpan());
 
+        /// <summary>Get full name of the attribute. Returns false if the full name could not be resolved.</summary>
+        /// <param name="namespaceName">
+        /// namespace name of the attribute<para/>
+        /// ex) "abcde" in the case the attribute is a:bar="123" in &lt;node xmlns:a="abcde" a:bar="123" /&gt;<para/>
+        /// </param>
+        /// <param name="name">
+        /// local name of the attribute<para/>
+        /// ex) "bar" in the case the attribute is a:bar="123" in &lt;node xmlns:a="abcde" a:bar="123" /&gt;<para/>
+        /// </param>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetFullName(out RawString namespaceName, out RawString name) => XmlnsHelper.TryGetAttributeFullName(this, out namespaceName, out name);
+
+        /// <summary>Get full name of the attribute. The method throws <see cref="InvalidOperationException"/> if the full name could not resolved.</summary>
+        /// <remarks>
+        /// ex) Returns ("abcde", "bar") in the case the attribute is a:bar="123" in &lt;node xmlns:a="abcde" a:bar="123" /&gt;<para/>
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">the full name could not resolved</exception>
+        /// <returns>A pair of namespace name and local name</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public (RawString NamespaceName, RawString Name) GetFullName()
+        {
+            if(XmlnsHelper.TryGetAttributeFullName(this, out var namespaceName, out var name) == false) {
+                ThrowNoNamespace();
+                static void ThrowNoNamespace() => throw new InvalidOperationException("Could not resolve the full name of the node.");
+            }
+            return (namespaceName, name);
+        }
+
         public override bool Equals(object? obj) => obj is XmlAttribute attribute && Equals(attribute);
 
         public bool Equals(XmlAttribute other) => _attr == other._attr;

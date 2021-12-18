@@ -369,6 +369,35 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryFindAttribute(string namespaceName, string name, out XmlAttribute attribute) => Attributes.TryFind(namespaceName, name, out attribute);
 
+        /// <summary>Get full name of the node. Returns false if the full name could not be resolved.</summary>
+        /// <param name="namespaceName">
+        /// namespace name of the node<para/>
+        /// ex) "abcde" in the case the node is &lt;a:foo xmlns:a="abcde" /&gt;<para/>
+        /// </param>
+        /// <param name="name">
+        /// local name of the node<para/>
+        /// ex) "foo" in the case the node is &lt;a:foo xmlns:a="abcde" /&gt;<para/>
+        /// </param>
+        /// <returns>Whether the full name of the node could be resolved</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetFullName(out RawString namespaceName, out RawString name) => XmlnsHelper.TryGetNodeFullName(this, out namespaceName, out name);
+
+        /// <summary>Get full name of the node. The method throws <see cref="InvalidOperationException"/> if the full name could not resolved.</summary>
+        /// <remarks>
+        /// ex) Returns ("abcde", "foo") in the case the node is &lt;a:foo xmlns:a="abcde" /&gt;<para/>
+        /// </remarks>
+        /// <exception cref="InvalidOperationException">the full name could not resolved</exception>
+        /// <returns>A pair of namespace name and local name</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public (RawString NamespaceName, RawString Name) GetFullName()
+        {
+            if(XmlnsHelper.TryGetNodeFullName(this, out var namespaceName, out var name) == false) {
+                ThrowNoNamespace();
+                static void ThrowNoNamespace() => throw new InvalidOperationException("Could not resolve the full name of the node.");
+            }
+            return (namespaceName, name);
+        }
+
         /// <inheritdoc/>
         public override bool Equals(object? obj) => obj is XmlNode node && Equals(node);
 
