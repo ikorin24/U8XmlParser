@@ -55,6 +55,17 @@ namespace UnitTest
                     attr.IsName(nsName_ROSbyte, name_RS).ShouldBe(true);
                     attr.IsName(nsName_RS, name_RS).ShouldBe(true);
                 }
+
+                {
+                    attr.TryGetFullName(out var nsNameResolved, out var nameResolved).ShouldBe(true);
+                    (nsNameResolved == nsName).ShouldBe(true);
+                    (nameResolved == name).ShouldBe(true);
+                }
+                {
+                    var (nsNameResolved, nameResolved) = attr.GetFullName();
+                    (nsNameResolved == nsName).ShouldBe(true);
+                    (nameResolved == name).ShouldBe(true);
+                }
             }
         }
 

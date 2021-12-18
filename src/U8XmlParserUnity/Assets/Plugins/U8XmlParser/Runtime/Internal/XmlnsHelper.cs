@@ -58,6 +58,41 @@ namespace U8Xml.Internal
             }
         }
 
+        public unsafe static bool TryGetAttributeFullName(XmlAttribute attr, out RawString nsName, out RawString name)
+        {
+            RawString nsAlias;
+            var attrName = attr.Name;
+            if(attr.Node.TryGetValue(out var node) == false) {
+                nsName = RawString.Empty;
+                name = attr.Name;
+                return false;
+            }
+            for(int i = 0; i < attrName.Length; i++) {
+                if(attrName.At(i) == (byte)':') {
+                    nsAlias = attrName.SliceUnsafe(0, i);
+                    name = attrName.SliceUnsafe(i + 1, attrName.Length - i - 1);
+                    return TryFindXmlnsRecursively(node, nsAlias.AsSpan(), out nsName);
+                }
+            }
+            name = attrName;
+            return TryFindXmlnsRecursively(node, ReadOnlySpan<byte>.Empty, out nsName);
+        }
+
+        public unsafe static bool TryGetNodeFullName(XmlNode node, out RawString nsName, out RawString name)
+        {
+            RawString nsAlias;
+            var nodeName = node.Name;
+            for(int i = 0; i < nodeName.Length; i++) {
+                if(nodeName.At(i) == (byte)':') {
+                    nsAlias = nodeName.SliceUnsafe(0, i);
+                    name = nodeName.SliceUnsafe(i + 1, nodeName.Length - i - 1);
+                    return TryFindXmlnsRecursively(node, nsAlias.AsSpan(), out nsName);
+                }
+            }
+            name = nodeName;
+            return TryFindXmlnsRecursively(node, ReadOnlySpan<byte>.Empty, out nsName);
+        }
+
         private static bool TryFindXmlnsRecursively(XmlNode target, ReadOnlySpan<byte> alias, out RawString nsName)
         {
             // xmlns:[alias]="[nsName]"
