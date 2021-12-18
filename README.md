@@ -1,8 +1,9 @@
 # U8XmlParser
 
 [![GitHub license](https://img.shields.io/github/license/ikorin24/U8XmlParser?color=FF8821)](https://github.com/ikorin24/U8XmlParser/blob/master/LICENSE)
-[![nuget](https://img.shields.io/badge/nuget-v1.2.0-FF8821)](https://www.nuget.org/packages/U8XmlParser)
+[![nuget](https://img.shields.io/badge/nuget-v1.3.0-FF8821)](https://www.nuget.org/packages/U8XmlParser)
 [![openupm](https://img.shields.io/npm/v/com.ikorin24.u8xmlparser?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.ikorin24.u8xmlparser/)
+[![Build and Test](https://github.com/ikorin24/U8XmlParser/actions/workflows/test.yml/badge.svg)](https://github.com/ikorin24/U8XmlParser/actions/workflows/test.yml)
 
 High performance, thread-safe and IL2CPP-safe C# xml parser.
 
@@ -33,7 +34,7 @@ $ openupm add com.ikorin24.u8xmlparser
 
 Or install the package from UPM by git URL.
 
-git URL: (https://github.com/ikorin24/U8XmlParser.git?path=src/U8XmlParserUnity/Assets/Plugins#v1.2.0)
+git URL: (https://github.com/ikorin24/U8XmlParser.git?path=src/U8XmlParserUnity/Assets/Plugins#v1.3.0)
 
 #### **Unity 2019 or older**
 
