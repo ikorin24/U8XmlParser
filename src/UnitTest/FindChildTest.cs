@@ -70,6 +70,31 @@ namespace UnitTest
         }
 
         [Fact]
+        public unsafe void Test_NoFullName()
+        {
+            using var xml = XmlParser.Parse(
+@"<foo xmlns:a='test_a'>
+    <bar>
+        <b:baz/>
+        <aaa:piyo/>
+    </bar>
+</foo>");
+            var root = xml.Root;
+            var nodes = new[]
+            {
+                root,
+                root.FindChild("bar"),
+                root.FindChild("bar").FindChild("b:baz"),
+                root.FindChild("bar").FindChild("aaa:piyo"),
+            };
+
+            foreach(var node in nodes) {
+                Assert.Throws<InvalidOperationException>(() => node.GetFullName());
+                node.TryGetFullName(out _, out _).ShouldBe(false);
+            }
+        }
+
+        [Fact]
         public void Test_FindChild()
         {
             using var xml = XmlParser.Parse(SampleXml1);
