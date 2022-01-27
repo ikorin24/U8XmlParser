@@ -596,6 +596,21 @@ namespace UnitTest
             Assert.True(rawStr3.GetHashCode() == RawString.GetHashCode(rawStr3.Ptr, rawStr3.Length));
         }
 
+        [Fact]
+        public unsafe void UnpairedSurrogateComparison()
+        {
+            // "\ufffd" == "�" It is the default fallback character for UTF8Encoding
+            const string FallbackCharStr = "\ufffd";
+            // "\ud83d" is one of the surrogate
+            const string SurrogateCharStr = "\ud83d";
+            var fallbackCharUtf8Bytes = Encoding.UTF8.GetBytes(FallbackCharStr);
+            fixed(byte* ptr = fallbackCharUtf8Bytes) {
+                var fallbackCharRawStr = new RawString(ptr, fallbackCharUtf8Bytes.Length);
+                Assert.False(fallbackCharRawStr.StartsWith(SurrogateCharStr));
+                Assert.False(fallbackCharRawStr.EndsWith(SurrogateCharStr));
+            }
+        }
+
         private readonly struct Check<T>
         {
             public readonly T Answer;
