@@ -1,7 +1,7 @@
 # U8XmlParser
 
 [![GitHub license](https://img.shields.io/github/license/ikorin24/U8XmlParser?color=FF8821)](https://github.com/ikorin24/U8XmlParser/blob/master/LICENSE)
-[![nuget](https://img.shields.io/badge/nuget-v1.3.0-FF8821)](https://www.nuget.org/packages/U8XmlParser)
+[![nuget](https://img.shields.io/badge/nuget-v1.4.0-FF8821)](https://www.nuget.org/packages/U8XmlParser)
 [![openupm](https://img.shields.io/npm/v/com.ikorin24.u8xmlparser?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.ikorin24.u8xmlparser/)
 [![Build and Test](https://github.com/ikorin24/U8XmlParser/actions/workflows/test.yml/badge.svg)](https://github.com/ikorin24/U8XmlParser/actions/workflows/test.yml)
 
@@ -34,7 +34,7 @@ $ openupm add com.ikorin24.u8xmlparser
 
 Or install the package from UPM by git URL.
 
-git URL: (https://github.com/ikorin24/U8XmlParser.git?path=src/U8XmlParserUnity/Assets/Plugins#v1.3.0)
+git URL: (https://github.com/ikorin24/U8XmlParser.git?path=src/U8XmlParserUnity/Assets/Plugins#v1.4.0)
 
 #### **Unity 2019 or older**
 
@@ -74,8 +74,7 @@ $ dotnet src/U8XmlParser/U8XmlParser.csproj -c Release
 // using System.IO;
 // using U8Xml;
 
-using (Stream stream = File.OpenRead("your_file.xml"))
-using (XmlObject xml = XmlParser.Parse(stream))
+using (XmlObject xml = XmlParser.ParseFile("your_file.xml"))
 {
     XmlNode root = xml.Root;
     string rootName = root.Name.ToString();         // "SomeData"
@@ -119,8 +118,7 @@ Some xml has DTD; Document Type Declaration, and it can contain Entity Declarati
 // using System.IO;
 // using U8Xml;
 
-using (Stream stream = File.OpenRead("your_file.xml"))
-using (XmlObject xml = XmlParser.Parse(stream))
+using (XmlObject xml = XmlParser.ParseFile("your_file.xml"))
 {
     RawString innerText = xml.Root.InnerText;   // "&lt;foo&gt;"
     XmlEntityTable entities = xml.EntityTable;
