@@ -93,4 +93,37 @@ namespace U8Xml.Internal
 #endif
         }
     }
+
+    internal static class FileHelper
+    {
+        public static unsafe (UnmanagedBuffer buffer, int length) ReadFileToUnmanaged(string filePath)
+        {
+#if NET6_0_OR_GREATER
+            UnmanagedBuffer buffer = default;
+            try {
+                int length;
+                using var handle = File.OpenHandle(filePath);
+                var fileLength = RandomAccess.GetLength(handle);
+                if(fileLength > int.MaxValue) {
+                    ThrowHelper.ThrowNotSupported("The file is too large to parse. The parser only supports the file whose size is less than 2GB.");
+                }
+                buffer = new UnmanagedBuffer((int)fileLength);
+                length = RandomAccess.Read(handle, buffer.AsSpan(), 0);
+                return (buffer, length);
+            }
+            catch {
+                buffer.Dispose();
+                throw;
+            }
+#else
+            using(var stream = File.OpenRead(filePath)) {
+                var fileLength = stream.Length;
+                if(fileLength > int.MaxValue) {
+                    ThrowHelper.ThrowNotSupported("The file is too large to parse. The parser only supports the file whose size is less than 2GB.");
+                }
+                return stream.ReadAllToUnmanaged((int)fileLength);
+            }
+#endif
+        }
+    }
 }

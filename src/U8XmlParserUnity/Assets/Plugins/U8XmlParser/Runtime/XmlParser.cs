@@ -27,19 +27,7 @@ namespace U8Xml
         /// <returns>xml object</returns>
         public static XmlObject Parse(ReadOnlySpan<char> text)
         {
-            var buf = default(UnmanagedBuffer);
-            try {
-                fixed(char* ptr = text) {
-                    var byteLen = UTF8ExceptionFallbackEncoding.Instance.GetByteCount(ptr, text.Length);
-                    buf = new UnmanagedBuffer(byteLen);
-                    UTF8ExceptionFallbackEncoding.Instance.GetBytes(ptr, text.Length, (byte*)buf.Ptr, buf.Length);
-                }
-                return new XmlObject(ParseCore(ref buf, buf.Length));
-            }
-            catch {
-                buf.Dispose();
-                throw;
-            }
+            return new XmlObject(ParseCharSpanCore(text));
         }
 
         /// <summary>Parse xml encoded as UTF8 (both with and without BOM).</summary>
@@ -136,6 +124,95 @@ namespace U8Xml
                 finally {
                     charBuf.Dispose();
                 }
+            }
+        }
+
+        /// <summary>Parse xml file encoded as UTF8 (both with and without BOM).</summary>
+        /// <param name="filePath">file path to parse</param>
+        /// <returns>xml object</returns>
+        public static XmlObject ParseFile(string filePath)
+        {
+            return ParseFile(filePath, UTF8ExceptionFallbackEncoding.Instance);
+        }
+
+        /// <summary>Parse xml file encoded as specified encoding.</summary>
+        /// <param name="filePath">file path to parse</param>
+        /// <param name="encoding">encoding of the file</param>
+        /// <returns>xml object</returns>
+        public static XmlObject ParseFile(string filePath, Encoding encoding)
+        {
+            if(filePath is null) { ThrowHelper.ThrowNullArg(nameof(filePath)); }
+            if(encoding is null) { ThrowHelper.ThrowNullArg(nameof(encoding)); }
+
+            return new XmlObject(ParseFileCore(filePath!, encoding!));
+        }
+
+        internal static XmlObjectCore ParseFileCore(string filePath, Encoding encoding)
+        {
+            if(encoding is UTF8Encoding || encoding is ASCIIEncoding) {
+                UnmanagedBuffer buffer = default;
+                try {
+                    int length;
+                    (buffer, length) = FileHelper.ReadFileToUnmanaged(filePath);
+                    return ParseCore(ref buffer, length);
+                }
+                catch {
+                    buffer.Dispose();
+                    throw;
+                }
+            }
+            else if(encoding.Equals(Encoding.Unicode) && BitConverter.IsLittleEndian) {
+                // The runtime is little endian and the encoding is utf-16 LE with BOM
+                var (utf16LEBuf, utf16LEByteLength) = FileHelper.ReadFileToUnmanaged(filePath);
+                try {
+                    var charSpan = SpanHelper.CreateReadOnlySpan<char>((void*)utf16LEBuf.Ptr, utf16LEByteLength / sizeof(char));
+                    // Remove BOM
+                    if(MemoryMarshal.AsBytes(charSpan).StartsWith(Utf16LEBOM)) {
+                        charSpan = charSpan.Slice(2);
+                    }
+                    return ParseCharSpanCore(charSpan);
+                }
+                finally {
+                    utf16LEBuf.Dispose();
+                }
+            }
+            else {
+                UnmanagedBuffer charBuf = default;
+                ReadOnlySpan<char> charSpan = default;
+                try {
+                    var (buf, byteLength) = FileHelper.ReadFileToUnmanaged(filePath);
+                    try {
+                        var charCount = encoding.GetCharCount((byte*)buf.Ptr, byteLength);
+                        charBuf = new UnmanagedBuffer(charCount * sizeof(char));
+                        encoding.GetChars((byte*)buf.Ptr, byteLength, (char*)charBuf.Ptr, charCount);
+                        charSpan = SpanHelper.CreateReadOnlySpan<char>((void*)charBuf.Ptr, charCount);
+                    }
+                    finally {
+                        buf.Dispose();
+                    }
+                    return ParseCharSpanCore(charSpan);
+                }
+                finally {
+                    charBuf.Dispose();
+                }
+            }
+        }
+
+        private static XmlObjectCore ParseCharSpanCore(ReadOnlySpan<char> charSpan)
+        {
+            var utf8Buf = default(UnmanagedBuffer);
+            try {
+                var utf8Enc = UTF8ExceptionFallbackEncoding.Instance;
+                fixed(char* ptr = charSpan) {
+                    var byteLen = utf8Enc.GetByteCount(ptr, charSpan.Length);
+                    utf8Buf = new UnmanagedBuffer(byteLen);
+                    utf8Enc.GetBytes(ptr, charSpan.Length, (byte*)utf8Buf.Ptr, utf8Buf.Length);
+                }
+                return ParseCore(ref utf8Buf, utf8Buf.Length);
+            }
+            catch {
+                utf8Buf.Dispose();
+                throw;
             }
         }
 

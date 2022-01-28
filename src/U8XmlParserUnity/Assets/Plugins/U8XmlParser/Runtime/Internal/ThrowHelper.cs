@@ -21,6 +21,14 @@ namespace U8Xml.Internal
 #if CODE_ANALYTICS
         [DoesNotReturn]
 #endif
+        public static void ThrowNotSupported(string message)
+        {
+            throw new NotSupportedException(message);
+        }
+
+#if CODE_ANALYTICS
+        [DoesNotReturn]
+#endif
         public static void ThrowNullArg(string message)
         {
             throw new ArgumentNullException(message);

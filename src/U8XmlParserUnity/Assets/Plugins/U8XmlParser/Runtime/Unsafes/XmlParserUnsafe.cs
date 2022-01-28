@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.IO;
+using System.Text;
 using U8Xml.Internal;
 
 namespace U8Xml.Unsafes
@@ -63,6 +64,31 @@ namespace U8Xml.Unsafes
                 buf.Dispose();
                 throw;
             }
+        }
+
+        /// <summary>
+        /// [WARNING] DON'T use this if you don't know how to use. The method is hidden. <para/>
+        /// *** Memory leaks happen if you use it in the wrong way. ***<para/>
+        /// The object returned from the method MUST BE disposed after you use it.<para/>
+        /// </summary>
+        /// <param name="filePath">file path to parse</param>
+        /// <returns>xml object</returns>
+        public static XmlObjectUnsafe ParseFileUnsafe(string filePath)
+        {
+            return XmlObjectUnsafe.Create(XmlParser.ParseFileCore(filePath, Encoding.UTF8));
+        }
+
+        /// <summary>
+        /// [WARNING] DON'T use this if you don't know how to use. The method is hidden. <para/>
+        /// *** Memory leaks happen if you use it in the wrong way. ***<para/>
+        /// The object returned from the method MUST BE disposed after you use it.<para/>
+        /// </summary>
+        /// <param name="filePath">file path to parse</param>
+        /// <param name="encoding">encoding of the file</param>
+        /// <returns>xml object</returns>
+        public static XmlObjectUnsafe ParseFileUnsafe(string filePath, Encoding encoding)
+        {
+            return XmlObjectUnsafe.Create(XmlParser.ParseFileCore(filePath, encoding));
         }
     }
 }
