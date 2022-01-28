@@ -1,0 +1,9 @@
+﻿<?xml version="1.0"?>
+<Sample Description="これは utf-8 with BOM のデータです。" TestString="香風智乃">
+  <Group Num="0">
+    <Data Id="0" Name="data0" Age="0" SomeValue="0.008726535498373935">sample data, id 0</Data>
+  </Group>
+  <Group Num="1">
+    <Data Id="0" Name="data0" Age="0" SomeValue="0.008726535498373935">sample data, id 0</Data>
+  </Group>
+</Sample>
