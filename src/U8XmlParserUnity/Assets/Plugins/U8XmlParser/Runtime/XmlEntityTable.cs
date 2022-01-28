@@ -145,7 +145,7 @@ namespace U8Xml
                 Span<byte> buf = stackalloc byte[Threshold];
                 Resolve(str, buf);
                 fixed(byte* ptr = buf) {
-                    return Encoding.UTF8.GetString(ptr, byteLen);
+                    return UTF8ExceptionFallbackEncoding.Instance.GetString(ptr, byteLen);
                 }
             }
             else {
@@ -153,7 +153,7 @@ namespace U8Xml
                 try {
                     Resolve(str, buf.AsSpan());
                     fixed(byte* ptr = buf) {
-                        return Encoding.UTF8.GetString(ptr, byteLen);
+                        return UTF8ExceptionFallbackEncoding.Instance.GetString(ptr, byteLen);
                     }
                 }
                 finally {

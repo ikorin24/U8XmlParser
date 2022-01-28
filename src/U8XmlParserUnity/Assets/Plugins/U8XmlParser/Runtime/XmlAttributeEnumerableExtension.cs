@@ -117,7 +117,7 @@ namespace U8Xml
                 return Option<XmlAttribute>.Null;
             }
 
-            var utf8 = Encoding.UTF8;
+            var utf8 = UTF8ExceptionFallbackEncoding.Instance;
             var byteLen = utf8.GetByteCount(name);
 
             const int Threshold = 128;
@@ -162,7 +162,7 @@ namespace U8Xml
                 return Option<XmlAttribute>.Null;
             }
 
-            var utf8 = Encoding.UTF8;
+            var utf8 = UTF8ExceptionFallbackEncoding.Instance;
             var nsNameByteLen = utf8.GetByteCount(namespaceName);
             var nameByteLen = utf8.GetByteCount(name);
             var byteLen = nsNameByteLen + nameByteLen;

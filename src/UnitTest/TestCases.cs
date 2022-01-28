@@ -6,6 +6,7 @@ using U8Xml;
 using U8Xml.Unsafes;
 using System.Text;
 using System.Collections.Generic;
+using U8Xml.Internal;
 
 namespace UnitTest
 {
@@ -19,9 +20,9 @@ namespace UnitTest
                 // from ReadOnlySpan<byte>
                 () => XmlParser.Parse(xmlBytes.ToArray()),
                 // from string
-                () => XmlParser.Parse(Encoding.UTF8.GetString(xmlBytes.ToArray())),
+                () => XmlParser.Parse(UTF8ExceptionFallbackEncoding.Instance.GetString(xmlBytes.ToArray())),
                 // from ReadOnlySpan<char>
-                () => XmlParser.Parse(Encoding.UTF8.GetString(xmlBytes.ToArray()).AsSpan()),
+                () => XmlParser.Parse(UTF8ExceptionFallbackEncoding.Instance.GetString(xmlBytes.ToArray()).AsSpan()),
                 // from Stream
                 () => XmlParser.Parse(new MemoryStream(xmlBytes.ToArray())),
                 // from Stream, fileSizeHint
@@ -31,7 +32,7 @@ namespace UnitTest
                     return XmlParser.Parse(ms, (int)ms.Length);
                 },
                 // from Stream, Encoding
-                ReEncoding(xmlBytes.ToArray(), Encoding.UTF8),
+                ReEncoding(xmlBytes.ToArray(), UTF8ExceptionFallbackEncoding.Instance),
                 ReEncoding(xmlBytes.ToArray(), Encoding.Unicode),
                 ReEncoding(xmlBytes.ToArray(), Encoding.BigEndianUnicode),
                 ReEncoding(xmlBytes.ToArray(), Encoding.UTF32),
@@ -58,7 +59,7 @@ namespace UnitTest
 
         private static Func<XmlObject> ReEncoding(ReadOnlySpan<byte> xml, Encoding encoding)
         {
-            var bytes = Encoding.Convert(Encoding.UTF8, encoding, xml.ToArray());
+            var bytes = Encoding.Convert(UTF8ExceptionFallbackEncoding.Instance, encoding, xml.ToArray());
             var ms = new MemoryStream(bytes);
             return () => XmlParser.Parse(ms, encoding);
         }

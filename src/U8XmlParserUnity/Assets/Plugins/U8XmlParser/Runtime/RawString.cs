@@ -156,7 +156,7 @@ namespace U8Xml
 
         /// <summary>Decode byte array as utf-8 and get <see langword="string"/></summary>
         /// <returns>decoded string</returns>
-        public override string ToString() => IsEmpty ? "" : Encoding.UTF8.GetString((byte*)_ptr, _length);
+        public override string ToString() => IsEmpty ? "" : UTF8ExceptionFallbackEncoding.Instance.GetString((byte*)_ptr, _length);
 
         public override bool Equals(object? obj) => obj is RawString array && Equals(array);
 
@@ -184,7 +184,7 @@ namespace U8Xml
             if(other.Length == 0) {
                 return true;
             }
-            var utf8 = Encoding.UTF8;
+            var utf8 = UTF8ExceptionFallbackEncoding.Instance;
             var byteLen = utf8.GetByteCount(other);
             if(byteLen > Length) {
                 return false;
@@ -236,7 +236,7 @@ namespace U8Xml
             if(other.Length == 0) {
                 return true;
             }
-            var utf8 = Encoding.UTF8;
+            var utf8 = UTF8ExceptionFallbackEncoding.Instance;
             var byteLen = utf8.GetByteCount(other);
             if(byteLen > Length) {
                 return false;
@@ -318,7 +318,7 @@ namespace U8Xml
         public static bool operator ==(RawString left, ReadOnlySpan<char> right)
         {
             if(right.IsEmpty) { return left.IsEmpty; }
-            var utf8 = Encoding.UTF8;
+            var utf8 = UTF8ExceptionFallbackEncoding.Instance;
             var byteLen = utf8.GetByteCount(right);
             if(byteLen != left.Length) { return false; }
 
