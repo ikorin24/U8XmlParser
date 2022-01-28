@@ -100,7 +100,7 @@ namespace U8Xml
                     var utf16LESpan = SpanHelper.CreateReadOnlySpan<char>((void*)utf16LEBuf.Ptr, utf16ByteLength / sizeof(char));
                     // Remove BOM
                     if(MemoryMarshal.AsBytes(utf16LESpan).StartsWith(Utf16LEBOM)) {
-                        utf16LESpan = utf16LESpan.Slice(2);
+                        utf16LESpan = utf16LESpan.Slice(1);
                     }
                     return Parse(utf16LESpan);
                 }
@@ -168,7 +168,7 @@ namespace U8Xml
                     var charSpan = SpanHelper.CreateReadOnlySpan<char>((void*)utf16LEBuf.Ptr, utf16LEByteLength / sizeof(char));
                     // Remove BOM
                     if(MemoryMarshal.AsBytes(charSpan).StartsWith(Utf16LEBOM)) {
-                        charSpan = charSpan.Slice(2);
+                        charSpan = charSpan.Slice(1);
                     }
                     return ParseCharSpanCore(charSpan);
                 }
