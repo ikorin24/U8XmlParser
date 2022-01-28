@@ -2,6 +2,7 @@
 using System;
 using System.Text;
 using U8Xml;
+using U8Xml.Internal;
 using Xunit;
 
 namespace UnitTest
@@ -43,8 +44,8 @@ namespace UnitTest
                 node.IsName(nsName.AsSpan(), name.AsSpan()).ShouldBe(true);
                 node.IsName(nsName, name.AsSpan()).ShouldBe(true);
 
-                var nsName_ROSbyte = Encoding.UTF8.GetBytes(nsName).AsSpan();
-                var name_ROSbyte = Encoding.UTF8.GetBytes(name).AsSpan();
+                var nsName_ROSbyte = UTF8ExceptionFallbackEncoding.Instance.GetBytes(nsName).AsSpan();
+                var name_ROSbyte = UTF8ExceptionFallbackEncoding.Instance.GetBytes(name).AsSpan();
                 fixed(byte* p = nsName_ROSbyte)
                 fixed(byte* p2 = name_ROSbyte) {
                     var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
@@ -443,9 +444,9 @@ namespace UnitTest
             public string? Name { get; }
 
             public ReadOnlySpan<char> NsName_ROSchar => NsName.AsSpan();
-            public ReadOnlySpan<byte> NsName_ROSbyte => Encoding.UTF8.GetBytes(NsName?.ToCharArray() ?? Array.Empty<char>());
+            public ReadOnlySpan<byte> NsName_ROSbyte => UTF8ExceptionFallbackEncoding.Instance.GetBytes(NsName?.ToCharArray() ?? Array.Empty<char>());
             public ReadOnlySpan<char> Name_ROSchar => Name.AsSpan();
-            public ReadOnlySpan<byte> Name_ROSbyte => Encoding.UTF8.GetBytes(Name?.ToCharArray() ?? Array.Empty<char>());
+            public ReadOnlySpan<byte> Name_ROSbyte => UTF8ExceptionFallbackEncoding.Instance.GetBytes(Name?.ToCharArray() ?? Array.Empty<char>());
 
             public NodeName(string? nsName, string? name)
             {

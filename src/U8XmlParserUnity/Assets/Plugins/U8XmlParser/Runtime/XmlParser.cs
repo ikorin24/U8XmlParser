@@ -30,9 +30,9 @@ namespace U8Xml
             var buf = default(UnmanagedBuffer);
             try {
                 fixed(char* ptr = text) {
-                    var byteLen = Encoding.UTF8.GetByteCount(ptr, text.Length);
+                    var byteLen = UTF8ExceptionFallbackEncoding.Instance.GetByteCount(ptr, text.Length);
                     buf = new UnmanagedBuffer(byteLen);
-                    Encoding.UTF8.GetBytes(ptr, text.Length, (byte*)buf.Ptr, buf.Length);
+                    UTF8ExceptionFallbackEncoding.Instance.GetBytes(ptr, text.Length, (byte*)buf.Ptr, buf.Length);
                 }
                 return new XmlObject(ParseCore(ref buf, buf.Length));
             }

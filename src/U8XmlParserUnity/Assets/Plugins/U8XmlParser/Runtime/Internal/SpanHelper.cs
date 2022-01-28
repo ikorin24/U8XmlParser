@@ -27,9 +27,9 @@ namespace U8Xml.Internal
         public static string Utf8ToString(this ReadOnlySpan<byte> source)
         {
 #if NO_SPAN_API
-            unsafe { fixed(byte* ptr = source) { return Encoding.UTF8.GetString(ptr, source.Length); } }
+            unsafe { fixed(byte* ptr = source) { return UTF8ExceptionFallbackEncoding.Instance.GetString(ptr, source.Length); } }
 #else
-            return Encoding.UTF8.GetString(source);
+            return UTF8ExceptionFallbackEncoding.Instance.GetString(source);
 #endif
         }
 

@@ -2,6 +2,7 @@
 using System;
 using System.Text;
 using U8Xml;
+using U8Xml.Internal;
 using Xunit;
 
 namespace UnitTest
@@ -43,8 +44,8 @@ namespace UnitTest
                 attr.IsName(nsName.AsSpan(), name.AsSpan()).ShouldBe(true);
                 attr.IsName(nsName, name.AsSpan()).ShouldBe(true);
 
-                var nsName_ROSbyte = Encoding.UTF8.GetBytes(nsName).AsSpan();
-                var name_ROSbyte = Encoding.UTF8.GetBytes(name).AsSpan();
+                var nsName_ROSbyte = UTF8ExceptionFallbackEncoding.Instance.GetBytes(nsName).AsSpan();
+                var name_ROSbyte = UTF8ExceptionFallbackEncoding.Instance.GetBytes(name).AsSpan();
                 fixed(byte* p = nsName_ROSbyte)
                 fixed(byte* p2 = name_ROSbyte) {
                     var nsName_RS = new RawString(p, nsName_ROSbyte.Length);
@@ -152,7 +153,7 @@ namespace UnitTest
             target.Attributes.Find(name!).Value.ToInt32().ShouldBe(value);
             target.Attributes.Find(name.AsSpan()).Value.ToInt32().ShouldBe(value);
 
-            var name_ROSbyte = Encoding.UTF8.GetBytes(name ?? "");
+            var name_ROSbyte = UTF8ExceptionFallbackEncoding.Instance.GetBytes(name ?? "");
             fixed(byte* p = name_ROSbyte) {
                 var name_RS = new RawString(p, name_ROSbyte.Length);
 
@@ -218,7 +219,7 @@ namespace UnitTest
                 attr.Value.ToInt32().ShouldBe(value);
             }
 
-            var name_ROSbyte = Encoding.UTF8.GetBytes(name ?? "");
+            var name_ROSbyte = UTF8ExceptionFallbackEncoding.Instance.GetBytes(name ?? "");
             fixed(byte* p = name_ROSbyte) {
                 fixed(byte* p2 = name_ROSbyte) {
                     var name_RS = new RawString(p, name_ROSbyte.Length);
@@ -368,7 +369,7 @@ namespace UnitTest
             target.Attributes.FindOrDefault(name!).Value.Value.ToInt32().ShouldBe(value);
             target.Attributes.FindOrDefault(name.AsSpan()).Value.Value.ToInt32().ShouldBe(value);
 
-            var name_ROSbyte = Encoding.UTF8.GetBytes(name ?? "");
+            var name_ROSbyte = UTF8ExceptionFallbackEncoding.Instance.GetBytes(name ?? "");
             fixed(byte* p = name_ROSbyte) {
                 var name_RS = new RawString(p, name_ROSbyte.Length);
 
@@ -488,9 +489,9 @@ namespace UnitTest
             public string? Name { get; }
 
             public ReadOnlySpan<char> NsName_ROSchar => NsName.AsSpan();
-            public ReadOnlySpan<byte> NsName_ROSbyte => Encoding.UTF8.GetBytes(NsName?.ToCharArray() ?? Array.Empty<char>());
+            public ReadOnlySpan<byte> NsName_ROSbyte => UTF8ExceptionFallbackEncoding.Instance.GetBytes(NsName?.ToCharArray() ?? Array.Empty<char>());
             public ReadOnlySpan<char> Name_ROSchar => Name.AsSpan();
-            public ReadOnlySpan<byte> Name_ROSbyte => Encoding.UTF8.GetBytes(Name?.ToCharArray() ?? Array.Empty<char>());
+            public ReadOnlySpan<byte> Name_ROSbyte => UTF8ExceptionFallbackEncoding.Instance.GetBytes(Name?.ToCharArray() ?? Array.Empty<char>());
 
             public AttrName(string? nsName, string? name)
             {

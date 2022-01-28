@@ -267,7 +267,7 @@ namespace U8Xml
             else {
                 const int CharMaxByteCount = 6;
                 byte* buf = stackalloc byte[CharMaxByteCount];
-                var byteCount = Encoding.UTF8.GetBytes(&separator, 1, buf, CharMaxByteCount);
+                var byteCount = UTF8ExceptionFallbackEncoding.Instance.GetBytes(&separator, 1, buf, CharMaxByteCount);
                 return Split2(SpanHelper.CreateReadOnlySpan<byte>(buf, byteCount));
             }
         }
@@ -287,12 +287,12 @@ namespace U8Xml
             if(separator.Length <= ThresholdLen) {
                 byte* buf = stackalloc byte[StackBufSize];
                 fixed(char* ptr = separator) {
-                    var byteCount = Encoding.UTF8.GetBytes(ptr, separator.Length, buf, StackBufSize);
+                    var byteCount = UTF8ExceptionFallbackEncoding.Instance.GetBytes(ptr, separator.Length, buf, StackBufSize);
                     return Split2(SpanHelper.CreateReadOnlySpan<byte>(buf, byteCount));
                 }
             }
             else {
-                var utf8 = Encoding.UTF8;
+                var utf8 = UTF8ExceptionFallbackEncoding.Instance;
                 var byteCount = utf8.GetByteCount(separator);
                 var buf = ArrayPool<byte>.Shared.Rent(byteCount);
                 try {

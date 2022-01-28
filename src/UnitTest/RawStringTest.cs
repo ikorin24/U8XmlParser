@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Linq;
+using U8Xml.Internal;
 
 namespace UnitTest
 {
@@ -603,11 +604,11 @@ namespace UnitTest
             const string FallbackCharStr = "\ufffd";
             // "\ud83d" is one of the surrogate
             const string SurrogateCharStr = "\ud83d";
-            var fallbackCharUtf8Bytes = Encoding.UTF8.GetBytes(FallbackCharStr);
+            var fallbackCharUtf8Bytes = UTF8ExceptionFallbackEncoding.Instance.GetBytes(FallbackCharStr);
             fixed(byte* ptr = fallbackCharUtf8Bytes) {
                 var fallbackCharRawStr = new RawString(ptr, fallbackCharUtf8Bytes.Length);
-                Assert.False(fallbackCharRawStr.StartsWith(SurrogateCharStr));
-                Assert.False(fallbackCharRawStr.EndsWith(SurrogateCharStr));
+                Assert.Throws<EncoderFallbackException>(() => fallbackCharRawStr.StartsWith(SurrogateCharStr));
+                Assert.Throws<EncoderFallbackException>(() => fallbackCharRawStr.EndsWith(SurrogateCharStr));
             }
         }
 
@@ -779,7 +780,7 @@ namespace UnitTest
             static unsafe void Register(ReadOnlySpan<byte> s)
             {
                 var ptr = (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(s));
-                var str = Encoding.UTF8.GetString(s.ToArray());
+                var str = UTF8ExceptionFallbackEncoding.Instance.GetString(s.ToArray());
                 _dic[str] = new RawString(ptr, s.Length);
             }
         }
