@@ -300,9 +300,11 @@ namespace U8Xml
                     else { throw NewFormatException(); }
                 }
                 else {
+                    var nodeStrStart = i - 1;
+                    byte* nodeStrPtr = data.GetPtr() + nodeStrStart;
                     GetNodeName(data, ref i, out var name);
                     var node = nodes.GetPointerToAdd(out var nodeIndex);
-                    *node = new XmlNode_(nodes, nodeIndex, nodeStack.Count, name, attrs);
+                    *node = new XmlNode_(nodes, nodeIndex, nodeStack.Count, name, nodeStrPtr, attrs);
                     while(true) {
                         if(data.At(i) == '>') {
                             if(nodeStack.Count > 0) {
@@ -318,6 +320,7 @@ namespace U8Xml
                                 XmlNode_.AddChild(nodeStack.Peek(), node);
                             }
                             i += 2;
+                            node->NodeStrLength = i - nodeStrStart;
                             goto None;
                         }
                         else {
@@ -342,9 +345,12 @@ namespace U8Xml
         NodeTail:
             {
                 GetNodeName(data, ref i, out var name);
-                if(nodeStack.Pop()->Name.SequenceEqual(name) == false) { throw NewFormatException(); }
+                var node = nodeStack.Pop();
+                if(node->Name.SequenceEqual(name) == false) { throw NewFormatException(); }
                 if(data.At(i) == '>') {
                     i++;
+                    long len = data.GetPtr() + i - node->NodeStrPtr;
+                    node->NodeStrLength = checked((int)len);
                     goto None;
                 }
                 else { throw NewFormatException(); }
