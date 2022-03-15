@@ -61,6 +61,9 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
+        /// <summary>Get the string that this node represents as <see cref="RawString"/>.</summary>
+        /// <remarks>The indent of the node is ignored at the head.</remarks>
+        /// <returns><see cref="RawString"/> this node represents</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString AsRawString() => ((XmlNode_*)_node)->AsRawString();
 
