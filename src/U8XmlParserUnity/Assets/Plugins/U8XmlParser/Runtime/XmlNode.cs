@@ -61,6 +61,12 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
+        /// <summary>Get the string that this node represents as <see cref="RawString"/>.</summary>
+        /// <remarks>The indent of the node is ignored at the head.</remarks>
+        /// <returns><see cref="RawString"/> this node represents</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public RawString AsRawString() => ((XmlNode_*)_node)->AsRawString();
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetParent(out XmlNode parent) => Parent.TryGetValue(out parent);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -433,6 +439,8 @@ namespace U8Xml
         public readonly int Depth;
         public readonly RawString Name;
         public RawString InnerText;
+        public readonly byte* NodeStrPtr;
+        public int NodeStrLength;
 
         public XmlNode_* Parent;
         public XmlNode_* FirstChild;
@@ -457,7 +465,7 @@ namespace U8Xml
         public bool HasChildren => FirstChild != null;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal XmlNode_(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, CustomList<XmlAttribute_> wholeAttrs)
+        internal XmlNode_(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
         {
             // [NOTE]
             // _wholeNodes is CustomList<XmlNode_>,
@@ -480,8 +488,13 @@ namespace U8Xml
             AttrIndex = 0;
             AttrCount = 0;
             WholeAttrs = wholeAttrs;
+            NodeStrPtr = nodeStrPtr;
+            NodeStrLength = 0;
             HasXmlNamespaceAttr = false;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public RawString AsRawString() => new RawString(NodeStrPtr, NodeStrLength);
 
         public override string ToString()
         {
