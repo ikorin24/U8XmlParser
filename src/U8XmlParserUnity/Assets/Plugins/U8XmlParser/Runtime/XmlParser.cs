@@ -5,6 +5,7 @@ using System.Diagnostics;
 using U8Xml.Internal;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace U8Xml
 {
@@ -537,15 +538,24 @@ namespace U8Xml
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool SkipEmpty(RawString data, ref int i)
         {
             // Skip whitespace, tab, CR and LF.
             // return false if end of data, otherwise true.
 
-            while(true) {
-                if(i >= data.Length) { return false; }
-                if(data.At(i) == ' ' || data.At(i) == '\t' || data.At(i) == '\n' || data.At(i) == '\r') { i++; continue; }
-                return true;
+            if(i >= data.Length) { return false; }
+            if(IsEmptyChar(data.At(i)) == false) { return true; }
+            return Loop(data, ref i);
+
+            static bool Loop(RawString data, ref int i)
+            {
+                i++;
+                while(true) {
+                    if(i >= data.Length) { return false; }
+                    if(IsEmptyChar(data.At(i))) { i++; continue; }
+                    return true;
+                }
             }
         }
 
@@ -643,16 +653,55 @@ namespace U8Xml
             // [NOTE]
             // 'node' is null when the attribute is belonging to the xml declaration.
 
+            // ---------------------------------
+            // The Current position is here.
+            //
+            // <foo aaa="bbb" ...
+            //      |
+            //      `- data[i]
+            //
+            // ---------------------------------
+            //
+            // Empty character may exist at the position of @.
+            //
+            // <foo aaa@=@"bbb" ...
+            //
+            // ---------------------------------
+
             // Get attribute name
             var nameStart = i;
-            while(true) {
-                if(i + 1 >= data.Length) { throw NewFormatException(); }
-                ref var next = ref data.At(i + 1);
-                i++;
-                if(next == '=') { break; }
+            if(data.At(i++) == '=') {
+                throw NewFormatException(); // in case of "<foo =...", that is no attribute name.
             }
-            var name = data.Slice(nameStart, i - nameStart);
-            i++;
+
+            RawString name;
+            while(true) {
+                if(i >= data.Length) { throw NewFormatException(); }
+                var next = data.At(i++);
+                if(IsEmptyChar(next)) {
+                    int nameLen = i - 1 - nameStart;
+                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+                    if(data.At(i++) == '=') {
+                        name = data.Slice(nameStart, nameLen);
+                        break;
+                    }
+                    throw NewFormatException();
+                }
+                if(next == '=') {
+                    name = data.Slice(nameStart, i - 1 - nameStart);
+                    break;
+                }
+            }
+            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+
+            // ---------------------------------
+            // The Current position is here. (Empty character may exist at the position of @.)
+            //
+            // <foo aaa@=@"bbb" ...
+            //            |
+            //            `- data[i]
+            //
+            // ---------------------------------
 
             // Get attribute value
             var quote = data.At(i);     // " or '
@@ -669,6 +718,12 @@ namespace U8Xml
             i++;
             if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
             return new XmlAttribute_(name, value, node);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsEmptyChar(byte c)
+        {
+            return c == ' ' || c == '\t' || c == '\n' || c == '\r';
         }
 
         private static FormatException NewFormatException(string? message = null) => new FormatException(message);
