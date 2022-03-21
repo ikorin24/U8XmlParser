@@ -42,5 +42,29 @@ namespace UnitTest
                 Assert.True(name == name_abc);
             }
         }
+
+        [Fact]
+        public void ParseAttributeFail()
+        {
+            Assert.Throws<FormatException>(() =>
+            {
+                using var xml = XmlParser.Parse(@"<root><foo =""123"" /></root>");
+            });
+
+            Assert.Throws<FormatException>(() =>
+            {
+                using var xml = XmlParser.Parse(@"<root><foo abc=123 /></root>");
+            });
+
+            Assert.Throws<FormatException>(() =>
+            {
+                using var xml = XmlParser.Parse(@"<root><foo abc='123"" /></root>");
+            });
+
+            Assert.Throws<FormatException>(() =>
+            {
+                using var xml = XmlParser.Parse(@"<root><foo abc=""123' /></root>");
+            });
+        }
     }
 }
