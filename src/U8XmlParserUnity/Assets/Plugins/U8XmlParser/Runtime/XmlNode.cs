@@ -9,10 +9,19 @@ using U8Xml.Internal;
 namespace U8Xml
 {
     /// <summary>A xml node type.</summary>
-    [DebuggerDisplay("<{ToString(),nq}>")]
+    [DebuggerDisplay("{DebugView(),nq}")]
     public readonly unsafe struct XmlNode : IEquatable<XmlNode>, IReference
     {
         private readonly IntPtr _node;  // XmlNode_*
+
+        private string DebugView()
+        {
+            var node = ((XmlNode_*)_node);
+            return (node == null) ? "" : node->IsTextNode ? node->InnerText.ToString() : $"<{node->Name}>";
+        }
+
+        /// <summary>Get whether the node is text node.</summary>
+        public bool IsTextNode => ((XmlNode_*)_node)->IsTextNode;
 
         /// <summary>Get whether the node is null. (Valid nodes always return false.)</summary>
         public bool IsNull => _node == IntPtr.Zero;
@@ -165,6 +174,9 @@ namespace U8Xml
         /// <returns>a found child node as <see cref="Option{T}"/></returns>
         public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> name)
         {
+            if(name.IsEmpty) {
+                return Option<XmlNode>.Null;
+            }
             foreach(var child in Children) {
                 if(child.Name == name) {
                     return child;
@@ -416,7 +428,7 @@ namespace U8Xml
         public override int GetHashCode() => _node.GetHashCode();
 
         /// <inheritdoc/>
-        public override string ToString() => _node != IntPtr.Zero ? ((XmlNode_*)_node)->Name.ToString() : "";
+        public override string ToString() => _node != IntPtr.Zero ? ((XmlNode_*)_node)->ToString() : "";
 
         /// <summary>Returns true if both <see cref="XmlNode"/>s are same objects.</summary>
         /// <param name="left">left operand</param>
@@ -453,6 +465,8 @@ namespace U8Xml
         public readonly CustomList<XmlAttribute_> WholeAttrs;
 
         public bool HasXmlNamespaceAttr;
+
+        public bool IsTextNode => Name.IsEmpty;
 
         public readonly CustomList<XmlNode_> WholeNodes
         {
@@ -498,7 +512,7 @@ namespace U8Xml
 
         public override string ToString()
         {
-            return Name.ToString();
+            return IsTextNode ? InnerText.ToString() : Name.ToString();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

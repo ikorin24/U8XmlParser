@@ -273,8 +273,15 @@ namespace U8Xml
 
         InnerText:
             {
+                var nodeStrStart = i;
+                byte* nodeStrPtr = data.GetPtr() + nodeStrStart;
                 var node = nodeStack.Peek();
-                GetInnerText(data, ref i, out node->InnerText);
+                var textNode = nodes.GetPointerToAdd(out var nodeIndex);
+                *textNode = new XmlNode_(nodes, nodeIndex, nodeStack.Count, RawString.Empty, nodeStrPtr, attrs);
+                GetInnerText(data, ref i, out var text);
+                textNode->InnerText = text;
+                node->InnerText = text;
+                XmlNode_.AddChild(node, textNode);
                 goto None;
             }
 
