@@ -63,7 +63,7 @@ $ dotnet src/U8XmlParser/U8XmlParser.csproj -c Release
 ```cs
 /* ------- your_file.xml ----------
 
-<?xml version="1.0" encoding="UTF-8">
+<?xml version="1.0" encoding="UTF-8"?>
 <SomeData>
     <Data aa="20">bbb</Data>
     <Data aa="30">ccc</Data>
