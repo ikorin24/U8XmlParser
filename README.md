@@ -108,7 +108,7 @@ Some xml has DTD; Document Type Declaration, and it can contain Entity Declarati
 ```cs
 /* ------- your_file.xml ----------
 
-<?xml version="1.0" encoding="UTF-8">
+<?xml version="1.0" encoding="UTF-8"?>
 <SomeData>
     &lt;foo&gt;
 </SomeData>
