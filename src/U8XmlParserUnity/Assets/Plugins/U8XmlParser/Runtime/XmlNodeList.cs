@@ -155,4 +155,100 @@ namespace U8Xml
             }
         }
     }
+
+    [DebuggerTypeProxy(typeof(TypedXmlNodeListTypeProxy))]
+    public unsafe readonly struct TypedXmlNodeList : IEnumerable<XmlNode>
+    {
+        private readonly XmlNode_* _parent;
+        private readonly XmlNodeType? _targetType;
+
+        internal TypedXmlNodeList(XmlNode_* parent, XmlNodeType? targetType)
+        {
+            _parent = parent;
+            _targetType = targetType;
+        }
+
+        public Enumerator GetEnumerator() => new Enumerator(_parent->FirstChild, _targetType);
+
+        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent->FirstChild, _targetType);
+
+        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent->FirstChild, _targetType);
+
+        public unsafe struct Enumerator : IEnumerator<XmlNode>
+        {
+            private XmlNode_* _current;
+            private XmlNode_* _next;
+            private readonly XmlNodeType _targetType;
+            private readonly bool _hasTargetType;
+
+            internal Enumerator(XmlNode_* parent, XmlNodeType? targetType)
+            {
+                _next = parent->FirstChild;
+                _current = null;
+                (_targetType, _hasTargetType) = targetType.HasValue switch
+                {
+                    true => (targetType.Value, true),
+                    false => (default, true),
+                };
+            }
+
+            public XmlNode Current => new XmlNode(_current);
+
+            object IEnumerator.Current => Current;
+
+            public void Dispose() { }   // nop
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool MoveNext()
+            {
+            MoveNext:
+                if(_next == null) { return false; }
+                _current = _next;
+                _next = _next->Sibling;
+
+                if(_hasTargetType == false || _current->NodeType == _targetType) {
+                    return true;
+                }
+
+                goto MoveNext;
+            }
+
+            public void Reset() => throw new NotSupportedException("Reset() is not supported.");
+        }
+
+        private sealed class EnumeratorClass : IEnumerator<XmlNode>
+        {
+            private Enumerator _enumerator;     // mutable object, don't make it readonly.
+
+            public XmlNode Current => _enumerator.Current;
+
+            object IEnumerator.Current => Current;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal EnumeratorClass(XmlNode_* firstChild, XmlNodeType? targetType)
+            {
+                _enumerator = new Enumerator(firstChild, targetType);
+            }
+
+            public void Dispose() => _enumerator.Dispose();
+
+            public bool MoveNext() => _enumerator.MoveNext();
+
+            public void Reset() => _enumerator.Reset();
+        }
+
+        private sealed class TypedXmlNodeListTypeProxy
+        {
+            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+            private TypedXmlNodeList _entity;
+
+            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+            public unsafe XmlNode[] Items => System.Linq.Enumerable.ToArray(_entity);
+
+            public TypedXmlNodeListTypeProxy(TypedXmlNodeList entity)
+            {
+                _entity = entity;
+            }
+        }
+    }
 }

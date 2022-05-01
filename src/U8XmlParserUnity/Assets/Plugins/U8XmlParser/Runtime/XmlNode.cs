@@ -17,11 +17,18 @@ namespace U8Xml
         private string DebugView()
         {
             var node = ((XmlNode_*)_node);
-            return (node == null) ? "" : node->IsTextNode ? node->InnerText.ToString() : $"<{node->Name}>";
+            return (node == null)
+                ? ""
+                : node->NodeType switch
+                {
+                    XmlNodeType.ElementNode => $"<{node->Name}>",
+                    XmlNodeType.TextNode => node->InnerText.ToString(),
+                    _ => "",
+                };
         }
 
-        /// <summary>Get whether the node is text node.</summary>
-        public bool IsTextNode => ((XmlNode_*)_node)->IsTextNode;
+        /// <summary>Get node type</summary>
+        public XmlNodeType NodeType => ((XmlNode_*)_node)->NodeType;
 
         /// <summary>Get whether the node is null. (Valid nodes always return false.)</summary>
         public bool IsNull => _node == IntPtr.Zero;
@@ -69,6 +76,11 @@ namespace U8Xml
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
+
+        /// <summary>Get children</summary>
+        /// <param name="targetType">target xml node type</param>
+        /// <returns>node list</returns>
+        public TypedXmlNodeList GetChildren(XmlNodeType? targetType = null) => new TypedXmlNodeList((XmlNode_*)_node, targetType);
 
         /// <summary>Get the string that this node represents as <see cref="RawString"/>.</summary>
         /// <remarks>The indent of the node is ignored at the head.</remarks>
@@ -466,7 +478,7 @@ namespace U8Xml
 
         public bool HasXmlNamespaceAttr;
 
-        public bool IsTextNode => Name.IsEmpty;
+        public XmlNodeType NodeType => Name.IsEmpty ? XmlNodeType.TextNode : XmlNodeType.ElementNode;
 
         public readonly CustomList<XmlNode_> WholeNodes
         {
@@ -512,7 +524,12 @@ namespace U8Xml
 
         public override string ToString()
         {
-            return IsTextNode ? InnerText.ToString() : Name.ToString();
+            return NodeType switch
+            {
+                XmlNodeType.ElementNode => Name.ToString(),
+                XmlNodeType.TextNode => InnerText.ToString(),
+                _ => "",
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -528,5 +545,14 @@ namespace U8Xml
             parent->ChildCount++;
             child->Parent = parent;
         }
+    }
+
+    /// <summary>Type of xml node</summary>
+    public enum XmlNodeType : byte
+    {
+        /// <summary>Element node</summary>
+        ElementNode = 0,
+        /// <summary>Text node</summary>
+        TextNode = 1,
     }
 }

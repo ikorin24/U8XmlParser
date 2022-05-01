@@ -42,7 +42,7 @@ namespace UnitTest
 
             static void AssertTextNode(XmlNode textNode, string text)
             {
-                Assert.True(textNode.IsTextNode);
+                Assert.True(textNode.NodeType == XmlNodeType.TextNode);
                 Assert.True(textNode.Name.IsEmpty);
                 Assert.True(textNode.InnerText == text);
                 Assert.False(textNode.HasAttribute);
