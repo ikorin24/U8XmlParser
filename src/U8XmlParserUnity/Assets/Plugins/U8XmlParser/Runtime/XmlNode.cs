@@ -77,7 +77,7 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
-        /// <summary>Get children</summary>
+        /// <summary>Get children by specifying the node type.</summary>
         /// <param name="targetType">target xml node type</param>
         /// <returns>node list</returns>
         public TypedXmlNodeList GetChildren(XmlNodeType? targetType = null) => new TypedXmlNodeList((XmlNode_*)_node, targetType);
@@ -491,7 +491,7 @@ namespace U8Xml
         public bool HasChildren => FirstChild != null;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal XmlNode_(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
+        private XmlNode_(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
         {
             // [NOTE]
             // _wholeNodes is CustomList<XmlNode_>,
@@ -517,6 +517,16 @@ namespace U8Xml
             NodeStrPtr = nodeStrPtr;
             NodeStrLength = 0;
             HasXmlNamespaceAttr = false;
+        }
+
+        internal static XmlNode_ CreateElementNode(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
+        {
+            return new XmlNode_(wholeNodes, nodeIndex, depth, name, nodeStrPtr, wholeAttrs);
+        }
+
+        internal static XmlNode_ CreateTextNode(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
+        {
+            return new XmlNode_(wholeNodes, nodeIndex, depth, RawString.Empty, nodeStrPtr, wholeAttrs);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

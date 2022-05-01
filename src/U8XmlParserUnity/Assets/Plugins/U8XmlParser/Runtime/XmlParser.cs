@@ -277,7 +277,7 @@ namespace U8Xml
                 byte* nodeStrPtr = data.GetPtr() + nodeStrStart;
                 var node = nodeStack.Peek();
                 var textNode = nodes.GetPointerToAdd(out var nodeIndex);
-                *textNode = new XmlNode_(nodes, nodeIndex, nodeStack.Count, RawString.Empty, nodeStrPtr, attrs);
+                *textNode = XmlNode_.CreateTextNode(nodes, nodeIndex, nodeStack.Count, nodeStrPtr, attrs);
                 GetInnerText(data, ref i, out var text);
                 textNode->InnerText = text;
                 node->InnerText = text;
@@ -312,7 +312,7 @@ namespace U8Xml
                     byte* nodeStrPtr = data.GetPtr() + nodeStrStart;
                     GetNodeName(data, ref i, out var name);
                     var node = nodes.GetPointerToAdd(out var nodeIndex);
-                    *node = new XmlNode_(nodes, nodeIndex, nodeStack.Count, name, nodeStrPtr, attrs);
+                    *node = XmlNode_.CreateElementNode(nodes, nodeIndex, nodeStack.Count, name, nodeStrPtr, attrs);
                     while(true) {
                         if(data.At(i) == '>') {
                             if(nodeStack.Count > 0) {
