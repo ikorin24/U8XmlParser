@@ -168,11 +168,11 @@ namespace U8Xml
             _targetType = targetType;
         }
 
-        public Enumerator GetEnumerator() => new Enumerator(_parent->FirstChild, _targetType);
+        public Enumerator GetEnumerator() => new Enumerator(_parent, _targetType);
 
-        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent->FirstChild, _targetType);
+        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
 
-        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent->FirstChild, _targetType);
+        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
 
         public unsafe struct Enumerator : IEnumerator<XmlNode>
         {
@@ -225,9 +225,9 @@ namespace U8Xml
             object IEnumerator.Current => Current;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal EnumeratorClass(XmlNode_* firstChild, XmlNodeType? targetType)
+            internal EnumeratorClass(XmlNode_* parent, XmlNodeType? targetType)
             {
-                _enumerator = new Enumerator(firstChild, targetType);
+                _enumerator = new Enumerator(parent, targetType);
             }
 
             public void Dispose() => _enumerator.Dispose();
