@@ -18,7 +18,7 @@ namespace UnitTest
             Name = node.Name.ToString();
             InnerText = node.InnerText.ToString();
             Attr = node.Attributes.Select(attr => (attr.Name.ToString(), attr.Value.ToString())).ToArray();
-            Children = node.Children.Where(n => n.NodeType == XmlNodeType.ElementNode).Select(c => new NodeInfo(c)).ToArray();
+            Children = node.GetChildren(XmlNodeType.ElementNode).Select(c => new NodeInfo(c)).ToArray();
         }
 
         public NodeInfo(string name, string innerText, (string attrName, string attrValue)[]? attrs, params NodeInfo[]? children)

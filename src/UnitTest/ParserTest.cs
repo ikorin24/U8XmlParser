@@ -191,8 +191,8 @@ namespace UnitTest
                 Assert.True(first.InnerText == "さしすせそ");
                 Assert.True(first.HasAttribute == false);
                 Assert.True(first.Attributes.Count == 0);
-                Assert.True(first.HasChildren);
-                Assert.True(first.Children.Count == 1);
+                Assert.True(first.HasChildren == false);
+                Assert.True(first.Children.Count == 0);
 
                 var second = root.Children.ElementAt(1);
                 Assert.True(second.Name == "abc");
@@ -228,8 +228,8 @@ namespace UnitTest
                         Assert.True(child.InnerText == "さしすせそ");
                         Assert.True(child.HasAttribute == false);
                         Assert.True(child.Attributes.Count == 0);
-                        Assert.True(child.HasChildren);
-                        Assert.True(child.Children.Count == 1);
+                        Assert.True(child.HasChildren == false);
+                        Assert.True(child.Children.Count == 0);
                     }
                     else if(i == 1) {
                         Assert.True(child.Name == "abc");

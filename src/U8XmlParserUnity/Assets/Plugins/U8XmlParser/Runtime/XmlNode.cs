@@ -471,6 +471,7 @@ namespace U8Xml
         public XmlNode_* LastChild;
         public XmlNode_* Sibling;
         public int ChildCount;
+        public int ChildElementCount;
 
         public int AttrIndex;
         public int AttrCount;
@@ -488,7 +489,7 @@ namespace U8Xml
 
         public bool HasAttribute => AttrCount > 0;
 
-        public bool HasChildren => FirstChild != null;
+        public bool HasChildren => ChildElementCount > 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private XmlNode_(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
@@ -511,6 +512,7 @@ namespace U8Xml
             LastChild = null;
             Sibling = null;
             ChildCount = 0;
+            ChildElementCount = 0;
             AttrIndex = 0;
             AttrCount = 0;
             WholeAttrs = wholeAttrs;
@@ -543,8 +545,27 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void AddChild(XmlNode_* parent, XmlNode_* child)
+        internal static void AddChildElementNode(XmlNode_* parent, XmlNode_* child)
         {
+            Debug.Assert(child != null);
+            Debug.Assert(child->NodeType == XmlNodeType.ElementNode);
+            if(parent->FirstChild == null) {
+                parent->FirstChild = child;
+            }
+            else {
+                parent->LastChild->Sibling = child;
+            }
+            parent->LastChild = child;
+            parent->ChildCount++;
+            parent->ChildElementCount++;
+            child->Parent = parent;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void AddChildTextNode(XmlNode_* parent, XmlNode_* child)
+        {
+            Debug.Assert(child != null);
+            Debug.Assert(child->NodeType == XmlNodeType.TextNode);
             if(parent->FirstChild == null) {
                 parent->FirstChild = child;
             }

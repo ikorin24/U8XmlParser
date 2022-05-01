@@ -27,7 +27,7 @@ namespace UnitTest
                 Assert.True(attr.Name == "xyz");
                 Assert.True(attr.Value == "321");
 
-                Assert.True(root.Children.Count == 5);
+                Assert.Equal(5, root.GetChildren().Count());
                 Assert.False(root.FindChildOrDefault(RawString.Empty).HasValue);
                 Assert.True(root.FindChildOrDefault("aaa").HasValue);
                 Assert.True(root.FindChildOrDefault("bbb").HasValue);
@@ -36,9 +36,9 @@ namespace UnitTest
                 Assert.False(root.FindChildOrDefault("baz").HasValue);
             }
 
-            AssertTextNode(root.Children.ElementAt(0), "foo");
-            AssertTextNode(root.Children.ElementAt(2), "bar");
-            AssertTextNode(root.Children.ElementAt(4), "baz");
+            AssertTextNode(root.GetChildren().ElementAt(0), "foo");
+            AssertTextNode(root.GetChildren().ElementAt(2), "bar");
+            AssertTextNode(root.GetChildren().ElementAt(4), "baz");
 
             static void AssertTextNode(XmlNode textNode, string text)
             {

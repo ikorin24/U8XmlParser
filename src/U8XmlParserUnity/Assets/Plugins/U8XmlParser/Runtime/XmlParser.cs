@@ -281,7 +281,7 @@ namespace U8Xml
                 GetInnerText(data, ref i, out var text);
                 textNode->InnerText = text;
                 node->InnerText = text;
-                XmlNode_.AddChild(node, textNode);
+                XmlNode_.AddChildTextNode(node, textNode);
                 goto None;
             }
 
@@ -316,7 +316,7 @@ namespace U8Xml
                     while(true) {
                         if(data.At(i) == '>') {
                             if(nodeStack.Count > 0) {
-                                XmlNode_.AddChild(nodeStack.Peek(), node);
+                                XmlNode_.AddChildElementNode(nodeStack.Peek(), node);
                             }
                             nodeStack.Push(node);
                             i++;
@@ -325,7 +325,7 @@ namespace U8Xml
                         }
                         else if((i + 1 < data.Length) && data.At(i) == '/' && data.At(i + 1) == '>') {
                             if(nodeStack.Count > 0) {
-                                XmlNode_.AddChild(nodeStack.Peek(), node);
+                                XmlNode_.AddChildElementNode(nodeStack.Peek(), node);
                             }
                             i += 2;
                             node->NodeStrLength = i - nodeStrStart;

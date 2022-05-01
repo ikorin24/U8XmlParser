@@ -20,7 +20,7 @@ namespace U8Xml
 
         public bool IsEmpty => _parent->FirstChild == null;
 
-        public int Count => _parent->ChildCount;
+        public int Count => _parent->ChildElementCount;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebugDisplay => _parent != null ? $"{nameof(XmlNode)}[{Count}]" : $"{nameof(XmlNode)} (invalid instance)";
@@ -30,6 +30,9 @@ namespace U8Xml
         internal XmlNodeList(XmlNode_* parent)
         {
             _parent = parent;
+
+
+            //var list = new TypedXmlNodeList(parent, XmlNodeType.ElementNode);
         }
 
         public XmlNode First()
@@ -188,7 +191,7 @@ namespace U8Xml
                 (_targetType, _hasTargetType) = targetType.HasValue switch
                 {
                     true => (targetType.Value, true),
-                    false => (default, true),
+                    false => (default, false),
                 };
             }
 
