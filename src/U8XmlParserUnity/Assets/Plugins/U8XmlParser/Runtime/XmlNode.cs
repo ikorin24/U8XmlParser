@@ -77,10 +77,14 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
-        /// <summary>Get children by specifying the node type.</summary>
-        /// <param name="targetType">target xml node type</param>
+        /// <summary>Get children of <see cref="XmlNodeType.ElementNode"/>.</summary>
         /// <returns>node list</returns>
-        public TypedXmlNodeList GetChildren(XmlNodeType? targetType = null) => new TypedXmlNodeList((XmlNode_*)_node, targetType);
+        public TypedXmlNodeList GetChildren() => new TypedXmlNodeList((XmlNode_*)_node, XmlNodeType.ElementNode);
+
+        /// <summary>Get children by specifying the node type.</summary>
+        /// <param name="targetType">target xml node type. (If set null, all types of nodes are returned.)</param>
+        /// <returns>node list</returns>
+        public TypedXmlNodeList GetChildren(XmlNodeType? targetType) => new TypedXmlNodeList((XmlNode_*)_node, targetType);
 
         /// <summary>Get the string that this node represents as <see cref="RawString"/>.</summary>
         /// <remarks>The indent of the node is ignored at the head.</remarks>
