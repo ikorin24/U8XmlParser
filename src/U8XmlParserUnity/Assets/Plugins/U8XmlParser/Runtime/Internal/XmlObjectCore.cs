@@ -57,6 +57,9 @@ namespace U8Xml.Internal
         public RawString AsRawString() => new RawString((byte*)_rawByteData + _offset, _byteLength - _offset);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public AllNodeList GetAllNodes() => new AllNodeList(_nodes);
+        public AllNodeList GetAllNodes() => new AllNodeList(_nodes, XmlNodeType.ElementNode);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public AllNodeList GetAllNodes(XmlNodeType? targetType) => new AllNodeList(_nodes, targetType);
     }
 }

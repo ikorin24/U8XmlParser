@@ -7,6 +7,9 @@ using U8Xml.Internal;
 
 namespace U8Xml
 {
+    // [NOTE]
+    // Enumerate only element nodes
+
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     [DebuggerTypeProxy(typeof(XmlNodeDescendantListDebuggerTypeProxy))]
     public unsafe readonly struct XmlNodeDescendantList : IEnumerable<XmlNode>
@@ -66,13 +69,19 @@ namespace U8Xml
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
             {
+            MoveNext:
                 if(_e.MoveNext() == false) {
                     return false;
                 }
                 if(_e.Current->Depth <= _depth) {
                     return false;
                 }
-                return true;
+
+                // Enumerate only element nodes
+                if(_e.Current->NodeType == XmlNodeType.ElementNode) {
+                    return true;
+                }
+                goto MoveNext;
             }
 
             public void Reset() => _e.Reset();
