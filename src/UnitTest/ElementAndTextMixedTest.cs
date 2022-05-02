@@ -254,6 +254,7 @@ namespace UnitTest
                     new { Name = "ccc", NodeType = XmlNodeType.ElementNode, },
                     new { Name = "ddd", NodeType = XmlNodeType.ElementNode, },
                 }));
+            Assert.Equal(5, xml.GetAllNodes().Count);
 
             Assert.True(
                 xml.GetAllNodes(XmlNodeType.ElementNode)
@@ -266,6 +267,7 @@ namespace UnitTest
                     new { Name = "ccc", NodeType = XmlNodeType.ElementNode, },
                     new { Name = "ddd", NodeType = XmlNodeType.ElementNode, },
                 }));
+            Assert.Equal(5, xml.GetAllNodes(XmlNodeType.ElementNode).Count);
 
             Assert.True(
                 xml.GetAllNodes(XmlNodeType.TextNode)
@@ -279,6 +281,7 @@ namespace UnitTest
                     new { Text = "boo", NodeType = XmlNodeType.TextNode, },
                     new { Text = "dee", NodeType = XmlNodeType.TextNode, },
                 }));
+            Assert.Equal(6, xml.GetAllNodes(XmlNodeType.TextNode).Count);
 
             Assert.True(
                 xml.GetAllNodes(null)
@@ -297,6 +300,7 @@ namespace UnitTest
                     new { Name = "", Text = "boo", NodeType = XmlNodeType.TextNode, },
                     new { Name = "", Text = "dee", NodeType = XmlNodeType.TextNode, },
                 }));
+            Assert.Equal(11, xml.GetAllNodes(null).Count);
         }
     }
 }

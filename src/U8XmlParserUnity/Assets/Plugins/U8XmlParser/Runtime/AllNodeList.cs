@@ -15,7 +15,28 @@ namespace U8Xml
         private readonly CustomList<XmlNode_> _nodes;
         private readonly XmlNodeType? _targetType;
 
-        public readonly int Count => _nodes.Count;  // TODO:
+        public readonly int Count
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                if(_targetType == null) {
+                    return _nodes.Count;
+                }
+                else {
+                    return CountLoop(in this);
+
+                    static int CountLoop(in AllNodeList self)
+                    {
+                        var count = 0;
+                        foreach(var _ in self) {
+                            count++;
+                        }
+                        return count;
+                    }
+                }
+            }
+        }
 
         internal AllNodeList(CustomList<XmlNode_> nodes, XmlNodeType? targetType)
         {
