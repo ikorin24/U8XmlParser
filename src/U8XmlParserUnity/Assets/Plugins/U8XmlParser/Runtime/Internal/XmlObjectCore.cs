@@ -56,9 +56,14 @@ namespace U8Xml.Internal
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString AsRawString() => new RawString((byte*)_rawByteData + _offset, _byteLength - _offset);
 
+        /// <summary>Get all nodes (target type is <see cref="XmlNodeType.ElementNode"/>)</summary>
+        /// <returns>all element nodes</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public AllNodeList GetAllNodes() => new AllNodeList(_nodes, XmlNodeType.ElementNode);
 
+        /// <summary>Get all nodes by specifying node type</summary>
+        /// <param name="targetType">node type</param>
+        /// <returns>all nodes</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public AllNodeList GetAllNodes(XmlNodeType? targetType) => new AllNodeList(_nodes, targetType);
     }

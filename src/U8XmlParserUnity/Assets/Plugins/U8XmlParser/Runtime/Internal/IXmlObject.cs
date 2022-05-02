@@ -12,5 +12,6 @@ namespace U8Xml.Internal
         XmlEntityTable EntityTable { get; }
         RawString AsRawString();
         AllNodeList GetAllNodes();
+        AllNodeList GetAllNodes(XmlNodeType? targetType);
     }
 }
