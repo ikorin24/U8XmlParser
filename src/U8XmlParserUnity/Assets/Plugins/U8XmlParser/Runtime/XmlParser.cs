@@ -280,7 +280,6 @@ namespace U8Xml
                 *textNode = XmlNode_.CreateTextNode(nodes, nodeIndex, nodeStack.Count, nodeStrPtr, attrs);
                 GetInnerText(data, ref i, out var text);
                 textNode->InnerText = text;
-                node->InnerText = text;
                 XmlNode_.AddChildTextNode(node, textNode);
                 goto None;
             }
@@ -359,6 +358,10 @@ namespace U8Xml
                     i++;
                     long len = data.GetPtr() + i - node->NodeStrPtr;
                     node->NodeStrLength = checked((int)len);
+                    if(node->ChildTextCount == 1 && node->ChildElementCount == 0) {
+                        Debug.Assert(node->FirstChild->NodeType == XmlNodeType.TextNode);
+                        node->InnerText = node->FirstChild->InnerText;
+                    }
                     goto None;
                 }
                 else { throw NewFormatException(); }

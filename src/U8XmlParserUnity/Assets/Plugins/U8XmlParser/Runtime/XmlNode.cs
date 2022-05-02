@@ -485,6 +485,7 @@ namespace U8Xml
         public XmlNode_* Sibling;
         public int ChildCount;
         public int ChildElementCount;
+        public int ChildTextCount => ChildCount - ChildElementCount;
 
         public int AttrIndex;
         public int AttrCount;
