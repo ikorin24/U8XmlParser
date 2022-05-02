@@ -298,5 +298,11 @@ namespace UnitTest
                     new { Name = "", Text = "dee", NodeType = XmlNodeType.TextNode, },
                 }));
         }
+
+        [Fact]
+        public void ErrorTest()
+        {
+            throw new System.Exception("error");
+        }
     }
 }
