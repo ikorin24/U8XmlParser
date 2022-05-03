@@ -48,10 +48,10 @@ namespace U8Xml
         /// <summary>Get whether the node has any children.</summary>
         public bool HasChildren => ((XmlNode_*)_node)->HasChildren;
 
-        /// <summary>Get children of the node.</summary>
-        public XmlNodeList Children => new XmlNodeList((XmlNode_*)_node);
+        /// <summary>Get children of <see cref="XmlNodeType.ElementNode"/>. (It is same as <see cref="Children"/> property.)</summary>
+        public XmlNodeList Children => new XmlNodeList((XmlNode_*)_node, XmlNodeType.ElementNode);
 
-        /// <summary>Get descendant nodes in the way of depth-first search.</summary>
+        /// <summary>Get descendant nodes of <see cref="XmlNodeType.ElementNode"/> in the way of depth-first search.</summary>
         public XmlNodeDescendantList Descendants => new XmlNodeDescendantList((XmlNode_*)_node, XmlNodeType.ElementNode);
 
         /// <summary>Get depth of the node in xml. (The root node is 0.)</summary>
@@ -79,18 +79,18 @@ namespace U8Xml
 
         /// <summary>Get children of <see cref="XmlNodeType.ElementNode"/>. (It is same as <see cref="Children"/> property.)</summary>
         /// <returns>child nodes</returns>
-        public TypedXmlNodeList GetChildren() => new TypedXmlNodeList((XmlNode_*)_node, XmlNodeType.ElementNode);
+        public XmlNodeList GetChildren() => new XmlNodeList((XmlNode_*)_node, XmlNodeType.ElementNode);
 
         /// <summary>Get children by specifying a node type.</summary>
         /// <param name="targetType">target xml node type. (If set null, all types of nodes are returned.)</param>
         /// <returns>child nodes</returns>
-        public TypedXmlNodeList GetChildren(XmlNodeType? targetType) => new TypedXmlNodeList((XmlNode_*)_node, targetType);
+        public XmlNodeList GetChildren(XmlNodeType? targetType) => new XmlNodeList((XmlNode_*)_node, targetType);
 
-        /// <summary>Get descendant nodes of <see cref="XmlNodeType.ElementNode"/>. (It is same as <see cref="Descendants"/> property.)</summary>
+        /// <summary>Get descendant nodes of <see cref="XmlNodeType.ElementNode"/> in the way of depth-first search. (It is same as <see cref="Descendants"/> property.)</summary>
         /// <returns>descendant nodes</returns>
         public XmlNodeDescendantList GetDescendants() => new XmlNodeDescendantList((XmlNode_*)_node, XmlNodeType.ElementNode);
 
-        /// <summary>Get descendant nodes by specifying a node type</summary>
+        /// <summary>Get descendant nodes by specifying a node type in the way of depth-first search.</summary>
         /// <param name="targetType">target xml node type. (If set null, all types of nodes are returned.)</param>
         /// <returns></returns>
         public XmlNodeDescendantList GetDescendants(XmlNodeType? targetType) => new XmlNodeDescendantList((XmlNode_*)_node, targetType);

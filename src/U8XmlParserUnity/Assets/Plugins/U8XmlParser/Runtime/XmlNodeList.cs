@@ -13,23 +13,31 @@ namespace U8Xml
     public unsafe readonly struct XmlNodeList : IEnumerable<XmlNode>, ICollection<XmlNode>, IReference
     {
         private readonly XmlNode_* _parent;
+        private readonly XmlNodeType? _targetType;
 
         internal Option<XmlNode> Parent => new XmlNode(_parent);
 
         public bool IsNull => _parent == null;
 
-        public bool IsEmpty => _parent->ChildElementCount == 0;
+        public bool IsEmpty => Count == 0;
 
-        public int Count => _parent->ChildElementCount;
+        public int Count => _targetType switch
+        {
+            null => _parent->ChildCount,
+            XmlNodeType.ElementNode => _parent->ChildElementCount,
+            XmlNodeType.TextNode => _parent->ChildTextCount,
+            _ => 0,
+        };
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebugDisplay => _parent != null ? $"{nameof(XmlNode)}[{Count}]" : $"{nameof(XmlNode)} (invalid instance)";
 
         bool ICollection<XmlNode>.IsReadOnly => true;
 
-        internal XmlNodeList(XmlNode_* parent)
+        internal XmlNodeList(XmlNode_* parent, XmlNodeType? targetType)
         {
             _parent = parent;
+            _targetType = targetType;
         }
 
         public XmlNode First()
@@ -68,11 +76,11 @@ namespace U8Xml
             return Option<XmlNode>.Null;
         }
 
-        public Enumerator GetEnumerator() => new Enumerator(_parent);
+        public Enumerator GetEnumerator() => new Enumerator(_parent, _targetType);
 
-        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent);
+        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
 
-        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent);
+        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
 
         void ICollection<XmlNode>.Add(XmlNode item) => throw new NotSupportedException();
 
@@ -83,81 +91,6 @@ namespace U8Xml
         void ICollection<XmlNode>.CopyTo(XmlNode[] array, int arrayIndex) => throw new NotSupportedException();
 
         bool ICollection<XmlNode>.Remove(XmlNode item) => throw new NotSupportedException();
-
-        public struct Enumerator : IEnumerator<XmlNode>
-        {
-            private TypedXmlNodeList.Enumerator _e;
-
-            internal Enumerator(XmlNode_* parent)
-            {
-                _e = new TypedXmlNodeList.Enumerator(parent, XmlNodeType.ElementNode);
-            }
-
-            public XmlNode Current => _e.Current;
-
-            object IEnumerator.Current => Current;
-
-            public void Dispose() => _e.Dispose();
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool MoveNext() => _e.MoveNext();
-
-            public void Reset() => _e.Reset();
-        }
-
-        private sealed class EnumeratorClass : IEnumerator<XmlNode>
-        {
-            private Enumerator _enumerator;     // mutable object, don't make it readonly.
-
-            public XmlNode Current => _enumerator.Current;
-
-            object IEnumerator.Current => Current;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal EnumeratorClass(XmlNode_* parent)
-            {
-                _enumerator = new Enumerator(parent);
-            }
-
-            public void Dispose() => _enumerator.Dispose();
-
-            public bool MoveNext() => _enumerator.MoveNext();
-
-            public void Reset() => _enumerator.Reset();
-        }
-
-        private sealed class XmlNodeListTypeProxy
-        {
-            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-            private XmlNodeList _entity;
-
-            [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-            public unsafe XmlNode[] Items => System.Linq.Enumerable.ToArray(_entity);
-
-            public XmlNodeListTypeProxy(XmlNodeList entity)
-            {
-                _entity = entity;
-            }
-        }
-    }
-
-    [DebuggerTypeProxy(typeof(TypedXmlNodeListTypeProxy))]
-    public unsafe readonly struct TypedXmlNodeList : IEnumerable<XmlNode>
-    {
-        private readonly XmlNode_* _parent;
-        private readonly XmlNodeType? _targetType;
-
-        internal TypedXmlNodeList(XmlNode_* parent, XmlNodeType? targetType)
-        {
-            _parent = parent;
-            _targetType = targetType;
-        }
-
-        public Enumerator GetEnumerator() => new Enumerator(_parent, _targetType);
-
-        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
-
-        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
 
         public unsafe struct Enumerator : IEnumerator<XmlNode>
         {
@@ -222,15 +155,15 @@ namespace U8Xml
             public void Reset() => _enumerator.Reset();
         }
 
-        private sealed class TypedXmlNodeListTypeProxy
+        private sealed class XmlNodeListTypeProxy
         {
             [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-            private TypedXmlNodeList _entity;
+            private XmlNodeList _entity;
 
             [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
             public unsafe XmlNode[] Items => System.Linq.Enumerable.ToArray(_entity);
 
-            public TypedXmlNodeListTypeProxy(TypedXmlNodeList entity)
+            public XmlNodeListTypeProxy(XmlNodeList entity)
             {
                 _entity = entity;
             }
