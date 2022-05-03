@@ -11,14 +11,13 @@ namespace U8Xml.Internal
         private readonly IntPtr _rawByteData;
         private readonly int _byteLength;
         private readonly int _offset;        // 0 or 3 (3 is UTF-8 BOM)
-        private readonly CustomList<XmlNode_> _nodes;
-        private readonly CustomList<XmlAttribute_> _attributes;
+        private readonly NodeStore _store;
         private readonly OptionalNodeList _optional;
         private readonly RawStringTable _entities;
 
         public bool IsDisposed => _rawByteData == IntPtr.Zero;
 
-        public XmlNode Root => new XmlNode(_nodes.FirstItem);
+        public XmlNode Root => _store.RootNode;
 
         public Option<XmlDeclaration> Declaration => new XmlDeclaration(_optional.Declaration);
 
@@ -26,12 +25,12 @@ namespace U8Xml.Internal
 
         public XmlEntityTable EntityTable => new XmlEntityTable(_entities);
 
-        internal XmlObjectCore(ref UnmanagedBuffer buffer, int offset, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attributes, OptionalNodeList optional, RawStringTable entities)
+        internal XmlObjectCore(ref UnmanagedBuffer buffer, int offset, ref NodeStore store, OptionalNodeList optional, RawStringTable entities)
         {
             buffer.TransferMemoryOwnership(out _rawByteData, out _byteLength);
             _offset = offset;
-            _nodes = nodes;
-            _attributes = attributes;
+            _store = store;
+            store = default;
             _optional = optional;
             _entities = entities;
         }
@@ -44,8 +43,7 @@ namespace U8Xml.Internal
                 Marshal.FreeHGlobal(data);
                 Unsafe.AsRef(_byteLength) = 0;
                 Unsafe.AsRef(_offset) = 0;
-                _nodes.Dispose();
-                _attributes.Dispose();
+                _store.Dispose();
                 _optional.Dispose();
                 _entities.Dispose();
             }
@@ -59,12 +57,86 @@ namespace U8Xml.Internal
         /// <summary>Get all nodes (target type is <see cref="XmlNodeType.ElementNode"/>)</summary>
         /// <returns>all element nodes</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public AllNodeList GetAllNodes() => new AllNodeList(_nodes, XmlNodeType.ElementNode);
+        public AllNodeList GetAllNodes() => _store.GetAllNodes(XmlNodeType.ElementNode);
 
         /// <summary>Get all nodes by specifying node type</summary>
         /// <param name="targetType">node type</param>
         /// <returns>all nodes</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public AllNodeList GetAllNodes(XmlNodeType? targetType) => new AllNodeList(_nodes, targetType);
+        public AllNodeList GetAllNodes(XmlNodeType? targetType) => _store.GetAllNodes(targetType);
+    }
+
+    internal unsafe struct NodeStore : IDisposable
+    {
+        private CustomList<XmlNode_> _allNodes;
+        private CustomList<XmlAttribute_> _allAttrs;
+        private int _elementNodeCount;
+
+        // [NOTE]
+        // Don't add a node from this property directly.
+        public CustomList<XmlNode_> AllNodes => _allNodes;
+
+        public CustomList<XmlAttribute_> AllAttrs => _allAttrs;
+        public int NodeCount => _allNodes.Count;
+        public int ElementNodeCount => _elementNodeCount;
+        public int TextNodeCount => _allNodes.Count - _elementNodeCount;
+
+        public XmlNode RootNode => new XmlNode(_allNodes.FirstItem);
+
+        public static NodeStore Create()
+        {
+            CustomList<XmlNode_> allNodes = default;
+            CustomList<XmlAttribute_> allAttrs = default;
+            try {
+                allNodes = CustomList<XmlNode_>.Create();
+                allAttrs = CustomList<XmlAttribute_>.Create();
+                return new NodeStore
+                {
+                    _allNodes = allNodes,
+                    _allAttrs = allAttrs,
+                    _elementNodeCount = 0,
+                };
+            }
+            catch {
+                allNodes.Dispose();
+                allAttrs.Dispose();
+                throw;
+            }
+        }
+
+        public XmlNode_* AddTextNode(int depth, byte* nodeStrPtr)
+        {
+            var textNode = _allNodes.GetPointerToAdd(out var nodeIndex);
+            *textNode = XmlNode_.CreateTextNode(_allNodes, nodeIndex, depth, nodeStrPtr, _allAttrs);
+            return textNode;
+        }
+
+        public XmlNode_* AddElementNode(RawString name, int depth, byte* nodeStrPtr)
+        {
+            var elementNode = _allNodes.GetPointerToAdd(out var nodeIndex);
+            *elementNode = XmlNode_.CreateElementNode(_allNodes, nodeIndex, depth, name, nodeStrPtr, _allAttrs);
+            _elementNodeCount++;
+            return elementNode;
+        }
+
+        public AllNodeList GetAllNodes(XmlNodeType? targetType)
+        {
+            var count = targetType switch
+            {
+                null => NodeCount,
+                XmlNodeType.ElementNode => ElementNodeCount,
+                XmlNodeType.TextNode => TextNodeCount,
+                _ => default,
+            };
+            return new AllNodeList(_allNodes, count, targetType);
+        }
+
+        public CustomList<XmlNode_>.Enumerator GetAllNodesEnumerator() => _allNodes.GetEnumerator();
+
+        public void Dispose()
+        {
+            _allNodes.Dispose();
+            _allAttrs.Dispose();
+        }
     }
 }

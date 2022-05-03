@@ -223,24 +223,24 @@ namespace U8Xml
             var offset = utf8Buf.AsSpan(0, 3).SequenceEqual(Utf8BOM) ? 3 : 0;
             var rawString = new RawString((byte*)utf8Buf.Ptr + offset, length - offset);
 
-            var nodes = CustomList<XmlNode_>.Create();
-            var attrs = CustomList<XmlAttribute_>.Create();
-            var optional = OptionalNodeList.Create();
-            var entities = default(RawStringTable);
+            NodeStore nodeStore = default;
+            OptionalNodeList optional = default;
+            RawStringTable entities = default;
             try {
-                StartStateMachine(rawString, nodes, attrs, optional, ref entities);
-                return new XmlObjectCore(ref utf8Buf, offset, nodes, attrs, optional, entities);
+                nodeStore = NodeStore.Create();
+                optional = OptionalNodeList.Create();
+                StartStateMachine(rawString, ref nodeStore, optional, ref entities);
+                return new XmlObjectCore(ref utf8Buf, offset, ref nodeStore, optional, entities);
             }
             catch {
-                nodes.Dispose();
-                attrs.Dispose();
+                nodeStore.Dispose();
                 optional.Dispose();
                 entities.Dispose();
                 throw;
             }
         }
 
-        private static void StartStateMachine(RawString data, CustomList<XmlNode_> nodes, CustomList<XmlAttribute_> attrs, OptionalNodeList optional, ref RawStringTable entities)
+        private static void StartStateMachine(RawString data, ref NodeStore store, OptionalNodeList optional, ref RawStringTable entities)
         {
             // Encoding assumes utf-8 without bom. Others are not supported.
             // Parse format by using a state machine. (It's very primitive but fastest.)
@@ -256,7 +256,7 @@ namespace U8Xml
 
                 // Must be '<', otherwise error.
                 if(data.At(i) == '<') {
-                    if(nodeStack.Count == 0 && nodes.Count > 0) {
+                    if(nodeStack.Count == 0 && store.NodeCount > 0) {
                         throw NewFormatException("Xml does not have multiple root nodes.");
                     }
                     if(i + 1 < data.Length && data.At(i + 1) == '/') {
@@ -276,10 +276,8 @@ namespace U8Xml
                 var nodeStrStart = i;
                 byte* nodeStrPtr = data.GetPtr() + nodeStrStart;
                 var node = nodeStack.Peek();
-                var textNode = nodes.GetPointerToAdd(out var nodeIndex);
-                *textNode = XmlNode_.CreateTextNode(nodes, nodeIndex, nodeStack.Count, nodeStrPtr, attrs);
-                GetInnerText(data, ref i, out var text);
-                textNode->InnerText = text;
+                var textNode = store.AddTextNode(nodeStack.Count, nodeStrPtr);
+                GetInnerText(data, ref i, out textNode->InnerText);
                 XmlNode_.AddChildTextNode(node, textNode);
                 goto None;
             }
@@ -301,17 +299,16 @@ namespace U8Xml
                 else if(data.At(i) == '?') {
                     if(i + 4 < data.Length && data.At(i + 1) == 'x' && data.At(i + 2) == 'm' && data.At(i + 3) == 'l' && data.At(i + 4) == ' ') // Start with "<?xml "
                     {
-                        if(GetXmlDeclaration(data, ref i, attrs, optional) == false) { throw NewFormatException(); }   // <?xml version="1.0" encoding="UTF-8"?>
+                        if(GetXmlDeclaration(data, ref i, store.AllAttrs, optional) == false) { throw NewFormatException(); }   // <?xml version="1.0" encoding="UTF-8"?>
                         goto None;
                     }
                     else { throw NewFormatException(); }
                 }
                 else {
+                    var attrs = store.AllAttrs;
                     var nodeStrStart = i - 1;
-                    byte* nodeStrPtr = data.GetPtr() + nodeStrStart;
                     GetNodeName(data, ref i, out var name);
-                    var node = nodes.GetPointerToAdd(out var nodeIndex);
-                    *node = XmlNode_.CreateElementNode(nodes, nodeIndex, nodeStack.Count, name, nodeStrPtr, attrs);
+                    var node = store.AddElementNode(name, nodeStack.Count, data.GetPtr() + nodeStrStart);
                     while(true) {
                         if(data.At(i) == '>') {
                             if(nodeStack.Count > 0) {
@@ -372,7 +369,7 @@ namespace U8Xml
                 if(TryParseCDATA(data, ref i, nodeStack)) {
                     goto None;
                 }
-                else if(TryParseDocType(data, ref i, nodes.Count > 0, optional, ref entities)) {
+                else if(TryParseDocType(data, ref i, store.NodeCount > 0, optional, ref entities)) {
                     goto None;
                 }
                 else {
@@ -382,7 +379,7 @@ namespace U8Xml
 
         End:
             {
-                if(nodes.Count == 0) {
+                if(store.NodeCount == 0) {
                     throw NewFormatException("Xml must have at least one node.");
                 }
                 Debug.Assert(nodeStack.Count == 0);

@@ -13,34 +13,15 @@ namespace U8Xml
     public readonly unsafe struct AllNodeList : IEnumerable<XmlNode>
     {
         private readonly CustomList<XmlNode_> _nodes;
+        private readonly int _count;
         private readonly XmlNodeType? _targetType;
 
-        public readonly int Count
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if(_targetType == null) {
-                    return _nodes.Count;
-                }
-                else {
-                    return CountLoop(in this);
+        public int Count => _count;
 
-                    static int CountLoop(in AllNodeList self)
-                    {
-                        var count = 0;
-                        foreach(var _ in self) {
-                            count++;
-                        }
-                        return count;
-                    }
-                }
-            }
-        }
-
-        internal AllNodeList(CustomList<XmlNode_> nodes, XmlNodeType? targetType)
+        internal AllNodeList(CustomList<XmlNode_> nodes, int count, XmlNodeType? targetType)
         {
             _nodes = nodes;
+            _count = count;
             _targetType = targetType;
         }
 
