@@ -56,7 +56,7 @@ namespace U8Xml.Internal
             var dataLen = _byteLength;
             var nodeHead = node.NodeHeadPtr;
             var nodeLen = node.NodeByteLen;
-            if(CheckContainsMemory(dataHead, dataLen, nodeHead, nodeLen) == false) {
+            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, nodeHead, nodeLen) == false) {
                 ThrowHelper.ThrowArg("The target node does not belong to the xml.");
             }
             long offset = nodeHead - dataHead;
@@ -74,7 +74,7 @@ namespace U8Xml.Internal
             Debug.Assert(strLen >= 0);
             Debug.Assert(dataLen >= 0);
 
-            if(CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
+            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
                 ThrowHelper.ThrowArg("The target attribute does not belong to the xml.");
             }
             long offset = strHead - dataHead;
@@ -91,7 +91,7 @@ namespace U8Xml.Internal
             Debug.Assert(strLen >= 0);
             Debug.Assert(dataLen >= 0);
 
-            if(CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
+            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
                 ThrowHelper.ThrowArg("The target string does not belong to the xml.");
             }
             long offset = strHead - dataHead;
@@ -108,10 +108,10 @@ namespace U8Xml.Internal
             Debug.Assert(nodeLen >= 0);
             Debug.Assert(dataLen >= 0);
 
-            if(CheckContainsMemory(dataHead, dataLen, nodeHead, nodeLen) == false) {
+            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, nodeHead, nodeLen) == false) {
                 ThrowHelper.ThrowArg("The target node does not belong to the xml.");
             }
-            return GetLineAndPosition(dataHead, dataLen, nodeHead, nodeLen, useZeroBasedNum);
+            return DataOffsetHelper.GetLineAndPosition(dataHead, dataLen, nodeHead, nodeLen, useZeroBasedNum);
         }
 
         public (int Line, int Position) GetLineAndPosition(XmlAttribute attr, bool useZeroBasedNum)
@@ -125,10 +125,10 @@ namespace U8Xml.Internal
             Debug.Assert(strLen >= 0);
             Debug.Assert(dataLen >= 0);
 
-            if(CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
+            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
                 ThrowHelper.ThrowArg("The target attribute does not belong to the xml.");
             }
-            return GetLineAndPosition(dataHead, dataLen, strHead, strLen, useZeroBasedNum);
+            return DataOffsetHelper.GetLineAndPosition(dataHead, dataLen, strHead, strLen, useZeroBasedNum);
         }
 
         public (int Line, int Position) GetLineAndPosition(RawString str, bool useZeroBasedNum)
@@ -141,10 +141,10 @@ namespace U8Xml.Internal
             Debug.Assert(strLen >= 0);
             Debug.Assert(dataLen >= 0);
 
-            if(CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
+            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
                 ThrowHelper.ThrowArg("The target string does not belong to the xml.");
             }
-            return GetLineAndPosition(dataHead, dataLen, strHead, strLen, useZeroBasedNum);
+            return DataOffsetHelper.GetLineAndPosition(dataHead, dataLen, strHead, strLen, useZeroBasedNum);
         }
 
         /// <summary>Get whole xml string as utf-8 bytes data.</summary>
@@ -162,38 +162,6 @@ namespace U8Xml.Internal
         /// <returns>all nodes</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public AllNodeList GetAllNodes(XmlNodeType? targetType) => _store.GetAllNodes(targetType);
-
-        private bool CheckContainsMemory(byte* dataHead, int dataLen, byte* targetHead, int targetLen)
-        {
-            return (dataHead <= targetHead) && (targetHead + targetLen) <= (dataHead + dataLen);
-        }
-
-        private static (int Line, int Position) GetLineAndPosition(byte* dataHead, int dataLen, byte* targetHead, int targetLen, bool useZeroBasedNum)
-        {
-            Debug.Assert(targetLen >= 0);
-            Debug.Assert(dataLen >= 0);
-            Debug.Assert(dataHead <= targetHead);
-            Debug.Assert((targetHead + targetLen) <= (dataHead + dataLen));
-
-            int lineNum = 0;
-            int pos;
-            byte* lineHead = dataHead;
-            for(byte* ptr = dataHead; ptr < targetHead; ptr++) {
-                if(*ptr == '\n') {
-                    lineNum++;
-                    lineHead = ptr + 1;
-                }
-            }
-
-            checked {
-                pos = (int)(targetHead - lineHead);
-                if(useZeroBasedNum == false) {
-                    lineNum += 1;
-                    pos += 1;
-                }
-            }
-            return (Line: lineNum, Position: pos);
-        }
     }
 
     internal unsafe struct NodeStore : IDisposable
