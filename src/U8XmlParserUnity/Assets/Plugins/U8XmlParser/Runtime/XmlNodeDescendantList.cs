@@ -7,9 +7,6 @@ using U8Xml.Internal;
 
 namespace U8Xml
 {
-    // [NOTE]
-    // Enumerate only element nodes
-
     [DebuggerDisplay("{DebuggerDisplay,nq}")]
     [DebuggerTypeProxy(typeof(XmlNodeDescendantListDebuggerTypeProxy))]
     public unsafe readonly struct XmlNodeDescendantList : IEnumerable<XmlNode>
@@ -88,8 +85,6 @@ namespace U8Xml
                 if(_e.Current->Depth <= _depth) {
                     return false;
                 }
-
-                // Enumerate only element nodes
                 if(_hasTargetType == false || _e.Current->NodeType == _targetType) {
                     return true;
                 }
