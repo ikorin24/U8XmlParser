@@ -51,6 +51,18 @@ namespace U8Xml.Unsafes
         /// <returns>all nodes</returns>
         public AllNodeList GetAllNodes(XmlNodeType? targetType) => ((XmlObjectCore*)_core)->GetAllNodes(targetType);
 
+        public (int Line, int Position) GetLineAndPosition(XmlNode node, bool useZeroBasedNum) => ((XmlObjectCore*)_core)->GetLineAndPosition(node, useZeroBasedNum);
+
+        public (int Line, int Position) GetLineAndPosition(XmlAttribute attr, bool useZeroBasedNum) => ((XmlObjectCore*)_core)->GetLineAndPosition(attr, useZeroBasedNum);
+
+        public (int Line, int Position) GetLineAndPosition(RawString str, bool useZeroBasedNum) => ((XmlObjectCore*)_core)->GetLineAndPosition(str, useZeroBasedNum);
+
+        public int GetOffset(XmlNode node) => ((XmlObjectCore*)_core)->GetOffset(node);
+
+        public int GetOffset(XmlAttribute attr) => ((XmlObjectCore*)_core)->GetOffset(attr);
+
+        public int GetOffset(RawString str) => ((XmlObjectCore*)_core)->GetOffset(str);
+
         public override string ToString() => AsRawString().ToString();
 
         internal static XmlObjectUnsafe Create(in XmlObjectCore core)

@@ -13,5 +13,13 @@ namespace U8Xml.Internal
         RawString AsRawString();
         AllNodeList GetAllNodes();
         AllNodeList GetAllNodes(XmlNodeType? targetType);
+
+        (int Line, int Position) GetLineAndPosition(XmlNode node, bool useZeroBasedNum);
+        (int Line, int Position) GetLineAndPosition(XmlAttribute attr, bool useZeroBasedNum);
+        (int Line, int Position) GetLineAndPosition(RawString str, bool useZeroBasedNum);
+
+        int GetOffset(XmlNode node);
+        int GetOffset(XmlAttribute attr);
+        int GetOffset(RawString str);
     }
 }

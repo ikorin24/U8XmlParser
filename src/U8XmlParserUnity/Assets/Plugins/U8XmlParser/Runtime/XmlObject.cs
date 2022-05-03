@@ -56,6 +56,18 @@ namespace U8Xml
         /// <returns>all nodes</returns>
         public AllNodeList GetAllNodes(XmlNodeType? targetType) => _core.GetAllNodes(targetType);
 
+        public (int Line, int Position) GetLineAndPosition(XmlNode node, bool useZeroBasedNum) => _core.GetLineAndPosition(node, useZeroBasedNum);
+
+        public (int Line, int Position) GetLineAndPosition(XmlAttribute attr, bool useZeroBasedNum) => _core.GetLineAndPosition(attr, useZeroBasedNum);
+
+        public (int Line, int Position) GetLineAndPosition(RawString str, bool useZeroBasedNum) => _core.GetLineAndPosition(str, useZeroBasedNum);
+
+        public int GetOffset(XmlNode node) => _core.GetOffset(node);
+
+        public int GetOffset(XmlAttribute attr) => _core.GetOffset(attr);
+
+        public int GetOffset(RawString str) => _core.GetOffset(str);
+
         public override string ToString() => AsRawString().ToString();
     }
 }
