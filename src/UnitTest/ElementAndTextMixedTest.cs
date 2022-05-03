@@ -171,6 +171,7 @@ namespace UnitTest
                     new { Name = "bbb", NodeType = XmlNodeType.ElementNode, },
                     new { Name = "ccc", NodeType = XmlNodeType.ElementNode, },
                 }));
+            Assert.Equal(3, root.Children.Count);
 
             Assert.True(
                 root.GetChildren(XmlNodeType.ElementNode)
@@ -181,6 +182,7 @@ namespace UnitTest
                     new { Name = "bbb", NodeType = XmlNodeType.ElementNode, },
                     new { Name = "ccc", NodeType = XmlNodeType.ElementNode, },
                 }));
+            Assert.Equal(3, root.GetChildren(XmlNodeType.ElementNode).Count);
 
             Assert.True(
                 root.GetChildren(XmlNodeType.TextNode)
@@ -191,6 +193,7 @@ namespace UnitTest
                     new { Text = "bar", NodeType = XmlNodeType.TextNode, },
                     new { Text = "baz", NodeType = XmlNodeType.TextNode, },
                 }));
+            Assert.Equal(3, root.GetChildren(XmlNodeType.TextNode).Count);
 
             Assert.True(
                 root.GetChildren(null)
@@ -204,6 +207,7 @@ namespace UnitTest
                     new { Name = "", Text = "baz", NodeType = XmlNodeType.TextNode, },
                     new { Name = "ccc", Text = "", NodeType = XmlNodeType.ElementNode, },
                 }));
+            Assert.Equal(6, root.GetChildren(null).Count);
         }
 
         [Fact]
