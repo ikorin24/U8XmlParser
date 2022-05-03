@@ -267,6 +267,7 @@ namespace U8Xml
             }
         }
 
+
         public int IndexOf(byte value)
         {
             var span = AsSpan();
@@ -371,16 +372,111 @@ namespace U8Xml
             }
         }
 
-        public int LastIndexOf(byte c)
+
+        public int LastIndexOf(byte value)
         {
             var span = AsSpan();
             for(int i = span.Length - 1; i >= 0; i--) {
-                if(span.At(i) == c) {
+                if(span.At(i) == value) {
                     return i;
                 }
             }
             return -1;
         }
+
+        public int LastIndexOf(char value, out int length)
+        {
+            int start;
+            (start, length) = LastIndexOf(value);
+            return start;
+        }
+
+        public (int Start, int Length) LastIndexOf(char value)
+        {
+            if(value < 128) {
+                // For ASCII
+                var index = LastIndexOf((byte)value);
+                return (Start: index, Length: (index >= 0) ? 1 : 0);
+            }
+            else {
+                var utf8 = UTF8ExceptionFallbackEncoding.Instance;
+                byte* buf = stackalloc byte[8];
+                var len = utf8.GetBytes(&value, 1, buf, 8);
+                var index = LastIndexOf(SpanHelper.CreateReadOnlySpan<byte>(buf, len));
+                return (Start: index, Length: (index >= 0) ? len : 0);
+            }
+        }
+
+        public int LastIndexOf(RawString value) => LastIndexOf(value.AsSpan());
+
+        public int LastIndexOf(ReadOnlySpan<byte> value)
+        {
+            if(value.Length == 0) { return 0; }
+
+            var l = Length + 1 - value.Length;
+            var span = AsSpan();
+            for(int i = l - 1; i >= 0; i--) {
+                if(span.SliceUnsafe(i, span.Length - i).StartsWith(value)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public int LastIndexOf(string value, out int length)
+        {
+            int start;
+            (start, length) = LastIndexOf(value);
+            return start;
+        }
+
+        public (int Start, int Length) LastIndexOf(string value) => LastIndexOf(value.AsSpan());
+
+        public int LastIndexOf(ReadOnlySpan<char> value, out int length)
+        {
+            int start;
+            (start, length) = LastIndexOf(value);
+            return start;
+        }
+
+        public (int Start, int Length) LastIndexOf(ReadOnlySpan<char> value)
+        {
+            if(value.Length == 0) {
+                return (Start: 0, Length: 0);
+            }
+            var utf8 = UTF8ExceptionFallbackEncoding.Instance;
+            var byteLen = utf8.GetByteCount(value);
+            if(byteLen > Length) {
+                return (Start: -1, Length: 0);
+            }
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = value) {
+                    utf8.GetBytes(ptr, value.Length, buf, byteLen);
+                }
+                var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                var index = LastIndexOf(span);
+                return (Start: index, Length: (index >= 0) ? byteLen : 0);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = value) {
+                        utf8.GetBytes(ptr, value.Length, buf, byteLen);
+                        var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                        var index = LastIndexOf(span);
+                        return (Start: index, Length: (index >= 0) ? byteLen : 0);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
+
 
         public bool Contains(byte value) => IndexOf(value) >= 0;
         public bool Contains(char value) => IndexOf(value, out _) >= 0;
@@ -388,6 +484,7 @@ namespace U8Xml
         public bool Contains(ReadOnlySpan<byte> value) => IndexOf(value) >= 0;
         public bool Contains(string value) => IndexOf(value, out _) >= 0;
         public bool Contains(ReadOnlySpan<char> value) => IndexOf(value, out _) >= 0;
+
 
         /// <summary>Compute hash code for the specified span using the same algorithm as <see cref="GetHashCode()"/>.</summary>
         /// <param name="utf8String">span to compute hash code</param>
