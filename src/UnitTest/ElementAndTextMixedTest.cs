@@ -103,16 +103,6 @@ namespace UnitTest
                     new { Name = "ddd", NodeType = XmlNodeType.ElementNode, },
                 }));
 
-            Assert.True(root.GetDescendants()
-                .Select(n => new { Name = n.Name.ToString(), NodeType = n.NodeType, })
-                .SequenceEqual(new[]
-                {
-                    new { Name = "aaa", NodeType = XmlNodeType.ElementNode, },
-                    new { Name = "bbb", NodeType = XmlNodeType.ElementNode, },
-                    new { Name = "ccc", NodeType = XmlNodeType.ElementNode, },
-                    new { Name = "ddd", NodeType = XmlNodeType.ElementNode, },
-                }));
-
             Assert.True(root.GetDescendants(XmlNodeType.ElementNode)
                 .Select(n => new { Name = n.Name.ToString(), NodeType = n.NodeType, })
                 .SequenceEqual(new[]
@@ -174,16 +164,6 @@ namespace UnitTest
 
             Assert.True(
                 root.Children
-                .Select(n => new { Name = n.Name.ToString(), NodeType = n.NodeType, })
-                .SequenceEqual(new[]
-                {
-                    new { Name = "aaa", NodeType = XmlNodeType.ElementNode, },
-                    new { Name = "bbb", NodeType = XmlNodeType.ElementNode, },
-                    new { Name = "ccc", NodeType = XmlNodeType.ElementNode, },
-                }));
-
-            Assert.True(
-                root.GetChildren()
                 .Select(n => new { Name = n.Name.ToString(), NodeType = n.NodeType, })
                 .SequenceEqual(new[]
                 {

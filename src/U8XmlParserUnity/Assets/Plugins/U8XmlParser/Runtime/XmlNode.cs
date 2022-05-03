@@ -77,18 +77,10 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
 
-        /// <summary>Get children of <see cref="XmlNodeType.ElementNode"/>. (It is same as <see cref="Children"/> property.)</summary>
-        /// <returns>child nodes</returns>
-        public XmlNodeList GetChildren() => new XmlNodeList((XmlNode_*)_node, XmlNodeType.ElementNode);
-
         /// <summary>Get children by specifying a node type.</summary>
         /// <param name="targetType">target xml node type. (If set null, all types of nodes are returned.)</param>
         /// <returns>child nodes</returns>
         public XmlNodeList GetChildren(XmlNodeType? targetType) => new XmlNodeList((XmlNode_*)_node, targetType);
-
-        /// <summary>Get descendant nodes of <see cref="XmlNodeType.ElementNode"/> in the way of depth-first search. (It is same as <see cref="Descendants"/> property.)</summary>
-        /// <returns>descendant nodes</returns>
-        public XmlNodeDescendantList GetDescendants() => new XmlNodeDescendantList((XmlNode_*)_node, XmlNodeType.ElementNode);
 
         /// <summary>Get descendant nodes by specifying a node type in the way of depth-first search.</summary>
         /// <param name="targetType">target xml node type. (If set null, all types of nodes are returned.)</param>
