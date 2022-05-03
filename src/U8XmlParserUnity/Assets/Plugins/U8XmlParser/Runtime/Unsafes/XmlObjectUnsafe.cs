@@ -42,7 +42,14 @@ namespace U8Xml.Unsafes
             AllocationSafety.Remove(sizeof(XmlObjectCore));
         }
 
+        /// <summary>Get all nodes (target type is <see cref="XmlNodeType.ElementNode"/>)</summary>
+        /// <returns>all element nodes</returns>
         public AllNodeList GetAllNodes() => ((XmlObjectCore*)_core)->GetAllNodes();
+
+        /// <summary>Get all nodes by specifying node type</summary>
+        /// <param name="targetType">node type</param>
+        /// <returns>all nodes</returns>
+        public AllNodeList GetAllNodes(XmlNodeType? targetType) => ((XmlObjectCore*)_core)->GetAllNodes(targetType);
 
         public override string ToString() => AsRawString().ToString();
 

@@ -9,10 +9,26 @@ using U8Xml.Internal;
 namespace U8Xml
 {
     /// <summary>A xml node type.</summary>
-    [DebuggerDisplay("<{ToString(),nq}>")]
+    [DebuggerDisplay("{DebugView(),nq}")]
     public readonly unsafe struct XmlNode : IEquatable<XmlNode>, IReference
     {
         private readonly IntPtr _node;  // XmlNode_*
+
+        private string DebugView()
+        {
+            var node = ((XmlNode_*)_node);
+            return (node == null)
+                ? ""
+                : node->NodeType switch
+                {
+                    XmlNodeType.ElementNode => $"<{node->Name}>",
+                    XmlNodeType.TextNode => node->InnerText.ToString(),
+                    _ => "",
+                };
+        }
+
+        /// <summary>Get node type</summary>
+        public XmlNodeType NodeType => ((XmlNode_*)_node)->NodeType;
 
         /// <summary>Get whether the node is null. (Valid nodes always return false.)</summary>
         public bool IsNull => _node == IntPtr.Zero;
@@ -32,11 +48,11 @@ namespace U8Xml
         /// <summary>Get whether the node has any children.</summary>
         public bool HasChildren => ((XmlNode_*)_node)->HasChildren;
 
-        /// <summary>Get children of the node.</summary>
-        public XmlNodeList Children => new XmlNodeList((XmlNode_*)_node);
+        /// <summary>Get children of <see cref="XmlNodeType.ElementNode"/>. (It is same as <see cref="Children"/> property.)</summary>
+        public XmlNodeList Children => new XmlNodeList((XmlNode_*)_node, XmlNodeType.ElementNode);
 
-        /// <summary>Get descendant nodes in the way of depth-first search.</summary>
-        public XmlNodeDescendantList Descendants => new XmlNodeDescendantList((XmlNode_*)_node);
+        /// <summary>Get descendant nodes of <see cref="XmlNodeType.ElementNode"/> in the way of depth-first search.</summary>
+        public XmlNodeDescendantList Descendants => new XmlNodeDescendantList((XmlNode_*)_node, XmlNodeType.ElementNode);
 
         /// <summary>Get depth of the node in xml. (The root node is 0.)</summary>
         public int Depth => ((XmlNode_*)_node)->Depth;
@@ -60,6 +76,16 @@ namespace U8Xml
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal XmlNode(XmlNode_* node) => _node = (IntPtr)node;
+
+        /// <summary>Get children by specifying a node type.</summary>
+        /// <param name="targetType">target xml node type. (If set null, all types of nodes are returned.)</param>
+        /// <returns>child nodes</returns>
+        public XmlNodeList GetChildren(XmlNodeType? targetType) => new XmlNodeList((XmlNode_*)_node, targetType);
+
+        /// <summary>Get descendant nodes by specifying a node type in the way of depth-first search.</summary>
+        /// <param name="targetType">target xml node type. (If set null, all types of nodes are returned.)</param>
+        /// <returns></returns>
+        public XmlNodeDescendantList GetDescendants(XmlNodeType? targetType) => new XmlNodeDescendantList((XmlNode_*)_node, targetType);
 
         /// <summary>Get the string that this node represents as <see cref="RawString"/>.</summary>
         /// <remarks>The indent of the node is ignored at the head.</remarks>
@@ -165,6 +191,9 @@ namespace U8Xml
         /// <returns>a found child node as <see cref="Option{T}"/></returns>
         public Option<XmlNode> FindChildOrDefault(ReadOnlySpan<byte> name)
         {
+            if(name.IsEmpty) {
+                return Option<XmlNode>.Null;
+            }
             foreach(var child in Children) {
                 if(child.Name == name) {
                     return child;
@@ -416,7 +445,7 @@ namespace U8Xml
         public override int GetHashCode() => _node.GetHashCode();
 
         /// <inheritdoc/>
-        public override string ToString() => _node != IntPtr.Zero ? ((XmlNode_*)_node)->Name.ToString() : "";
+        public override string ToString() => _node != IntPtr.Zero ? ((XmlNode_*)_node)->ToString() : "";
 
         /// <summary>Returns true if both <see cref="XmlNode"/>s are same objects.</summary>
         /// <param name="left">left operand</param>
@@ -447,12 +476,16 @@ namespace U8Xml
         public XmlNode_* LastChild;
         public XmlNode_* Sibling;
         public int ChildCount;
+        public int ChildElementCount;
+        public int ChildTextCount => ChildCount - ChildElementCount;
 
         public int AttrIndex;
         public int AttrCount;
         public readonly CustomList<XmlAttribute_> WholeAttrs;
 
         public bool HasXmlNamespaceAttr;
+
+        public XmlNodeType NodeType => Name.IsEmpty ? XmlNodeType.TextNode : XmlNodeType.ElementNode;
 
         public readonly CustomList<XmlNode_> WholeNodes
         {
@@ -462,10 +495,10 @@ namespace U8Xml
 
         public bool HasAttribute => AttrCount > 0;
 
-        public bool HasChildren => FirstChild != null;
+        public bool HasChildren => ChildElementCount > 0;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal XmlNode_(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
+        private XmlNode_(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
         {
             // [NOTE]
             // _wholeNodes is CustomList<XmlNode_>,
@@ -485,6 +518,7 @@ namespace U8Xml
             LastChild = null;
             Sibling = null;
             ChildCount = 0;
+            ChildElementCount = 0;
             AttrIndex = 0;
             AttrCount = 0;
             WholeAttrs = wholeAttrs;
@@ -493,17 +527,51 @@ namespace U8Xml
             HasXmlNamespaceAttr = false;
         }
 
+        internal static XmlNode_ CreateElementNode(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, RawString name, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
+        {
+            return new XmlNode_(wholeNodes, nodeIndex, depth, name, nodeStrPtr, wholeAttrs);
+        }
+
+        internal static XmlNode_ CreateTextNode(CustomList<XmlNode_> wholeNodes, int nodeIndex, int depth, byte* nodeStrPtr, CustomList<XmlAttribute_> wholeAttrs)
+        {
+            return new XmlNode_(wholeNodes, nodeIndex, depth, RawString.Empty, nodeStrPtr, wholeAttrs);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString AsRawString() => new RawString(NodeStrPtr, NodeStrLength);
 
         public override string ToString()
         {
-            return Name.ToString();
+            return NodeType switch
+            {
+                XmlNodeType.ElementNode => Name.ToString(),
+                XmlNodeType.TextNode => InnerText.ToString(),
+                _ => "",
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void AddChild(XmlNode_* parent, XmlNode_* child)
+        internal static void AddChildElementNode(XmlNode_* parent, XmlNode_* child)
         {
+            Debug.Assert(child != null);
+            Debug.Assert(child->NodeType == XmlNodeType.ElementNode);
+            if(parent->FirstChild == null) {
+                parent->FirstChild = child;
+            }
+            else {
+                parent->LastChild->Sibling = child;
+            }
+            parent->LastChild = child;
+            parent->ChildCount++;
+            parent->ChildElementCount++;
+            child->Parent = parent;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void AddChildTextNode(XmlNode_* parent, XmlNode_* child)
+        {
+            Debug.Assert(child != null);
+            Debug.Assert(child->NodeType == XmlNodeType.TextNode);
             if(parent->FirstChild == null) {
                 parent->FirstChild = child;
             }
@@ -514,5 +582,14 @@ namespace U8Xml
             parent->ChildCount++;
             child->Parent = parent;
         }
+    }
+
+    /// <summary>Type of xml node</summary>
+    public enum XmlNodeType : byte
+    {
+        /// <summary>Element node</summary>
+        ElementNode = 0,
+        /// <summary>Text node</summary>
+        TextNode = 1,
     }
 }

@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using U8Xml.Internal;
 
 namespace U8Xml
@@ -12,23 +13,33 @@ namespace U8Xml
     public readonly unsafe struct AllNodeList : IEnumerable<XmlNode>
     {
         private readonly CustomList<XmlNode_> _nodes;
+        private readonly int _count;
+        private readonly XmlNodeType? _targetType;
 
-        public readonly int Count => _nodes.Count;
+        public int Count => _count;
 
-        internal AllNodeList(CustomList<XmlNode_> nodes)
+        internal AllNodeList(CustomList<XmlNode_> nodes, int count, XmlNodeType? targetType)
         {
             _nodes = nodes;
+            _count = count;
+            _targetType = targetType;
         }
 
         public XmlNode First()
         {
-            if(Count == 0) { ThrowHelper.ThrowInvalidOperation("Sequence contains no elements."); }
-            return new XmlNode(_nodes.FirstItem);
+            if(FirstOrDefault().TryGetValue(out var node) == false) {
+                ThrowHelper.ThrowInvalidOperation("Sequence contains no elements.");
+            }
+            return node;
         }
 
         public Option<XmlNode> FirstOrDefault()
         {
-            return new XmlNode(_nodes.FirstItem);
+            using var e = GetEnumerator();
+            if(e.MoveNext() == false) {
+                return Option<XmlNode>.Null;
+            }
+            return e.Current;
         }
 
         public XmlNode First(Func<XmlNode, bool> predicate)
@@ -47,23 +58,30 @@ namespace U8Xml
                     return node;
                 }
             }
-            return new Option<XmlNode>(default);
+            return Option<XmlNode>.Null;
         }
 
-        public Enumerator GetEnumerator() => new Enumerator(_nodes.GetEnumerator());
+        public Enumerator GetEnumerator() => new Enumerator(_nodes.GetEnumerator(), _targetType);
 
-        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_nodes.GetEnumerator());
+        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_nodes.GetEnumerator(), _targetType);
 
-        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_nodes.GetEnumerator());
+        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_nodes.GetEnumerator(), _targetType);
 
 
         public struct Enumerator : IEnumerator<XmlNode>
         {
             private CustomList<XmlNode_>.Enumerator _e;
+            private readonly XmlNodeType _targetType;
+            private readonly bool _hasTargetType;
 
-            internal Enumerator(CustomList<XmlNode_>.Enumerator e)
+            internal Enumerator(CustomList<XmlNode_>.Enumerator e, XmlNodeType? targetType)
             {
                 _e = e;
+                (_hasTargetType, _targetType) = targetType.HasValue switch
+                {
+                    true => (true, targetType.Value),
+                    false => (false, default),
+                };
             }
 
             public XmlNode Current => new XmlNode(_e.Current);
@@ -72,21 +90,32 @@ namespace U8Xml
 
             public void Dispose() => _e.Dispose();
 
-            public bool MoveNext() => _e.MoveNext();
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool MoveNext()
+            {
+            MoveNext:
+                if(_e.MoveNext() == false) {
+                    return false;
+                }
+                if(_hasTargetType == false || _e.Current->NodeType == _targetType) {
+                    return true;
+                }
+                goto MoveNext;
+            }
 
             public void Reset() => _e.Reset();
         }
 
         internal sealed class EnumeratorClass : IEnumerator<XmlNode>
         {
-            private CustomList<XmlNode_>.Enumerator _e;
+            private Enumerator _e;
 
-            internal EnumeratorClass(CustomList<XmlNode_>.Enumerator e)
+            internal EnumeratorClass(CustomList<XmlNode_>.Enumerator e, XmlNodeType? targetType)
             {
-                _e = e;
+                _e = new Enumerator(e, targetType);
             }
 
-            public XmlNode Current => new XmlNode(_e.Current);
+            public XmlNode Current => _e.Current;
 
             object IEnumerator.Current => Current;
 
@@ -103,19 +132,7 @@ namespace U8Xml
             private readonly AllNodeList _list;
 
             [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-            public XmlNode[] Item
-            {
-                get
-                {
-                    var list = _list;
-                    var array = new XmlNode[list.Count];
-                    int i = 0;
-                    foreach(var item in list) {
-                        array[i++] = item;
-                    }
-                    return array;
-                }
-            }
+            public XmlNode[] Item => System.Linq.Enumerable.ToArray(_list);
 
             public AllNodeListDebuggerTypeProxy(AllNodeList list)
             {

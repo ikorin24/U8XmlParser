@@ -12,11 +12,13 @@ namespace U8Xml
     public unsafe readonly struct XmlNodeDescendantList : IEnumerable<XmlNode>
     {
         private readonly XmlNode_* _parent;
+        private readonly XmlNodeType? _targetType;
 
-        internal XmlNodeDescendantList(XmlNode_* parent)
+        internal XmlNodeDescendantList(XmlNode_* parent, XmlNodeType? targetType)
         {
             Debug.Assert(parent != null);
             _parent = parent;
+            _targetType = targetType;
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -33,27 +35,37 @@ namespace U8Xml
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator GetEnumerator() => new Enumerator(_parent);
+        public Enumerator GetEnumerator() => new Enumerator(_parent, _targetType);
 
-        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent);
+        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
 
-        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent);
+        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
 
         public struct Enumerator : IEnumerator<XmlNode>
         {
             private CustomList<XmlNode_>.Enumerator _e;     // Don't make it readonly.
             private readonly int _depth;
+            private readonly XmlNodeType _targetType;
+            private readonly bool _hasTargetType;
 
             public XmlNode Current => new XmlNode(_e.Current);
 
             object IEnumerator.Current => Current;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal Enumerator(XmlNode_* parent)
+            internal Enumerator(XmlNode_* parent, XmlNodeType? targetType)
             {
+                (_hasTargetType, _targetType) = targetType.HasValue switch
+                {
+                    true => (true, targetType.Value),
+                    false => (false, default),
+                };
+
                 var firstChild = parent->FirstChild;
                 if(firstChild == null) {
-                    this = default;         // default instance is valid.
+                    // default instance is valid.
+                    _e = default;
+                    _depth = default;
                 }
                 else {
                     _e = parent->WholeNodes.GetEnumerator(firstChild->NodeIndex);
@@ -66,13 +78,17 @@ namespace U8Xml
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
             {
+            MoveNext:
                 if(_e.MoveNext() == false) {
                     return false;
                 }
                 if(_e.Current->Depth <= _depth) {
                     return false;
                 }
-                return true;
+                if(_hasTargetType == false || _e.Current->NodeType == _targetType) {
+                    return true;
+                }
+                goto MoveNext;
             }
 
             public void Reset() => _e.Reset();
@@ -83,9 +99,9 @@ namespace U8Xml
             private Enumerator _e;  // Don't make it readonly.
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal EnumeratorClass(XmlNode_* parent)
+            internal EnumeratorClass(XmlNode_* parent, XmlNodeType? targetType)
             {
-                _e = new Enumerator(parent);
+                _e = new Enumerator(parent, targetType);
             }
 
             public XmlNode Current => _e.Current;
@@ -106,23 +122,7 @@ namespace U8Xml
             private readonly XmlNodeDescendantList _list;
 
             [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-            public XmlNode[] Item
-            {
-                get
-                {
-                    var list = _list;
-                    int count = 0;
-                    foreach(var _ in list) {
-                        count++;
-                    }
-                    var array = new XmlNode[count];
-                    int i = 0;
-                    foreach(var item in list) {
-                        array[i++] = item;
-                    }
-                    return array;
-                }
-            }
+            public XmlNode[] Item => System.Linq.Enumerable.ToArray(_list);
 
             public XmlNodeDescendantListDebuggerTypeProxy(XmlNodeDescendantList list)
             {

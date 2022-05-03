@@ -13,34 +13,48 @@ namespace U8Xml
     public unsafe readonly struct XmlNodeList : IEnumerable<XmlNode>, ICollection<XmlNode>, IReference
     {
         private readonly XmlNode_* _parent;
+        private readonly XmlNodeType? _targetType;
 
         internal Option<XmlNode> Parent => new XmlNode(_parent);
 
         public bool IsNull => _parent == null;
 
-        public bool IsEmpty => _parent->FirstChild == null;
+        public bool IsEmpty => Count == 0;
 
-        public int Count => _parent->ChildCount;
+        public int Count => _targetType switch
+        {
+            null => _parent->ChildCount,
+            XmlNodeType.ElementNode => _parent->ChildElementCount,
+            XmlNodeType.TextNode => _parent->ChildTextCount,
+            _ => 0,
+        };
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string DebugDisplay => _parent != null ? $"{nameof(XmlNode)}[{Count}]" : $"{nameof(XmlNode)} (invalid instance)";
 
         bool ICollection<XmlNode>.IsReadOnly => true;
 
-        internal XmlNodeList(XmlNode_* parent)
+        internal XmlNodeList(XmlNode_* parent, XmlNodeType? targetType)
         {
             _parent = parent;
+            _targetType = targetType;
         }
 
         public XmlNode First()
         {
-            if(Count == 0) { ThrowHelper.ThrowInvalidOperation("Sequence contains no elements."); }
-            return new XmlNode(_parent->FirstChild);
+            if(FirstOrDefault().TryGetValue(out var node) == false) {
+                ThrowHelper.ThrowInvalidOperation("Sequence contains no elements.");
+            }
+            return node;
         }
 
         public Option<XmlNode> FirstOrDefault()
         {
-            return new XmlNode(_parent->FirstChild);
+            using var e = GetEnumerator();
+            if(e.MoveNext() == false) {
+                return Option<XmlNode>.Null;
+            }
+            return e.Current;
         }
 
         public XmlNode First(Func<XmlNode, bool> predicate)
@@ -59,14 +73,14 @@ namespace U8Xml
                     return node;
                 }
             }
-            return new Option<XmlNode>(default);
+            return Option<XmlNode>.Null;
         }
 
-        public Enumerator GetEnumerator() => new Enumerator(_parent->FirstChild);
+        public Enumerator GetEnumerator() => new Enumerator(_parent, _targetType);
 
-        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent->FirstChild);
+        IEnumerator<XmlNode> IEnumerable<XmlNode>.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
 
-        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent->FirstChild);
+        IEnumerator IEnumerable.GetEnumerator() => new EnumeratorClass(_parent, _targetType);
 
         void ICollection<XmlNode>.Add(XmlNode item) => throw new NotSupportedException();
 
@@ -78,28 +92,22 @@ namespace U8Xml
 
         bool ICollection<XmlNode>.Remove(XmlNode item) => throw new NotSupportedException();
 
-        private XmlNode[] ToArray()
-        {
-            // only for debugger
-            if(_parent == null || IsEmpty) { return Array.Empty<XmlNode>(); }
-            var array = new XmlNode[Count];
-            var i = 0;
-            foreach(var item in this) {
-                array[i] = item;
-                i++;
-            }
-            return array;
-        }
-
-        public struct Enumerator : IEnumerator<XmlNode>
+        public unsafe struct Enumerator : IEnumerator<XmlNode>
         {
             private XmlNode_* _current;
             private XmlNode_* _next;
+            private readonly XmlNodeType _targetType;
+            private readonly bool _hasTargetType;
 
-            internal Enumerator(XmlNode_* firstChild)
+            internal Enumerator(XmlNode_* parent, XmlNodeType? targetType)
             {
-                _next = firstChild;
+                _next = parent->FirstChild;
                 _current = null;
+                (_targetType, _hasTargetType) = targetType.HasValue switch
+                {
+                    true => (targetType.Value, true),
+                    false => (default, false),
+                };
             }
 
             public XmlNode Current => new XmlNode(_current);
@@ -111,10 +119,16 @@ namespace U8Xml
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
             {
+            MoveNext:
                 if(_next == null) { return false; }
                 _current = _next;
                 _next = _next->Sibling;
-                return true;
+
+                if(_hasTargetType == false || _current->NodeType == _targetType) {
+                    return true;
+                }
+
+                goto MoveNext;
             }
 
             public void Reset() => throw new NotSupportedException("Reset() is not supported.");
@@ -129,9 +143,9 @@ namespace U8Xml
             object IEnumerator.Current => Current;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal EnumeratorClass(XmlNode_* firstChild)
+            internal EnumeratorClass(XmlNode_* parent, XmlNodeType? targetType)
             {
-                _enumerator = new Enumerator(firstChild);
+                _enumerator = new Enumerator(parent, targetType);
             }
 
             public void Dispose() => _enumerator.Dispose();
@@ -147,7 +161,7 @@ namespace U8Xml
             private XmlNodeList _entity;
 
             [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-            public unsafe XmlNode[] Items => _entity.ToArray();
+            public unsafe XmlNode[] Items => System.Linq.Enumerable.ToArray(_entity);
 
             public XmlNodeListTypeProxy(XmlNodeList entity)
             {
