@@ -479,11 +479,11 @@ namespace U8Xml
 
 
         public bool Contains(byte value) => IndexOf(value) >= 0;
-        public bool Contains(char value) => IndexOf(value, out _) >= 0;
+        public bool Contains(char value) => IndexOf(value).Start >= 0;
         public bool Contains(RawString value) => IndexOf(value) >= 0;
         public bool Contains(ReadOnlySpan<byte> value) => IndexOf(value) >= 0;
-        public bool Contains(string value) => IndexOf(value, out _) >= 0;
-        public bool Contains(ReadOnlySpan<char> value) => IndexOf(value, out _) >= 0;
+        public bool Contains(string value) => IndexOf(value).Start >= 0;
+        public bool Contains(ReadOnlySpan<char> value) => IndexOf(value).Start >= 0;
 
 
         /// <summary>Compute hash code for the specified span using the same algorithm as <see cref="GetHashCode()"/>.</summary>
