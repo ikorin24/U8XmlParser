@@ -251,13 +251,13 @@ namespace U8Xml
             {
                 if(SkipEmpty(data, ref i) == false) {
                     if(nodeStack.Count == 0) { goto End; }
-                    else { throw NewFormatException(); }
+                    else { throw NewFormatException(data, i); }
                 }
 
                 // Must be '<', otherwise error.
                 if(data.At(i) == '<') {
                     if(nodeStack.Count == 0 && store.NodeCount > 0) {
-                        throw NewFormatException("Xml does not have multiple root nodes.");
+                        throw NewFormatException(data, i, "Xml does not have multiple root nodes.");
                     }
                     if(i + 1 < data.Length && data.At(i + 1) == '/') {
                         i += 2;
@@ -290,7 +290,7 @@ namespace U8Xml
                     // Skip comment <!--xxx-->
                     if((i + 2 < data.Length) && (data.At(i + 1) == '-') && (data.At(i + 2) == '-'))  // Start with "<!--"
                     {
-                        if(SkipComment(data, ref i) == false) { throw NewFormatException(); }
+                        if(SkipComment(data, ref i) == false) { throw NewFormatException(data, i); }
                         goto None;
                     }
                     else {
@@ -301,10 +301,10 @@ namespace U8Xml
                 else if(data.At(i) == '?') {
                     if(i + 4 < data.Length && data.At(i + 1) == 'x' && data.At(i + 2) == 'm' && data.At(i + 3) == 'l' && data.At(i + 4) == ' ') // Start with "<?xml "
                     {
-                        if(GetXmlDeclaration(data, ref i, store.AllAttrs, optional) == false) { throw NewFormatException(); }   // <?xml version="1.0" encoding="UTF-8"?>
+                        if(GetXmlDeclaration(data, ref i, store.AllAttrs, optional) == false) { throw NewFormatException(data, i); }   // <?xml version="1.0" encoding="UTF-8"?>
                         goto None;
                     }
-                    else { throw NewFormatException(); }
+                    else { throw NewFormatException(data, i); }
                 }
                 else {
                     var attrs = store.AllAttrs;
@@ -318,7 +318,7 @@ namespace U8Xml
                             }
                             nodeStack.Push(node);
                             i++;
-                            if(i >= data.Length) { throw NewFormatException(); }
+                            if(i >= data.Length) { throw NewFormatException(data, i); }
                             goto None;
                         }
                         else if((i + 1 < data.Length) && data.At(i) == '/' && data.At(i + 1) == '>') {
@@ -352,7 +352,7 @@ namespace U8Xml
             {
                 GetNodeName(data, ref i, out var name);
                 var node = nodeStack.Pop();
-                if(node->Name.SequenceEqual(name) == false) { throw NewFormatException(); }
+                if(node->Name.SequenceEqual(name) == false) { throw NewFormatException(data, i); }
                 if(data.At(i) == '>') {
                     i++;
                     long len = data.GetPtr() + i - node->NodeStrPtr;
@@ -363,7 +363,7 @@ namespace U8Xml
                     }
                     goto None;
                 }
-                else { throw NewFormatException(); }
+                else { throw NewFormatException(data, i); }
             }
 
         ExtraNode:  // Current data[i] is next char to "<!". (except comment out)
@@ -375,14 +375,14 @@ namespace U8Xml
                     goto None;
                 }
                 else {
-                    throw NewFormatException();
+                    throw NewFormatException(data, i);
                 }
             }
 
         End:
             {
                 if(store.NodeCount == 0) {
-                    throw NewFormatException("Xml must have at least one node.");
+                    throw NewFormatException(data, i, "Xml must have at least one node.");
                 }
                 Debug.Assert(nodeStack.Count == 0);
                 return;
@@ -406,21 +406,21 @@ namespace U8Xml
             var bodyStart = i - 2;
             var docType = optional.DocumentType;
             i += DocTypeStr.Length;
-            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
 
             var nameStart = i;
             SkipUntil((byte)'[', data, ref i);
             var nameLen = i - nameStart - 1;
             var contentStart = i;
-            if(nameLen <= 0) { throw NewFormatException(); }
+            if(nameLen <= 0) { throw NewFormatException(data, i); }
             docType->Name = data.Slice(nameStart, nameLen).TrimEnd();
 
             using var list = default(RawStringPairList);
             while(true) {
-                if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+                if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
                 var c = data.At(i++);
                 if(c == ']') { break; }
-                if(c != '<') { throw NewFormatException(); }
+                if(c != '<') { throw NewFormatException(data, i); }
                 if((i + 2 < data.Length) && (data.At(i) == '!') && (data.At(i + 1) == '-') && (data.At(i + 2) == '-'))  // Start with "<!--"
                 {
                     // Skip comment <!--xxx-->
@@ -438,15 +438,15 @@ namespace U8Xml
                     var j = i;
                     SkipToEmpty(data, ref i);
                     var name = data.SliceUnsafe(j, i - j);
-                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
 
                     var quote = data.At(i);
-                    if(quote != '"' && quote != '\'') { throw NewFormatException(); }
+                    if(quote != '"' && quote != '\'') { throw NewFormatException(data, i); }
                     i++;
                     var k = i;
                     while(true) {
                         i++;
-                        if(i >= data.Length) { throw NewFormatException(); }
+                        if(i >= data.Length) { throw NewFormatException(data, i); }
                         var q = data.At(i);
                         if(q == quote) { break; }
                     }
@@ -476,7 +476,7 @@ namespace U8Xml
                 // An entity can refer to another entity that was defined before it.
                 if(ContainsAlias(item.Value, out var alias)) {
                     if(entities.TryGetValue(alias, out _) == false) {
-                        throw NewFormatException();
+                        throw NewFormatException(data, i);
                     }
                 }
 
@@ -488,7 +488,7 @@ namespace U8Xml
             static void SkipUntil(byte ascii, RawString data, ref int i)
             {
                 while(true) {
-                    if(i >= data.Length) { throw NewFormatException(); }
+                    if(i >= data.Length) { throw NewFormatException(data, i); }
                     if(data.At(i++) == ascii) { return; }
                 }
             }
@@ -496,7 +496,7 @@ namespace U8Xml
             static void SkipToEmpty(RawString data, ref int i)
             {
                 while(true) {
-                    if(i + 1 >= data.Length) { throw NewFormatException(); }
+                    if(i + 1 >= data.Length) { throw NewFormatException(data, i); }
                     ref var next = ref data.At(i + 1);
                     i++;
                     if(next == ' ' || next == '\t' || next == '\r' || next == '\n') { break; }
@@ -529,7 +529,7 @@ namespace U8Xml
                 i += 7;
                 var start = i;
                 while(true) {
-                    if(i + 2 >= data.Length) { throw NewFormatException(); }
+                    if(i + 2 >= data.Length) { throw NewFormatException(data, i); }
                     if(data.At(i) == ']' && data.At(i + 1) == ']' && data.At(i + 2) == '>') {
                         i += 3;
                         break;
@@ -621,7 +621,7 @@ namespace U8Xml
 
                     if(attr->Name.SequenceEqual(version)) {
                         if(attr->Value.SequenceEqual(v1_0) == false) {
-                            throw NewFormatException("Invalid xml version. it must be '1.0'");
+                            throw NewFormatException(data, i, "Invalid xml version. it must be '1.0'");
                         }
                         declaration->Version = attr;
                     }
@@ -636,7 +636,7 @@ namespace U8Xml
         {
             var start = i;
             while(true) {
-                if(i + 1 >= data.Length) { throw NewFormatException(); }
+                if(i + 1 >= data.Length) { throw NewFormatException(data, i); }
                 ref var next = ref data.At(i + 1);
                 i++;
                 if(next == '<') { break; }
@@ -648,13 +648,13 @@ namespace U8Xml
         {
             var nameStart = i;
             while(true) {
-                if(i + 1 >= data.Length) { throw NewFormatException(); }
+                if(i + 1 >= data.Length) { throw NewFormatException(data, i); }
                 ref var next = ref data.At(i + 1);
                 i++;
                 if(next == ' ' || next == '\t' || next == '\r' || next == '\n' || next == '/' || next == '>') { break; }
             }
             name = data.Slice(nameStart, i - nameStart);
-            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
         }
 
         private static XmlAttribute_ GetAttr(RawString data, ref int i, XmlNode_* node)
@@ -680,28 +680,28 @@ namespace U8Xml
             // Get attribute name
             var nameStart = i;
             if(data.At(i++) == '=') {
-                throw NewFormatException(); // in case of "<foo =...", that is no attribute name.
+                throw NewFormatException(data, i); // in case of "<foo =...", that is no attribute name.
             }
 
             RawString name;
             while(true) {
-                if(i >= data.Length) { throw NewFormatException(); }
+                if(i >= data.Length) { throw NewFormatException(data, i); }
                 var next = data.At(i++);
                 if(IsEmptyChar(next)) {
                     int nameLen = i - 1 - nameStart;
-                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
                     if(data.At(i++) == '=') {
                         name = data.Slice(nameStart, nameLen);
                         break;
                     }
-                    throw NewFormatException();
+                    throw NewFormatException(data, i);
                 }
                 if(next == '=') {
                     name = data.Slice(nameStart, i - 1 - nameStart);
                     break;
                 }
             }
-            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
 
             // ---------------------------------
             // The Current position is here. (Empty character may exist at the position of @.)
@@ -714,18 +714,18 @@ namespace U8Xml
 
             // Get attribute value
             var quote = data.At(i);     // " or '
-            if(quote != '"' && quote != '\'') { throw NewFormatException(); }
+            if(quote != '"' && quote != '\'') { throw NewFormatException(data, i); }
             i++;
-            if(i >= data.Length) { throw NewFormatException(); }
+            if(i >= data.Length) { throw NewFormatException(data, i); }
             var valueStart = i;
             while(true) {
                 if(data.At(i) == quote) { break; }
                 i++;
-                if(i >= data.Length) { throw NewFormatException(); }
+                if(i >= data.Length) { throw NewFormatException(data, i); }
             }
             var value = data.Slice(valueStart, i - valueStart);
             i++;
-            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(); }
+            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
             return new XmlAttribute_(name, value, node);
         }
 
@@ -735,10 +735,16 @@ namespace U8Xml
             return c == ' ' || c == '\t' || c == '\n' || c == '\r';
         }
 
-        private static FormatException NewFormatException(string? message = null) => new FormatException(message);
-        private static FormatException NewFormatException(string message, int line, int pos)
+        private static FormatException NewFormatException(RawString data, int byteOffset, string message = "Xml parsing failed at the location.")
         {
-            return new FormatException($"line {line}, position {pos}: {message}");
+            var linePos = DataOffsetHelper.GetLinePosition(data.GetPtr(), data.Length, data.GetPtr() + byteOffset);
+            if(linePos.HasValue) {
+                var (line, pos) = linePos.Value;
+
+                // Use one-based numbering for the message.
+                return new FormatException($"(line {line + 1}, char {pos + 1}): {message}");
+            }
+            return new FormatException(message);
         }
     }
 }

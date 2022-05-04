@@ -23,8 +23,8 @@ namespace U8Xml.Internal
                 return null;
             }
 
-            var start = GetLinePosition(dataHead, dataLen, targetHead);
-            var endOffset = GetLinePosition(targetHead, targetLen, targetHead + targetLen);
+            var start = GetLinePositionPrivate(dataHead, dataLen, targetHead);
+            var endOffset = GetLinePositionPrivate(targetHead, targetLen, targetHead + targetLen);
             var end = new DataLinePosition(
                 line: start.Line + endOffset.Line,
                 position: (endOffset.Line == 0) ? (start.Position + endOffset.Position) : endOffset.Position
@@ -35,7 +35,16 @@ namespace U8Xml.Internal
             return new DataLocation(start, end, range);
         }
 
-        private static DataLinePosition GetLinePosition(byte* dataHead, int dataLen, byte* target)
+        public static DataLinePosition? GetLinePosition(byte* dataHead, int dataLen, byte* target)
+        {
+            if(dataLen < 0) { ThrowHelper.ThrowArgOutOfRange(nameof(dataLen)); }
+            if(CheckContainsMemory(dataHead, dataLen, target, 1) == false) {
+                return null;
+            }
+            return GetLinePositionPrivate(dataHead, dataLen, target);
+        }
+
+        private static DataLinePosition GetLinePositionPrivate(byte* dataHead, int dataLen, byte* target)
         {
             Debug.Assert(dataLen >= 0);
             Debug.Assert(dataHead <= target);
