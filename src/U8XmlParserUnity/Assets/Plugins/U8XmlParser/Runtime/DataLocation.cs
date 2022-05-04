@@ -50,7 +50,9 @@ namespace U8Xml
     [DebuggerDisplay("{DebugView,nq}")]
     public readonly struct DataLinePosition : IEquatable<DataLinePosition>
     {
+        /// <summary>Line number (zero-based numbering)</summary>
         public readonly int Line;
+        /// <summary>Position offset which is number of characters, NOT number of bytes. (zero-based numbering)</summary>
         public readonly int Position;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]

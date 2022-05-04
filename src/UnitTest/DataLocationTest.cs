@@ -121,22 +121,22 @@ text</ddd>
                 Assert.Equal(xml.GetRange(node), location.Range);
                 Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
             }
-            //{
-            //    var (node, answer) = cases[2];
-            //    var location = xml.GetLocation(node);
-            //    Assert.Equal(answer.Start, location.Start);
-            //    Assert.Equal(answer.End, location.End);
-            //    Assert.Equal(xml.GetRange(node), location.Range);
-            //    Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
-            //}
-            //{
-            //    var (node, answer) = cases[3];
-            //    var location = xml.GetLocation(node);
-            //    Assert.Equal(answer.Start, location.Start);
-            //    Assert.Equal(answer.End, location.End);
-            //    Assert.Equal(xml.GetRange(node), location.Range);
-            //    Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
-            //}
+            {
+                var (node, answer) = cases[2];
+                var location = xml.GetLocation(node);
+                Assert.Equal(answer.Start, location.Start);
+                Assert.Equal(answer.End, location.End);
+                Assert.Equal(xml.GetRange(node), location.Range);
+                Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
+            }
+            {
+                var (node, answer) = cases[3];
+                var location = xml.GetLocation(node);
+                Assert.Equal(answer.Start, location.Start);
+                Assert.Equal(answer.End, location.End);
+                Assert.Equal(xml.GetRange(node), location.Range);
+                Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
+            }
             {
                 var (node, answer) = cases[4];
                 var location = xml.GetLocation(node);

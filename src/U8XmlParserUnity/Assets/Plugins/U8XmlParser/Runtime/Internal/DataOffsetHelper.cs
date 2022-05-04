@@ -48,7 +48,9 @@ namespace U8Xml.Internal
                     lastLineHead = p + 1;
                 }
             }
-            int pos = checked((int)(uint)(target - lastLineHead));
+            int byteCountInLastLine = checked((int)(uint)(target - lastLineHead));
+            var utf8 = UTF8ExceptionFallbackEncoding.Instance;
+            var pos = utf8.GetCharCount(lastLineHead, byteCountInLastLine);
             return new DataLinePosition(lineNum, pos);
         }
 
