@@ -3,7 +3,6 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Runtime.CompilerServices;
-using System.Diagnostics;
 
 namespace U8Xml.Internal
 {
@@ -78,30 +77,40 @@ namespace U8Xml.Internal
             return new DataRange(offset!.Value, str.Length);
         }
 
-        public DataLocation GetLocation(XmlNode node, bool useZeroBasedNum)
+        public DataLocation GetLocation(XmlNode node)
         {
-            var location = DataOffsetHelper.GetLocation((byte*)_rawByteData, _byteLength, node.NodeHeadPtr, node.NodeByteLen, useZeroBasedNum);
+            var location = DataOffsetHelper.GetLocation((byte*)_rawByteData, _byteLength, node.NodeHeadPtr, node.NodeByteLen);
             if(location.HasValue == false) {
                 ThrowHelper.ThrowArg("The node does not belong to the xml.");
             }
             return location!.Value;
         }
 
-        public DataLocation GetLocation(XmlAttribute attr, bool useZeroBasedNum)
+        public DataLocation GetLocation(XmlAttribute attr)
         {
             var str = attr.AsRawString();
-            var location = DataOffsetHelper.GetLocation((byte*)_rawByteData, _byteLength, str.GetPtr(), str.Length, useZeroBasedNum);
+            var location = DataOffsetHelper.GetLocation((byte*)_rawByteData, _byteLength, str.GetPtr(), str.Length);
             if(location.HasValue == false) {
                 ThrowHelper.ThrowArg("The attribute does not belong to the xml.");
             }
             return location!.Value;
         }
 
-        public DataLocation GetLocation(RawString str, bool useZeroBasedNum)
+        public DataLocation GetLocation(RawString str)
         {
-            var location = DataOffsetHelper.GetLocation((byte*)_rawByteData, _byteLength, str.GetPtr(), str.Length, useZeroBasedNum);
+            var location = DataOffsetHelper.GetLocation((byte*)_rawByteData, _byteLength, str.GetPtr(), str.Length);
             if(location.HasValue == false) {
                 ThrowHelper.ThrowArg("The string does not belong to the xml.");
+            }
+            return location!.Value;
+        }
+
+        public DataLocation GetLocation(DataRange range)
+        {
+            var dataHead = (byte*)_rawByteData;
+            var location = DataOffsetHelper.GetLocation(dataHead, _byteLength, dataHead + range.Start, range.Length);
+            if(location.HasValue == false) {
+                ThrowHelper.ThrowArg("The range is out of the xml.");
             }
             return location!.Value;
         }
@@ -110,6 +119,14 @@ namespace U8Xml.Internal
         /// <returns>whole xml string</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString AsRawString() => new RawString((byte*)_rawByteData + _offset, _byteLength - _offset);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public RawString AsRawString(int start) => AsRawString().Slice(start);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public RawString AsRawString(int start, int length) => AsRawString().Slice(start, length);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public RawString AsRawString(DataRange range) => AsRawString().Slice(range);
 
         /// <summary>Get all nodes (target type is <see cref="XmlNodeType.ElementNode"/>)</summary>
         /// <returns>all element nodes</returns>

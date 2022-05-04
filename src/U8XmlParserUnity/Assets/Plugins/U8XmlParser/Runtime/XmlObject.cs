@@ -46,6 +46,25 @@ namespace U8Xml
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString AsRawString() => _core.AsRawString();
 
+        /// <summary>Get sliced xml string as utf-8 bytes data.</summary>
+        /// <param name="start">start byte offset</param>
+        /// <returns>sliced xml string</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public RawString AsRawString(int start) => _core.AsRawString(start);
+
+        /// <summary>Get sliced xml string as utf-8 bytes data.</summary>
+        /// <param name="start">start byte offset</param>
+        /// <param name="length">byte length</param>
+        /// <returns>sliced xml string</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public RawString AsRawString(int start, int length) => _core.AsRawString(start, length);
+
+        /// <summary>Get sliced xml string as utf-8 bytes data.</summary>
+        /// <param name="range">data range</param>
+        /// <returns>sliced xml string</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public RawString AsRawString(DataRange range) => _core.AsRawString(range);
+
         /// <summary>Get all nodes (target type is <see cref="XmlNodeType.ElementNode"/>)</summary>
         /// <returns>all element nodes</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -56,11 +75,13 @@ namespace U8Xml
         /// <returns>all nodes</returns>
         public AllNodeList GetAllNodes(XmlNodeType? targetType) => _core.GetAllNodes(targetType);
 
-        public DataLocation GetLocation(XmlNode node, bool useZeroBasedNum) => _core.GetLocation(node, useZeroBasedNum);
+        public DataLocation GetLocation(XmlNode node) => _core.GetLocation(node);
 
-        public DataLocation GetLocation(XmlAttribute attr, bool useZeroBasedNum) => _core.GetLocation(attr, useZeroBasedNum);
+        public DataLocation GetLocation(XmlAttribute attr) => _core.GetLocation(attr);
 
-        public DataLocation GetLocation(RawString str, bool useZeroBasedNum) => _core.GetLocation(str, useZeroBasedNum);
+        public DataLocation GetLocation(RawString str) => _core.GetLocation(str);
+
+        public DataLocation GetLocation(DataRange range) => _core.GetLocation(range);
 
         public DataRange GetRange(XmlNode node) => _core.GetRange(node);
 

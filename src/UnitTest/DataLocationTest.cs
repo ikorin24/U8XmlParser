@@ -25,69 +25,36 @@ text</ddd>
 
             // Range of nodes
             foreach(var node in xml.GetAllNodes(null)) {
-                CheckNode(xml, node);
+                Assert.True(xml.AsRawString(xml.GetRange(node)).ReferenceEquals(node.AsRawString()));
             }
 
             // Range of attributes
             {
                 var attr = xml.Root.FindAttribute("xyz");
-                CheckAttr(xml, attr);
-                Assert.Equal("xyz=\"321\"", attr.AsRawString().ToString());
+                var attrStr = attr.AsRawString();
+                Assert.True(xml.AsRawString(xml.GetRange(attr)).ReferenceEquals(attrStr));
+                Assert.Equal("xyz=\"321\"", attrStr.ToString());
             }
             {
                 var attr = xml.Root.FindChild("bbb").FindChild("ccc").FindAttribute("zzz");
-                CheckAttr(xml, attr);
-                Assert.Equal("zzz='98765'", attr.AsRawString().ToString());
+                var attrStr = attr.AsRawString();
+                Assert.True(xml.AsRawString(xml.GetRange(attr)).ReferenceEquals(attrStr));
+                Assert.Equal("zzz='98765'", attrStr.ToString());
             }
 
             // Range of RawString
             {
                 var str = xml.Root.FindChild("aaa").InnerText;
-                CheckRawStr(xml, str);
+                Assert.True(xml.AsRawString(xml.GetRange(str)).ReferenceEquals(str));
                 Assert.Equal("あいう", str.ToString());
             }
             {
                 var str = xml.Root.FindChild("ddd").InnerText;
-                CheckRawStr(xml, str);
+                Assert.True(xml.AsRawString(xml.GetRange(str)).ReferenceEquals(str));
                 Assert.Equal(@"This is
 a multi
 line
 text", str.ToString());
-            }
-
-            return;
-
-            static void CheckNode(XmlObject xml, XmlNode node)
-            {
-                var xmlRawStr = xml.AsRawString();
-                var range = xml.GetRange(node);
-                var sliced = xmlRawStr.Slice(range.ByteOffset, range.ByteLength);
-                var answer = node.AsRawString();
-                Assert.Equal(answer, sliced);
-                Assert.Equal(answer.Ptr, sliced.Ptr);
-                Assert.Equal(answer.Length, sliced.Length);
-            }
-
-            static void CheckAttr(XmlObject xml, XmlAttribute attr)
-            {
-                var xmlRawStr = xml.AsRawString();
-                var range = xml.GetRange(attr);
-                var sliced = xmlRawStr.Slice(range.ByteOffset, range.ByteLength);
-                var answer = attr.AsRawString();
-                Assert.Equal(answer, sliced);
-                Assert.Equal(answer.Ptr, sliced.Ptr);
-                Assert.Equal(answer.Length, sliced.Length);
-            }
-
-            static void CheckRawStr(XmlObject xml, RawString str)
-            {
-                var xmlRawStr = xml.AsRawString();
-                var range = xml.GetRange(str);
-                var sliced = xmlRawStr.Slice(range.ByteOffset, range.ByteLength);
-                var answer = str;
-                Assert.Equal(answer, sliced);
-                Assert.Equal(answer.Ptr, sliced.Ptr);
-                Assert.Equal(answer.Length, sliced.Length);
             }
         }
 
@@ -109,11 +76,75 @@ text</ddd>
 
             using var xml = XmlParser.Parse(xmlString);
 
-            var l = xml.GetLocation(xml.Root, false);
-            Assert.Equal(1, l.Start.Line);
-            Assert.Equal(1, l.Start.Position);
-            Assert.Equal(11, l.End.Line);
-            Assert.Equal(7, l.End.Position);
+            var cases = new[]
+            {
+                (
+                    // <root>...</root>
+                    Node: xml.Root,
+                    Answer: (Start: new DataLinePosition(0, 0), End: new DataLinePosition(10, 7))
+                ),
+                (
+                    // foo --- 3 characters, 3 bytes
+                    Node: xml.Root.GetChildren(XmlNodeType.TextNode).First(),
+                    Answer: (Start: new DataLinePosition(1, 4), End: new DataLinePosition(1, 7))
+                ),
+                (
+                    // <aaa>あいう</aaa> --- 14 characters, 20 bytes
+                    Node: xml.Root.FindChild("aaa"),
+                    Answer: (Start: new DataLinePosition(2, 4), End: new DataLinePosition(2, 4 + 14))
+                ),
+                (
+                    // あいう --- 3 characters, 9 bytes
+                    Node: xml.Root.FindChild("aaa").GetChildren(XmlNodeType.TextNode).First(),
+                    Answer: (Start: new DataLinePosition(2, 9), End: new DataLinePosition(2, 9 + 3))
+                ),
+                (
+                    // <ddd>...</ddd>
+                    Node: xml.Root.FindChild("ddd"),
+                    Answer: (Start: new DataLinePosition(6, 4), End: new DataLinePosition(9, 10))
+                ),
+            };
+
+            {
+                var (node, answer) = cases[0];
+                var location = xml.GetLocation(node);
+                Assert.Equal(answer.Start, location.Start);
+                Assert.Equal(answer.End, location.End);
+                Assert.Equal(xml.GetRange(node), location.Range);
+                Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
+            }
+            {
+                var (node, answer) = cases[1];
+                var location = xml.GetLocation(node);
+                Assert.Equal(answer.Start, location.Start);
+                Assert.Equal(answer.End, location.End);
+                Assert.Equal(xml.GetRange(node), location.Range);
+                Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
+            }
+            //{
+            //    var (node, answer) = cases[2];
+            //    var location = xml.GetLocation(node);
+            //    Assert.Equal(answer.Start, location.Start);
+            //    Assert.Equal(answer.End, location.End);
+            //    Assert.Equal(xml.GetRange(node), location.Range);
+            //    Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
+            //}
+            //{
+            //    var (node, answer) = cases[3];
+            //    var location = xml.GetLocation(node);
+            //    Assert.Equal(answer.Start, location.Start);
+            //    Assert.Equal(answer.End, location.End);
+            //    Assert.Equal(xml.GetRange(node), location.Range);
+            //    Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
+            //}
+            {
+                var (node, answer) = cases[4];
+                var location = xml.GetLocation(node);
+                Assert.Equal(answer.Start, location.Start);
+                Assert.Equal(answer.End, location.End);
+                Assert.Equal(xml.GetRange(node), location.Range);
+                Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
+            }
         }
     }
 }

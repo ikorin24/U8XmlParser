@@ -59,9 +59,9 @@ namespace U8Xml
         /// <returns>new array</returns>
         public byte[] ToArray() => AsSpan().ToArray();
 
-        /// <summary>Get slice of the array</summary>
+        /// <summary>Get slice of the <see cref="RawString"/></summary>
         /// <param name="start">start index to slice</param>
-        /// <returns>sliced array</returns>
+        /// <returns>sliced <see cref="RawString"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString Slice(int start)
         {
@@ -69,10 +69,10 @@ namespace U8Xml
             return new RawString((byte*)_ptr + start, _length - start);
         }
 
-        /// <summary>Get slice of the array</summary>
+        /// <summary>Get slice of the <see cref="RawString"/></summary>
         /// <param name="start">start index to slice</param>
         /// <param name="length">length to slice from <paramref name="start"/></param>
-        /// <returns>sliced array</returns>
+        /// <returns>sliced <see cref="RawString"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public RawString Slice(int start, int length)
         {
@@ -80,6 +80,12 @@ namespace U8Xml
             if((uint)length > (uint)(_length - start)) { ThrowHelper.ThrowArgOutOfRange(nameof(length)); }
             return new RawString((byte*)_ptr + start, length);
         }
+
+        /// <summary>Get slice of the <see cref="RawString"/></summary>
+        /// <param name="range">data range</param>
+        /// <returns>sliced <see cref="RawString"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public RawString Slice(DataRange range) => Slice(range.Start, range.Length);
 
         /// <summary>Trim invisible charactors. (whitespace, '\t', '\r', and '\n')</summary>
         /// <returns>trimmed string</returns>
@@ -165,6 +171,8 @@ namespace U8Xml
         public bool SequenceEqual(RawString other) => AsSpan().SequenceEqual(other.AsSpan());
 
         public bool SequenceEqual(ReadOnlySpan<byte> other) => AsSpan().SequenceEqual(other);
+
+        public bool ReferenceEquals(RawString other) => _ptr.Equals(other.Ptr) && _length == other.Length;
 
         public bool StartsWith(RawString other)
         {

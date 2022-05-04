@@ -14,7 +14,7 @@ namespace U8Xml
         public readonly DataRange Range;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string DebugView => (Start == End) ? Start.DebugView : $"{Start.DebugView} ~ {End.DebugView}";
+        private string DebugView => (Start == End) ? Start.DebugView : $"{Start.DebugView} - {End.DebugView}";
 
         public DataLocation(DataLinePosition start, DataLinePosition end, DataRange range)
         {
@@ -40,9 +40,9 @@ namespace U8Xml
         // Can not use System.HashCode because the project doesn't depend on Microsoft.Bcl.HashCode package. (on netstandard2.0 / net48)
         public override int GetHashCode() => XXHash32.ComputeHash(this);
 
-        public static bool operator ==(DataLocation left, DataLocation right) => left.Equals(right);
+        public static bool operator ==(in DataLocation left, in DataLocation right) => left.Equals(right);
 
-        public static bool operator !=(DataLocation left, DataLocation right) => !(left == right);
+        public static bool operator !=(in DataLocation left, in DataLocation right) => !(left == right);
 
         public override string ToString() => DebugView;
     }
@@ -85,25 +85,25 @@ namespace U8Xml
 
     public readonly struct DataRange : IEquatable<DataRange>
     {
-        public readonly int ByteOffset;
-        public readonly int ByteLength;
+        public readonly int Start;
+        public readonly int Length;
 
         public DataRange(int byteOffset, int byteLength)
         {
-            ByteOffset = byteOffset;
-            ByteLength = byteLength;
+            Start = byteOffset;
+            Length = byteLength;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public void Deconstruct(out int byteOffset, out int byteLength)
         {
-            byteOffset = ByteOffset;
-            byteLength = ByteLength;
+            byteOffset = Start;
+            byteLength = Length;
         }
 
         public override bool Equals(object? obj) => obj is DataRange range && Equals(range);
 
-        public bool Equals(DataRange other) => ByteOffset == other.ByteOffset && ByteLength == other.ByteLength;
+        public bool Equals(DataRange other) => Start == other.Start && Length == other.Length;
 
         // Can not use System.HashCode because the project doesn't depend on Microsoft.Bcl.HashCode package. (on netstandard2.0 / net48)
         public override int GetHashCode() => XXHash32.ComputeHash(this);

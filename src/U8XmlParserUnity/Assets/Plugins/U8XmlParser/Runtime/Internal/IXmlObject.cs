@@ -11,12 +11,17 @@ namespace U8Xml.Internal
         Option<XmlDocumentType> DocumentType { get; }
         XmlEntityTable EntityTable { get; }
         RawString AsRawString();
+        RawString AsRawString(int start);
+        RawString AsRawString(int start, int length);
+        RawString AsRawString(DataRange range);
+
         AllNodeList GetAllNodes();
         AllNodeList GetAllNodes(XmlNodeType? targetType);
 
-        DataLocation GetLocation(XmlNode node, bool useZeroBasedNum);
-        DataLocation GetLocation(XmlAttribute attr, bool useZeroBasedNum);
-        DataLocation GetLocation(RawString str, bool useZeroBasedNum);
+        DataLocation GetLocation(XmlNode node);
+        DataLocation GetLocation(XmlAttribute attr);
+        DataLocation GetLocation(RawString str);
+        DataLocation GetLocation(DataRange range);
 
         DataRange GetRange(XmlNode node);
         DataRange GetRange(XmlAttribute attr);
