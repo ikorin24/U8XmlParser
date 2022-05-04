@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.ComponentModel;
 using U8Xml.Internal;
 using System.Buffers;
+using System.Collections.Generic;
 
 namespace U8Xml
 {
@@ -23,7 +24,7 @@ namespace U8Xml
         /// <summary>Get whether the byte array is empty or not.</summary>
         public bool IsEmpty => _length == 0;
 
-        /// <summary>Get length of the byte array. (NOT length of utf-8 string)</summary>
+        /// <summary>Get length of the byte array. (NOT number of characters)</summary>
         public int Length => _length;
 
         /// <summary>Get pointer to the head of the utf-8 characters.</summary>
@@ -49,6 +50,10 @@ namespace U8Xml
             _ptr = (IntPtr)ptr;
             _length = length;
         }
+
+        /// <summary>Get number of characters</summary>
+        /// <returns>characters count</returns>
+        public int GetCharCount() => _length == 0 ? 0 : UTF8ExceptionFallbackEncoding.Instance.GetCharCount((byte*)_ptr, _length);
 
         /// <summary>Get read-only bytes data</summary>
         /// <returns><see cref="ReadOnlySpan{T}"/> of type <see langword="byte"/></returns>
@@ -375,9 +380,28 @@ namespace U8Xml
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly RawString _entity;
 
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
-        public byte[] Items => _entity.ToArray();
+        public byte[] ByteArray => _entity.ToArray();
+        public int ByteLength => _entity.Length;
+        public unsafe int CharCount => _entity.GetCharCount();
 
+        public string[] Lines
+        {
+            get
+            {
+                var lines = new List<string>();
+                foreach(var line in _entity.Split((byte)'\n')) {
+                    if(line.Length > 0 && line[line.Length - 1] == '\r') {
+                        lines.Add(line.Slice(0, line.Length - 1).ToString());
+                    }
+                    else {
+                        lines.Add(line.ToString());
+                    }
+                }
+                return lines.ToArray();
+            }
+        }
+
+        public string String => _entity.ToString();
 
         public RawStringDebuggerTypeProxy(RawString entity)
         {
