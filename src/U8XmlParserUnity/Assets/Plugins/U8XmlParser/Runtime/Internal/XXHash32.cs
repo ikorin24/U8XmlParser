@@ -1,7 +1,16 @@
 #nullable enable
+
+#if NETCOREAPP3_1_OR_GREATER
+#define FAST_SPAN
+#endif
+
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+
+#if FAST_SPAN
+using System.Runtime.InteropServices;
+#endif
 
 namespace U8Xml.Internal
 {
@@ -14,6 +23,20 @@ namespace U8Xml.Internal
         private const uint Prime3 = 3266489917U;
         private const uint Prime4 = 668265263U;
         private const uint Prime5 = 374761393U;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int ComputeHash<T>(in T data) where T : unmanaged
+        {
+#if FAST_SPAN
+            var span = MemoryMarshal.CreateReadOnlySpan(ref Unsafe.As<T, byte>(ref Unsafe.AsRef(in data)), sizeof(T));
+            fixed(byte* p = span) {
+                return ComputeHash(p, span.Length);
+            }
+#else
+            var localCopy = data;
+            return ComputeHash((byte*)&localCopy, sizeof(T));
+#endif
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ComputeHash(byte* data, int byteLength)

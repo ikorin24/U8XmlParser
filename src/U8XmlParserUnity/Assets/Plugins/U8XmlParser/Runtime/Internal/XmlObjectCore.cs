@@ -50,101 +50,60 @@ namespace U8Xml.Internal
             }
         }
 
-        public int GetOffset(XmlNode node)
+        public DataRange GetRange(XmlNode node)
         {
-            var dataHead = (byte*)_rawByteData;
-            var dataLen = _byteLength;
-            var nodeHead = node.NodeHeadPtr;
-            var nodeLen = node.NodeByteLen;
-            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, nodeHead, nodeLen) == false) {
-                ThrowHelper.ThrowArg("The target node does not belong to the xml.");
+            var offset = DataOffsetHelper.GetOffset((byte*)_rawByteData, _byteLength, node.NodeHeadPtr);
+            if(offset.HasValue == false) {
+                ThrowHelper.ThrowArg("The node does not belong to the xml.");
             }
-            long offset = nodeHead - dataHead;
-            return checked((int)offset);
+            return new DataRange(offset!.Value, node.NodeByteLen);
         }
 
-        public int GetOffset(XmlAttribute attr)
+        public DataRange GetRange(XmlAttribute attr)
         {
-            var rawStr = attr.AsRawString();
-            var dataHead = (byte*)_rawByteData;
-            var dataLen = _byteLength;
-            var strHead = rawStr.GetPtr();
-            var strLen = rawStr.Length;
-
-            Debug.Assert(strLen >= 0);
-            Debug.Assert(dataLen >= 0);
-
-            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
-                ThrowHelper.ThrowArg("The target attribute does not belong to the xml.");
+            var str = attr.AsRawString();
+            var offset = DataOffsetHelper.GetOffset((byte*)_rawByteData, _byteLength, str.GetPtr());
+            if(offset.HasValue == false) {
+                ThrowHelper.ThrowArg("The attribute does not belong to the xml.");
             }
-            long offset = strHead - dataHead;
-            return checked((int)offset);
+            return new DataRange(offset!.Value, str.Length);
         }
 
-        public int GetOffset(RawString str)
+        public DataRange GetRange(RawString str)
         {
-            var dataHead = (byte*)_rawByteData;
-            var dataLen = _byteLength;
-            var strHead = str.GetPtr();
-            var strLen = str.Length;
-
-            Debug.Assert(strLen >= 0);
-            Debug.Assert(dataLen >= 0);
-
-            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
-                ThrowHelper.ThrowArg("The target string does not belong to the xml.");
+            var offset = DataOffsetHelper.GetOffset((byte*)_rawByteData, _byteLength, str.GetPtr());
+            if(offset.HasValue == false) {
+                ThrowHelper.ThrowArg("The string does not belong to the xml.");
             }
-            long offset = strHead - dataHead;
-            return checked((int)offset);
+            return new DataRange(offset!.Value, str.Length);
         }
 
-        public (int Line, int Position) GetLineAndPosition(XmlNode node, bool useZeroBasedNum)
+        public DataLocation GetLocation(XmlNode node, bool useZeroBasedNum)
         {
-            var dataHead = (byte*)_rawByteData;
-            var dataLen = _byteLength;
-            var nodeHead = node.NodeHeadPtr;
-            var nodeLen = node.NodeByteLen;
-
-            Debug.Assert(nodeLen >= 0);
-            Debug.Assert(dataLen >= 0);
-
-            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, nodeHead, nodeLen) == false) {
-                ThrowHelper.ThrowArg("The target node does not belong to the xml.");
+            var location = DataOffsetHelper.GetLocation((byte*)_rawByteData, _byteLength, node.NodeHeadPtr, node.NodeByteLen, useZeroBasedNum);
+            if(location.HasValue == false) {
+                ThrowHelper.ThrowArg("The node does not belong to the xml.");
             }
-            return DataOffsetHelper.GetLineAndPosition(dataHead, dataLen, nodeHead, nodeLen, useZeroBasedNum);
+            return location!.Value;
         }
 
-        public (int Line, int Position) GetLineAndPosition(XmlAttribute attr, bool useZeroBasedNum)
+        public DataLocation GetLocation(XmlAttribute attr, bool useZeroBasedNum)
         {
-            var rawStr = attr.AsRawString();
-            var dataHead = (byte*)_rawByteData;
-            var dataLen = _byteLength;
-            var strHead = rawStr.GetPtr();
-            var strLen = rawStr.Length;
-
-            Debug.Assert(strLen >= 0);
-            Debug.Assert(dataLen >= 0);
-
-            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
-                ThrowHelper.ThrowArg("The target attribute does not belong to the xml.");
+            var str = attr.AsRawString();
+            var location = DataOffsetHelper.GetLocation((byte*)_rawByteData, _byteLength, str.GetPtr(), str.Length, useZeroBasedNum);
+            if(location.HasValue == false) {
+                ThrowHelper.ThrowArg("The attribute does not belong to the xml.");
             }
-            return DataOffsetHelper.GetLineAndPosition(dataHead, dataLen, strHead, strLen, useZeroBasedNum);
+            return location!.Value;
         }
 
-        public (int Line, int Position) GetLineAndPosition(RawString str, bool useZeroBasedNum)
+        public DataLocation GetLocation(RawString str, bool useZeroBasedNum)
         {
-            var dataHead = (byte*)_rawByteData;
-            var dataLen = _byteLength;
-            var strHead = str.GetPtr();
-            var strLen = str.Length;
-
-            Debug.Assert(strLen >= 0);
-            Debug.Assert(dataLen >= 0);
-
-            if(DataOffsetHelper.CheckContainsMemory(dataHead, dataLen, strHead, strLen) == false) {
-                ThrowHelper.ThrowArg("The target string does not belong to the xml.");
+            var location = DataOffsetHelper.GetLocation((byte*)_rawByteData, _byteLength, str.GetPtr(), str.Length, useZeroBasedNum);
+            if(location.HasValue == false) {
+                ThrowHelper.ThrowArg("The string does not belong to the xml.");
             }
-            return DataOffsetHelper.GetLineAndPosition(dataHead, dataLen, strHead, strLen, useZeroBasedNum);
+            return location!.Value;
         }
 
         /// <summary>Get whole xml string as utf-8 bytes data.</summary>

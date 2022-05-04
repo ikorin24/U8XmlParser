@@ -734,5 +734,9 @@ namespace U8Xml
         }
 
         private static FormatException NewFormatException(string? message = null) => new FormatException(message);
+        private static FormatException NewFormatException(string message, int line, int pos)
+        {
+            return new FormatException($"line {line}, position {pos}: {message}");
+        }
     }
 }
