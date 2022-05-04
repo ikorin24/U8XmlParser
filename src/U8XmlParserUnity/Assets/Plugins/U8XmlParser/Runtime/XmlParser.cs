@@ -277,7 +277,9 @@ namespace U8Xml
                 byte* nodeStrPtr = data.GetPtr() + nodeStrStart;
                 var node = nodeStack.Peek();
                 var textNode = store.AddTextNode(nodeStack.Count, nodeStrPtr);
-                GetInnerText(data, ref i, out textNode->InnerText);
+                GetInnerText(data, ref i, out var text);
+                textNode->InnerText = text;
+                textNode->NodeStrLength = text.Length;
                 XmlNode_.AddChildTextNode(node, textNode);
                 goto None;
             }
