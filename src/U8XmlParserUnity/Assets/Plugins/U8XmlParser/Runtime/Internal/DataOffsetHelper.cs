@@ -8,7 +8,7 @@ namespace U8Xml.Internal
         public static int? GetOffset(byte* dataHead, int dataLen, byte* target)
         {
             if(dataLen < 0) { ThrowHelper.ThrowArgOutOfRange(nameof(dataLen)); }
-            if(CheckContainsMemory(dataHead, dataLen, target, 1) == false) {
+            if(CheckContainsMemory(dataHead, dataLen, target, 0) == false) {
                 return null;
             }
             long offset = target - dataHead;
@@ -38,7 +38,7 @@ namespace U8Xml.Internal
         public static DataLinePosition? GetLinePosition(byte* dataHead, int dataLen, byte* target)
         {
             if(dataLen < 0) { ThrowHelper.ThrowArgOutOfRange(nameof(dataLen)); }
-            if(CheckContainsMemory(dataHead, dataLen, target, 1) == false) {
+            if(CheckContainsMemory(dataHead, dataLen, target, 0) == false) {
                 return null;
             }
             return GetLinePositionPrivate(dataHead, dataLen, target);
