@@ -55,5 +55,18 @@ namespace UnitTest
             var baz = bar2.FindChild("baz");
             Assert.True(baz.AsRawString() == @"<baz>abc</baz>");
         }
+
+        [Fact]
+        public void TextNodeAsString()
+        {
+            const string XmlString = @"<root>abc</root>";
+
+            using var xml = XmlParser.Parse(XmlString);
+            var textNode = xml.Root.GetChildren(XmlNodeType.TextNode).First();
+
+            Assert.Equal(XmlNodeType.TextNode, textNode.NodeType);
+            Assert.Equal("abc", textNode.InnerText.ToString());
+            Assert.Equal("abc", textNode.AsRawString().ToString());
+        }
     }
 }
