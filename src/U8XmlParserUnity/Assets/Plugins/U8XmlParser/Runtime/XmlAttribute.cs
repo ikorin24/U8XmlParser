@@ -197,7 +197,7 @@ namespace U8Xml
             //                 `- end
 
             byte* head = Name.GetPtr();
-            long len = head - (Value.GetPtr() + Value.Length + 1);
+            long len = (Value.GetPtr() + Value.Length + 1) - head;
             return new RawString(head, checked((int)(uint)len));
         }
 

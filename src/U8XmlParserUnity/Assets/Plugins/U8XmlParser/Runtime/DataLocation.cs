@@ -54,7 +54,7 @@ namespace U8Xml
         public readonly int Position;
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        internal string DebugView => $"(l.{Line}, {Position})";
+        internal string DebugView => $"(L.{Line}, {Position})";
 
         public DataLinePosition(int line, int position)
         {
