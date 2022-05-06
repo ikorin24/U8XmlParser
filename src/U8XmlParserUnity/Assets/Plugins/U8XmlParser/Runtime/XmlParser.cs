@@ -251,7 +251,9 @@ namespace U8Xml
             {
                 if(SkipEmpty(data, ref i) == false) {
                     if(nodeStack.Count == 0) { goto End; }
-                    else { throw NewFormatException(data, i); }
+                    else {
+                        throw NewFormatException(data, i, "Unexpected end of xml. The parent node is not closed.");
+                    }
                 }
 
                 // Must be '<', otherwise error.
@@ -311,7 +313,9 @@ namespace U8Xml
                         if(optional.Declaration->Body.IsEmpty == false) {
                             throw NewFormatException(data, nodeStart, "Multiple xml declaration in xml.");
                         }
-                        if(GetXmlDeclaration(data, ref i, store.AllAttrs, optional) == false) { throw NewFormatException(data, i); }   // <?xml version="1.0" encoding="UTF-8"?>
+
+                        // ex) <?xml version="1.0" encoding="UTF-8"?>
+                        GetXmlDeclaration(data, ref i, store.AllAttrs, optional);
                         goto None;
                     }
                     else { throw NewFormatException(data, nodeStart, "Invalid node. It must start with '<?xml '"); }
@@ -328,7 +332,7 @@ namespace U8Xml
                             }
                             nodeStack.Push(node);
                             i++;
-                            if(i >= data.Length) { throw NewFormatException(data, i); }
+                            if(i >= data.Length) { throw NewFormatException(data, i, $"Unexpected end of xml. The node '<{name}>' is not closed"); }
                             goto None;
                         }
                         else if((i + 1 < data.Length) && data.At(i) == '/' && data.At(i + 1) == '>') {
@@ -363,7 +367,7 @@ namespace U8Xml
                 GetNodeName(data, ref i, out var name);
                 var node = nodeStack.Pop();
                 if(node->Name.SequenceEqual(name) == false) {
-                    throw NewFormatException(data, i - name.Length, $"Unexpected name at the node tail. expected: </{node->Name}>, actual: </{name}>");
+                    throw NewFormatException(data, i - name.Length - 2, $"Unexpected node tail. expected: </{node->Name}>, actual: </{name}>");
                 }
                 if(data.At(i) == '>') {
                     i++;
@@ -375,11 +379,12 @@ namespace U8Xml
                     }
                     goto None;
                 }
-                else { throw NewFormatException(data, i, $"Unexpected character. expected: '>', actual: '{data.At(i)}'"); }
+                else { throw NewFormatException(data, i, $"Unexpected character. expected: '>', actual: '{(char)data.At(i)}'"); }
             }
 
         ExtraNode:  // Current data[i] is next char to "<!". (except comment out)
             {
+                var start = i;
                 if(TryParseCDATA(data, ref i, nodeStack)) {
                     goto None;
                 }
@@ -387,7 +392,8 @@ namespace U8Xml
                     goto None;
                 }
                 else {
-                    throw NewFormatException(data, i);
+                    var unknownNodeStr = data.Slice(start, Math.Min(6, data.Length - start));
+                    throw NewFormatException(data, start - 2, $"Unknown node starts with '<!{unknownNodeStr}'. It should be '<!DOCTYPE ...>' or '<![CDATA[...]]>'.");
                 }
             }
 
@@ -403,36 +409,40 @@ namespace U8Xml
 
         private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional, ref RawStringTable entities)
         {
+            // data[i] is the next char of "<!"
+
             // <!DOCTYPE foo[...]>
             ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
 
             if(data.Slice(i).StartsWith(DocTypeStr) == false) { return false; }
             if(hasNode) {
-                ThrowHelper.ThrowFormatException("DTD must be defined before the document root element.");
+                throw NewFormatException(data, i - 2, "DTD must be defined before the document root element.");
             }
             if(optional.DocumentType->Body.IsEmpty == false) {
-                ThrowHelper.ThrowFormatException("Cannot have multiple DTDs.");
+                throw NewFormatException(data, i - 2, "Cannot have multiple DTDs.");
             }
 
 
             var bodyStart = i - 2;
             var docType = optional.DocumentType;
             i += DocTypeStr.Length;
-            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
+            if(SkipEmpty(data, ref i) == false) {
+                throw NewFormatException(data, bodyStart, "Failed to parse DOCTYPE.");
+            }
 
             var nameStart = i;
             SkipUntil((byte)'[', data, ref i);
             var nameLen = i - nameStart - 1;
             var contentStart = i;
-            if(nameLen <= 0) { throw NewFormatException(data, i); }
+            if(nameLen <= 0) { throw NewFormatException(data, nameStart, "Failed to parse DOCTYPE."); }
             docType->Name = data.Slice(nameStart, nameLen).TrimEnd();
 
             using var list = default(RawStringPairList);
             while(true) {
-                if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
+                if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, bodyStart, "Unexpected end of xml. DOCTYPE is not closed."); }
                 var c = data.At(i++);
                 if(c == ']') { break; }
-                if(c != '<') { throw NewFormatException(data, i); }
+                if(c != '<') { throw NewFormatException(data, i - 1, $"Failed to parse DOCTYPE. expected: '<', actual: '{(char)c}'."); }
                 if((i + 2 < data.Length) && (data.At(i) == '!') && (data.At(i + 1) == '-') && (data.At(i + 2) == '-'))  // Start with "<!--"
                 {
                     // Skip comment <!--xxx-->
@@ -447,18 +457,20 @@ namespace U8Xml
                     // "<!ENTITY "
                     i += 8;
 
-                    var j = i;
+                    var entityNameStart = i;
                     SkipToEmpty(data, ref i);
-                    var name = data.SliceUnsafe(j, i - j);
-                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
+                    var name = data.SliceUnsafe(entityNameStart, i - entityNameStart);
+                    if(SkipEmpty(data, ref i) == false) {
+                        throw NewFormatException(data, entityNameStart + name.Length, "Unexpected end of xml. ENTITY is not closed.");
+                    }
 
                     var quote = data.At(i);
-                    if(quote != '"' && quote != '\'') { throw NewFormatException(data, i); }
+                    if(quote != '"' && quote != '\'') { throw NewFormatException(data, i, $"Invalid character. expected ''' or '\"', actual: '{(char)quote}'."); }
                     i++;
                     var k = i;
                     while(true) {
                         i++;
-                        if(i >= data.Length) { throw NewFormatException(data, i); }
+                        if(i >= data.Length) { throw NewFormatException(data, k, "Unexpected end of xml. ENTITY is not closed."); }
                         var q = data.At(i);
                         if(q == quote) { break; }
                     }
@@ -488,7 +500,8 @@ namespace U8Xml
                 // An entity can refer to another entity that was defined before it.
                 if(ContainsAlias(item.Value, out var alias)) {
                     if(entities.TryGetValue(alias, out _) == false) {
-                        throw NewFormatException(data, i);
+                        int offset = checked((int)(uint)(alias.GetPtr() - data.GetPtr()));
+                        throw NewFormatException(data, offset, "Alias can not be resolved.");
                     }
                 }
 
@@ -538,10 +551,11 @@ namespace U8Xml
             if(i + 6 < data.Length && data.At(i) == '[' && data.At(i + 1) == 'C' && data.At(i + 2) == 'D' &&
                data.At(i + 3) == 'A' && data.At(i + 4) == 'T' && data.At(i + 5) == 'A' && data.At(i + 6) == '[') {
                 // <![CDATA[...]]>
+                var nodeStart = i - 2;  // data[nodeStart] == '<'
                 i += 7;
                 var start = i;
                 while(true) {
-                    if(i + 2 >= data.Length) { throw NewFormatException(data, i); }
+                    if(i + 2 >= data.Length) { throw NewFormatException(data, nodeStart, "Unexpected end of xml. CDATA is not closed."); }
                     if(data.At(i) == ']' && data.At(i + 1) == ']' && data.At(i + 2) == '>') {
                         i += 3;
                         break;
@@ -599,13 +613,13 @@ namespace U8Xml
             }
         }
 
-        private static bool GetXmlDeclaration(RawString data, ref int i, CustomList<XmlAttribute_> attrs, OptionalNodeList optional)
+        private static void GetXmlDeclaration(RawString data, ref int i, CustomList<XmlAttribute_> attrs, OptionalNodeList optional)
         {
             // Parse <?xml version="1.0" encoding="UTF-8"?>
             // Current data[i] == '?'
             // return false if end of data, otherwise true
 
-            Debug.Assert(data.Slice(i, 5).ToString() == "?xml ");
+            Debug.Assert(data.Slice(i, 5) == "?xml ");
             Debug.Assert(i - 1 >= 0);
 
             var declaration = optional.Declaration;
@@ -614,13 +628,13 @@ namespace U8Xml
             while(true) {
                 if(i + 1 >= data.Length) {
                     i += 2;
-                    return false;
+                    throw NewFormatException(data, start, "Xml declaration is not closed.");
                 }
                 if(data.At(i) == '?' && data.At(i + 1) == '>')   // end with "?>"
                 {
                     i += 2;
                     declaration->Body = data.SliceUnsafe(start, i - start);
-                    return true;
+                    return;
                 }
                 else {
                     var attr = attrs.GetPointerToAdd(out _);
@@ -648,7 +662,7 @@ namespace U8Xml
         {
             var start = i;
             while(true) {
-                if(i + 1 >= data.Length) { throw NewFormatException(data, i); }
+                if(i + 1 >= data.Length) { throw NewFormatException(data, start, "Unexpected end of xml. Text is not closed."); }
                 ref var next = ref data.At(i + 1);
                 i++;
                 if(next == '<') { break; }
@@ -660,13 +674,15 @@ namespace U8Xml
         {
             var nameStart = i;
             while(true) {
-                if(i + 1 >= data.Length) { throw NewFormatException(data, i); }
+                if(i + 1 >= data.Length) { throw NewFormatException(data, nameStart, "Unexpected end of xml. Failed to parse the node name."); }
                 ref var next = ref data.At(i + 1);
                 i++;
                 if(next == ' ' || next == '\t' || next == '\r' || next == '\n' || next == '/' || next == '>') { break; }
             }
             name = data.Slice(nameStart, i - nameStart);
-            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
+            if(SkipEmpty(data, ref i) == false) {
+                throw NewFormatException(data, nameStart + name.Length, "Unexpected end of xml.");
+            }
         }
 
         private static XmlAttribute_ GetAttr(RawString data, ref int i, XmlNode_* node)
@@ -692,28 +708,40 @@ namespace U8Xml
             // Get attribute name
             var nameStart = i;
             if(data.At(i++) == '=') {
-                throw NewFormatException(data, i); // in case of "<foo =...", that is no attribute name.
+                // in case of "<foo =...", that is no attribute name.
+                throw NewFormatException(data, nameStart, "Unexpected character '='. The attribute name is not found.");
             }
 
             RawString name;
             while(true) {
-                if(i >= data.Length) { throw NewFormatException(data, i); }
+                if(i >= data.Length) {
+                    throw NewFormatException(data, nameStart, "Unexpected end of xml. The attribute name is not found.");
+                }
                 var next = data.At(i++);
                 if(IsEmptyChar(next)) {
                     int nameLen = i - 1 - nameStart;
-                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
-                    if(data.At(i++) == '=') {
+                    if(SkipEmpty(data, ref i) == false) {
+                        throw NewFormatException(data, nameStart, "Unexpected end of xml. The attribute name is not found.");
+                    }
+                    var c = data.At(i++);
+                    if(c == '=') {
                         name = data.Slice(nameStart, nameLen);
                         break;
                     }
-                    throw NewFormatException(data, i);
+                    throw NewFormatException(data, i - 1, $"Unexpected character. expected: '=', actual: '{(char)c}'.");
                 }
                 if(next == '=') {
                     name = data.Slice(nameStart, i - 1 - nameStart);
                     break;
                 }
             }
-            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
+
+            {
+                var pos = i;
+                if(SkipEmpty(data, ref i) == false) {
+                    throw NewFormatException(data, pos, "Unexpected end of xml. The attribute value is not found.");
+                }
+            }
 
             // ---------------------------------
             // The Current position is here. (Empty character may exist at the position of @.)
@@ -726,18 +754,27 @@ namespace U8Xml
 
             // Get attribute value
             var quote = data.At(i);     // " or '
-            if(quote != '"' && quote != '\'') { throw NewFormatException(data, i); }
+            if(quote != '"' && quote != '\'') {
+                throw NewFormatException(data, i, $"Invalid character. expected ''' or '\"', actual: '{(char)quote}'.");
+            }
             i++;
-            if(i >= data.Length) { throw NewFormatException(data, i); }
+            if(i >= data.Length) { throw NewFormatException(data, i - 1, "Unexpected end of xml. The attribute value is not closed."); }
             var valueStart = i;
             while(true) {
                 if(data.At(i) == quote) { break; }
                 i++;
-                if(i >= data.Length) { throw NewFormatException(data, i); }
+                if(i >= data.Length) {
+                    throw NewFormatException(data, valueStart - 1, "Unexpected end of xml. The attribute value is not closed.");
+                }
             }
             var value = data.Slice(valueStart, i - valueStart);
             i++;
-            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, i); }
+            {
+                var pos = i;
+                if(SkipEmpty(data, ref i) == false) {
+                    throw NewFormatException(data, pos, "Unexpected end of xml. The element node is not closed.");
+                }
+            }
             return new XmlAttribute_(name, value, node);
         }
 
@@ -747,7 +784,12 @@ namespace U8Xml
             return c == ' ' || c == '\t' || c == '\n' || c == '\r';
         }
 
-        private static FormatException NewFormatException(RawString data, int byteOffset, string message = "Xml parsing failed at the location.")
+        private static FormatException NewFormatException(RawString data, int byteOffset)
+        {
+            return NewFormatException(data, byteOffset, "Xml parsing failed at the location.");
+        }
+
+        private static FormatException NewFormatException(RawString data, int byteOffset, string message)
         {
             var linePos = DataOffsetHelper.GetLinePosition(data.GetPtr(), data.Length, data.GetPtr() + byteOffset);
             if(linePos.HasValue) {
