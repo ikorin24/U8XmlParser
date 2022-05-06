@@ -728,7 +728,7 @@ namespace U8Xml
                         name = data.Slice(nameStart, nameLen);
                         break;
                     }
-                    throw NewFormatException(data, i - 1, $"Unexpected character. expected: '=', actual: '{(char)c}'.");
+                    throw NewFormatException(data, i - 1, $"Unexpected character appears on parsing an attribute. expected: '=', actual: '{(char)c}'.");
                 }
                 if(next == '=') {
                     name = data.Slice(nameStart, i - 1 - nameStart);
