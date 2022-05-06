@@ -275,7 +275,9 @@ namespace U8Xml
             {
                 var nodeStrStart = i;
                 byte* nodeStrPtr = data.GetPtr() + nodeStrStart;
-                var node = nodeStack.Peek();
+                if(nodeStack.TryPeek(out var node) == false) {
+                    throw NewFormatException(data, i, "Text node can not be a root node.");
+                }
                 var textNode = store.AddTextNode(nodeStack.Count, nodeStrPtr);
                 GetInnerText(data, ref i, out var text);
                 textNode->InnerText = text;
@@ -290,7 +292,8 @@ namespace U8Xml
                     // Skip comment <!--xxx-->
                     if((i + 2 < data.Length) && (data.At(i + 1) == '-') && (data.At(i + 2) == '-'))  // Start with "<!--"
                     {
-                        if(SkipComment(data, ref i) == false) { throw NewFormatException(data, i); }
+                        var commentStart = i - 1;   // data[commentStart] == '<'
+                        if(SkipComment(data, ref i) == false) { throw NewFormatException(data, commentStart, "The comment is not closed."); }
                         goto None;
                     }
                     else {
@@ -299,12 +302,19 @@ namespace U8Xml
                     }
                 }
                 else if(data.At(i) == '?') {
+                    var nodeStart = i - 1;  // data[nodeStart] == '<'
                     if(i + 4 < data.Length && data.At(i + 1) == 'x' && data.At(i + 2) == 'm' && data.At(i + 3) == 'l' && data.At(i + 4) == ' ') // Start with "<?xml "
                     {
+                        if(store.NodeCount != 0) {
+                            throw NewFormatException(data, nodeStart, "Xml declaration must be at the head in xml.");
+                        }
+                        if(optional.Declaration->Body.IsEmpty == false) {
+                            throw NewFormatException(data, nodeStart, "Multiple xml declaration in xml.");
+                        }
                         if(GetXmlDeclaration(data, ref i, store.AllAttrs, optional) == false) { throw NewFormatException(data, i); }   // <?xml version="1.0" encoding="UTF-8"?>
                         goto None;
                     }
-                    else { throw NewFormatException(data, i); }
+                    else { throw NewFormatException(data, nodeStart, "Invalid node. It must start with '<?xml '"); }
                 }
                 else {
                     var attrs = store.AllAttrs;
@@ -352,7 +362,9 @@ namespace U8Xml
             {
                 GetNodeName(data, ref i, out var name);
                 var node = nodeStack.Pop();
-                if(node->Name.SequenceEqual(name) == false) { throw NewFormatException(data, i); }
+                if(node->Name.SequenceEqual(name) == false) {
+                    throw NewFormatException(data, i - name.Length, $"Unexpected name at the node tail. expected: </{node->Name}>, actual: </{name}>");
+                }
                 if(data.At(i) == '>') {
                     i++;
                     long len = data.GetPtr() + i - node->NodeStrPtr;
@@ -363,7 +375,7 @@ namespace U8Xml
                     }
                     goto None;
                 }
-                else { throw NewFormatException(data, i); }
+                else { throw NewFormatException(data, i, $"Unexpected character. expected: '>', actual: '{data.At(i)}'"); }
             }
 
         ExtraNode:  // Current data[i] is next char to "<!". (except comment out)
