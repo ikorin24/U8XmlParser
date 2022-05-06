@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using System;
 using U8Xml;
 using Xunit;
 
@@ -145,6 +146,34 @@ text</ddd>
                 Assert.Equal(xml.GetRange(node), location.Range);
                 Assert.Equal(node.AsRawString(), xml.AsRawString(location.Range));
             }
+        }
+
+        [Fact]
+        public unsafe void LocationOfEnd()
+        {
+            // 01234567
+            // <a></a>_
+            //        |
+            //        `--> next character of the end
+            //
+            // No exceptions if call GetRange and GetLocation here.
+
+            using var xml = XmlParser.Parse("<a></a>");
+
+            var xmlRawString = xml.AsRawString();
+            var str = xmlRawString.Slice(7);
+
+            // str is empty, str.Ptr is next character of the end
+            Assert.Equal(0, str.Length);
+            Assert.Equal(new IntPtr(xmlRawString.GetPtr() + 7), str.Ptr);
+
+            var range = xml.GetRange(str);
+            Assert.Equal(new DataRange(7, 0), range);
+
+            var location = xml.GetLocation(str);
+            Assert.Equal(new DataLinePosition(0, 7), location.Start);
+            Assert.Equal(new DataLinePosition(0, 7), location.End);
+            Assert.Equal(new DataRange(7, 0), location.Range);
         }
     }
 }

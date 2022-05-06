@@ -85,10 +85,14 @@ namespace U8Xml
         public override string ToString() => DebugView;
     }
 
+    [DebuggerDisplay("{DebugView,nq}")]
     public readonly struct DataRange : IEquatable<DataRange>
     {
         public readonly int Start;
         public readonly int Length;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private string DebugView => $"Start: {Start}, Length: {Length}";
 
         public DataRange(int byteOffset, int byteLength)
         {
@@ -113,5 +117,7 @@ namespace U8Xml
         public static bool operator ==(DataRange left, DataRange right) => left.Equals(right);
 
         public static bool operator !=(DataRange left, DataRange right) => !(left == right);
+
+        public override string ToString() => DebugView;
     }
 }
