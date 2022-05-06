@@ -431,7 +431,9 @@ namespace U8Xml
             }
 
             var nameStart = i;
-            SkipUntil((byte)'[', data, ref i);
+            if(SkipUntil((byte)'[', data, ref i) == false) {
+                throw NewFormatException(data, bodyStart, "Unexpected end of xml. Can not find character '[' and failed to parse DOCTYPE.");
+            }
             var nameLen = i - nameStart - 1;
             var contentStart = i;
             if(nameLen <= 0) { throw NewFormatException(data, nameStart, "Failed to parse DOCTYPE."); }
@@ -458,7 +460,9 @@ namespace U8Xml
                     i += 8;
 
                     var entityNameStart = i;
-                    SkipToEmpty(data, ref i);
+                    if(SkipToEmpty(data, ref i) == false) {
+                        throw NewFormatException(data, entityNameStart, "Unexpected end of xml. ENTITY is invalid formatted.");
+                    }
                     var name = data.SliceUnsafe(entityNameStart, i - entityNameStart);
                     if(SkipEmpty(data, ref i) == false) {
                         throw NewFormatException(data, entityNameStart + name.Length, "Unexpected end of xml. ENTITY is not closed.");
@@ -478,15 +482,32 @@ namespace U8Xml
                     i++;
                     list.Add(name, value);
 
-                    SkipUntil((byte)'>', data, ref i);
+                    {
+                        var pos = i;
+                        if(SkipUntil((byte)'>', data, ref i) == false) {
+                            throw NewFormatException(data, pos, "Unexpected end of xml. ENTITY is not closed.");
+                        }
+                    }
                     continue;
                 }
 
-                SkipUntil((byte)'>', data, ref i);
+                {
+                    // Skip other types of tag except ENTITY
+                    var pos = i;
+                    if(SkipUntil((byte)'>', data, ref i) == false) {
+                        throw NewFormatException(data, pos, "Unexpected end of xml. The tag is not closed.");
+                    }
+                    continue;
+                }
             }
 
             docType->InternalSubset = data.Slice(contentStart, i - contentStart - 1);
-            SkipUntil((byte)'>', data, ref i);
+            {
+                var pos = i;
+                if(SkipUntil((byte)'>', data, ref i) == false) {
+                    throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed.");
+                }
+            }
             docType->Body = data.Slice(bodyStart, i - bodyStart);
 
             if(list.Count == 0) {
@@ -510,22 +531,27 @@ namespace U8Xml
             }
             return true;
 
-            static void SkipUntil(byte ascii, RawString data, ref int i)
+            static bool SkipUntil(byte ascii, RawString data, ref int i)
             {
+                // Returns false if end of file
+
                 while(true) {
-                    if(i >= data.Length) { throw NewFormatException(data, i); }
-                    if(data.At(i++) == ascii) { return; }
+                    if(i >= data.Length) { return false; }
+                    if(data.At(i++) == ascii) { return true; }
                 }
             }
 
-            static void SkipToEmpty(RawString data, ref int i)
+            static bool SkipToEmpty(RawString data, ref int i)
             {
+                // Returns false if end of file
+
                 while(true) {
-                    if(i + 1 >= data.Length) { throw NewFormatException(data, i); }
+                    if(i + 1 >= data.Length) { return false; }
                     ref var next = ref data.At(i + 1);
                     i++;
                     if(next == ' ' || next == '\t' || next == '\r' || next == '\n') { break; }
                 }
+                return true;
             }
 
             static bool ContainsAlias(RawString str, out RawString alias)
@@ -782,11 +808,6 @@ namespace U8Xml
         private static bool IsEmptyChar(byte c)
         {
             return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-        }
-
-        private static FormatException NewFormatException(RawString data, int byteOffset)
-        {
-            return NewFormatException(data, byteOffset, "Xml parsing failed at the location.");
         }
 
         private static FormatException NewFormatException(RawString data, int byteOffset, string message)
