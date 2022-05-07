@@ -27,6 +27,9 @@ namespace U8Xml
                 };
         }
 
+        internal byte* NodeHeadPtr => ((XmlNode_*)_node)->NodeStrPtr;
+        internal int NodeByteLen => ((XmlNode_*)_node)->NodeStrLength;
+
         /// <summary>Get node type</summary>
         public XmlNodeType NodeType => ((XmlNode_*)_node)->NodeType;
 

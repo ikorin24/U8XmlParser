@@ -145,6 +145,8 @@ namespace U8Xml
             return (namespaceName, name);
         }
 
+        internal RawString AsRawString() => _attr == IntPtr.Zero ? RawString.Empty : ((XmlAttribute_*)_attr)->AsRawString();
+
         public override bool Equals(object? obj) => obj is XmlAttribute attribute && Equals(attribute);
 
         public bool Equals(XmlAttribute other) => _attr == other._attr;
@@ -185,6 +187,18 @@ namespace U8Xml
             Name = name;
             Value = value;
             Node = new XmlNode(node);
+        }
+
+        public RawString AsRawString()
+        {
+            // <foo name="value" />
+            //      |          |
+            //      `- head    |
+            //                 `- end
+
+            byte* head = Name.GetPtr();
+            long len = (Value.GetPtr() + Value.Length + 1) - head;
+            return new RawString(head, checked((int)(uint)len));
         }
 
         public override string ToString() => $"{Name.ToString()}=\"{Value.ToString()}\"";
