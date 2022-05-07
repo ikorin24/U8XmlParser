@@ -407,43 +407,19 @@ namespace U8Xml
             }
         }
 
-        private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional, ref RawStringTable entities)
+        private static void ParseDtd(RawString data, ref int i, ref RawStringPairList list, bool isInternalSubset)
         {
-            // data[i] is the next char of "<!"
-
-            // <!DOCTYPE foo[...]>
-            ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
-
-            if(data.Slice(i).StartsWith(DocTypeStr) == false) { return false; }
-            if(hasNode) {
-                throw NewFormatException(data, i - 2, "DTD must be defined before the document root element.");
-            }
-            if(optional.DocumentType->Body.IsEmpty == false) {
-                throw NewFormatException(data, i - 2, "Cannot have multiple DTDs.");
-            }
-
-
-            var bodyStart = i - 2;
-            var docType = optional.DocumentType;
-            i += DocTypeStr.Length;
-            if(SkipEmpty(data, ref i) == false) {
-                throw NewFormatException(data, bodyStart, "Failed to parse DOCTYPE.");
-            }
-
-            var nameStart = i;
-            if(SkipUntil((byte)'[', data, ref i) == false) {
-                throw NewFormatException(data, bodyStart, "Unexpected end of xml. Can not find character '[' and failed to parse DOCTYPE.");
-            }
-            var nameLen = i - nameStart - 1;
-            var contentStart = i;
-            if(nameLen <= 0) { throw NewFormatException(data, nameStart, "Failed to parse DOCTYPE."); }
-            docType->Name = data.Slice(nameStart, nameLen).TrimEnd();
-
-            using var list = default(RawStringPairList);
             while(true) {
-                if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, bodyStart, "Unexpected end of xml. DOCTYPE is not closed."); }
+                {
+                    var pos = i;
+                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed."); }
+                }
+
                 var c = data.At(i++);
-                if(c == ']') { break; }
+                if(isInternalSubset && c == ']') {
+                    break;
+                }
+
                 if(c != '<') { throw NewFormatException(data, i - 1, $"Failed to parse DOCTYPE. expected: '<', actual: '{(char)c}'."); }
                 if((i + 2 < data.Length) && (data.At(i) == '!') && (data.At(i + 1) == '-') && (data.At(i + 2) == '-'))  // Start with "<!--"
                 {
@@ -501,35 +477,6 @@ namespace U8Xml
                 }
             }
 
-            docType->InternalSubset = data.Slice(contentStart, i - contentStart - 1);
-            {
-                var pos = i;
-                if(SkipUntil((byte)'>', data, ref i) == false) {
-                    throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed.");
-                }
-            }
-            docType->Body = data.Slice(bodyStart, i - bodyStart);
-
-            if(list.Count == 0) {
-                return true;
-            }
-
-            entities = RawStringTable.Create(list.Count);
-            for(int l = 0; l < list.Count; l++) {
-                ref readonly var item = ref list[l];
-
-                // An entity can refer to another entity that was defined before it.
-                if(ContainsAlias(item.Value, out var alias)) {
-                    if(entities.TryGetValue(alias, out _) == false) {
-                        int offset = checked((int)(uint)(alias.GetPtr() - data.GetPtr()));
-                        throw NewFormatException(data, offset, "Alias can not be resolved.");
-                    }
-                }
-
-                // Ignore the entity if the key is duplicated.
-                entities.TryAdd(item.Key, item.Value);
-            }
-            return true;
 
             static bool SkipUntil(byte ascii, RawString data, ref int i)
             {
@@ -552,6 +499,97 @@ namespace U8Xml
                     if(next == ' ' || next == '\t' || next == '\r' || next == '\n') { break; }
                 }
                 return true;
+            }
+        }
+
+        private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional, ref RawStringTable entities)
+        {
+            // data[i] is the next char of "<!"
+
+            // DOCTYPE has three types.
+            // 
+            // 1) internal
+            // <!DOCTYPE rootname[...]>
+            //
+            // 2) external (SYSTEM)
+            // <!DOCTYPE rootname SYSTEM "http://github.com/ikorin24/foo.dtd">
+            //
+            // 3) external (PUBLIC)
+            // <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN" "http://www.w3.org/MarkUp/Wilbur/HTML32.DTD">
+
+            ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
+
+            if(data.Slice(i).StartsWith(DocTypeStr) == false) { return false; }
+            if(hasNode) {
+                throw NewFormatException(data, i - 2, "DTD must be defined before the document root element.");
+            }
+            if(optional.DocumentType->Body.IsEmpty == false) {
+                throw NewFormatException(data, i - 2, "Cannot have multiple DTDs.");
+            }
+
+
+            var bodyStart = i - 2;
+            var docType = optional.DocumentType;
+            i += DocTypeStr.Length;
+            if(SkipEmpty(data, ref i) == false) {
+                throw NewFormatException(data, bodyStart, "Failed to parse DOCTYPE.");
+            }
+
+            var nameStart = i;
+            if(SkipUntil((byte)'[', data, ref i) == false) {
+                throw NewFormatException(data, bodyStart, "Unexpected end of xml. Can not find character '[' and failed to parse DOCTYPE.");
+            }
+            var nameLen = i - nameStart - 1;
+            var contentStart = i;
+            if(nameLen <= 0) { throw NewFormatException(data, nameStart, "Failed to parse DOCTYPE."); }
+            docType->Name = data.Slice(nameStart, nameLen).TrimEnd();
+
+            var list = default(RawStringPairList);
+            try {
+                ParseDtd(data, ref i, ref list, true);
+                docType->InternalSubset = data.Slice(contentStart, i - contentStart - 1);
+
+                {
+                    var pos = i;
+                    if(SkipUntil((byte)'>', data, ref i) == false) {
+                        throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed.");
+                    }
+                }
+                docType->Body = data.Slice(bodyStart, i - bodyStart);
+
+                if(list.Count == 0) {
+                    return true;
+                }
+
+                entities = RawStringTable.Create(list.Count);
+                for(int l = 0; l < list.Count; l++) {
+                    ref readonly var item = ref list[l];
+
+                    // An entity can refer to another entity that was defined before it.
+                    if(ContainsAlias(item.Value, out var alias)) {
+                        if(entities.TryGetValue(alias, out _) == false) {
+                            int offset = checked((int)(uint)(alias.GetPtr() - data.GetPtr()));
+                            throw NewFormatException(data, offset, "Alias can not be resolved.");
+                        }
+                    }
+
+                    // Ignore the entity if the key is duplicated.
+                    entities.TryAdd(item.Key, item.Value);
+                }
+                return true;
+            }
+            finally {
+                list.Dispose();
+            }
+
+            static bool SkipUntil(byte ascii, RawString data, ref int i)
+            {
+                // Returns false if end of file
+
+                while(true) {
+                    if(i >= data.Length) { return false; }
+                    if(data.At(i++) == ascii) { return true; }
+                }
             }
 
             static bool ContainsAlias(RawString str, out RawString alias)
