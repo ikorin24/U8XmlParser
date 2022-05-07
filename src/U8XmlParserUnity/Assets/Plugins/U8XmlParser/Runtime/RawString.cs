@@ -280,6 +280,177 @@ namespace U8Xml
             }
         }
 
+
+        public int IndexOf(byte value)
+        {
+            var span = AsSpan();
+            for(int i = 0; i < span.Length; i++) {
+                if(span[i] == value) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public DataRange RangeOf(char value)
+        {
+            if(value < 128) {
+                // For ASCII
+                var index = IndexOf((byte)value);
+                return new DataRange(index, (index >= 0) ? 1 : 0);
+            }
+            else {
+                var utf8 = UTF8ExceptionFallbackEncoding.Instance;
+                byte* buf = stackalloc byte[8];
+                var len = utf8.GetBytes(&value, 1, buf, 8);
+                return RangeOf(SpanHelper.CreateReadOnlySpan<byte>(buf, len));
+            }
+        }
+
+        public DataRange RangeOf(RawString value) => RangeOf(value.AsSpan());
+
+        public DataRange RangeOf(ReadOnlySpan<byte> value)
+        {
+            if(value.Length == 0) { return new DataRange(0, 0); }
+
+            var l = Length + 1 - value.Length;
+            var span = AsSpan();
+            for(int i = 0; i < l; i++) {
+                if(span.SliceUnsafe(i, span.Length - i).StartsWith(value)) {
+                    return new DataRange(i, value.Length);
+                }
+            }
+            return new DataRange(-1, 0);
+        }
+
+        public DataRange RangeOf(string value) => RangeOf(value.AsSpan());
+
+        public DataRange RangeOf(ReadOnlySpan<char> value)
+        {
+            if(value.Length == 0) {
+                return new DataRange(0, 0);
+            }
+            var utf8 = UTF8ExceptionFallbackEncoding.Instance;
+            var byteLen = utf8.GetByteCount(value);
+            if(byteLen > Length) {
+                return new DataRange(-1, 0);
+            }
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = value) {
+                    utf8.GetBytes(ptr, value.Length, buf, byteLen);
+                }
+                var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                return RangeOf(span);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = value) {
+                        utf8.GetBytes(ptr, value.Length, buf, byteLen);
+                        var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                        return RangeOf(span);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
+
+
+        public int LastIndexOf(byte value)
+        {
+            var span = AsSpan();
+            for(int i = span.Length - 1; i >= 0; i--) {
+                if(span.At(i) == value) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public DataRange LastRangeOf(char value)
+        {
+            if(value < 128) {
+                // For ASCII
+                var index = LastIndexOf((byte)value);
+                return new DataRange(index, (index >= 0) ? 1 : 0);
+            }
+            else {
+                var utf8 = UTF8ExceptionFallbackEncoding.Instance;
+                byte* buf = stackalloc byte[8];
+                var len = utf8.GetBytes(&value, 1, buf, 8);
+                return LastRangeOf(SpanHelper.CreateReadOnlySpan<byte>(buf, len));
+            }
+        }
+
+        public DataRange LastRangeOf(RawString value) => LastRangeOf(value.AsSpan());
+
+        public DataRange LastRangeOf(ReadOnlySpan<byte> value)
+        {
+            if(value.Length == 0) { return new DataRange(0, 0); }
+
+            var l = Length + 1 - value.Length;
+            var span = AsSpan();
+            for(int i = l - 1; i >= 0; i--) {
+                if(span.SliceUnsafe(i, span.Length - i).StartsWith(value)) {
+                    return new DataRange(i, value.Length);
+                }
+            }
+            return new DataRange(-1, 0);
+        }
+
+        public DataRange LastRangeOf(string value) => LastRangeOf(value.AsSpan());
+
+        public DataRange LastRangeOf(ReadOnlySpan<char> value)
+        {
+            if(value.Length == 0) {
+                return new DataRange(0, 0);
+            }
+            var utf8 = UTF8ExceptionFallbackEncoding.Instance;
+            var byteLen = utf8.GetByteCount(value);
+            if(byteLen > Length) {
+                return new DataRange(-1, 0);
+            }
+
+            const int Threshold = 128;
+            if(byteLen <= Threshold) {
+                byte* buf = stackalloc byte[Threshold];
+                fixed(char* ptr = value) {
+                    utf8.GetBytes(ptr, value.Length, buf, byteLen);
+                }
+                var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                return LastRangeOf(span);
+            }
+            else {
+                var rentArray = ArrayPool<byte>.Shared.Rent(byteLen);
+                try {
+                    fixed(byte* buf = rentArray)
+                    fixed(char* ptr = value) {
+                        utf8.GetBytes(ptr, value.Length, buf, byteLen);
+                        var span = SpanHelper.CreateReadOnlySpan<byte>(buf, byteLen);
+                        return LastRangeOf(span);
+                    }
+                }
+                finally {
+                    ArrayPool<byte>.Shared.Return(rentArray);
+                }
+            }
+        }
+
+
+        public bool Contains(byte value) => IndexOf(value) >= 0;
+        public bool Contains(char value) => RangeOf(value).Start >= 0;
+        public bool Contains(RawString value) => RangeOf(value).Start >= 0;
+        public bool Contains(ReadOnlySpan<byte> value) => RangeOf(value).Start >= 0;
+        public bool Contains(string value) => RangeOf(value).Start >= 0;
+        public bool Contains(ReadOnlySpan<char> value) => RangeOf(value).Start >= 0;
+
+
         /// <summary>Compute hash code for the specified span using the same algorithm as <see cref="GetHashCode()"/>.</summary>
         /// <param name="utf8String">span to compute hash code</param>
         /// <returns>hash code</returns>
