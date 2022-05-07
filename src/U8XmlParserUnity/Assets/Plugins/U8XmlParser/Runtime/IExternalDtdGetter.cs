@@ -20,7 +20,7 @@ namespace U8Xml
         private readonly RawString _uri;
         private readonly XmlDtdParser _dtdParser;
 
-        public readonly RawString UrI => _uri;
+        public readonly RawString Uri => _uri;
         public readonly XmlDtdParser DtdParser => _dtdParser;
     }
 }
