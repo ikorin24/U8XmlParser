@@ -15,6 +15,25 @@ namespace UnitTest
     public class RawStringTest
     {
         [Fact]
+        public void EqualTest()
+        {
+            var xyzxyz = RawStringSource.Get("xyzxyz");
+            var xyz0 = xyzxyz.Slice(0, 3);
+            var xyz1 = xyzxyz.Slice(0, 3);
+            var xyz2 = xyzxyz.Slice(3, 3);
+
+            Assert.True(xyz0 == xyz1);
+            Assert.True(xyz0.Equals(xyz1));
+            Assert.True(xyz0.SequenceEqual(xyz1));
+            Assert.True(xyz0.ReferenceEquals(xyz1));
+
+            Assert.True(xyz0 == xyz2);
+            Assert.True(xyz0.Equals(xyz2));
+            Assert.True(xyz0.SequenceEqual(xyz2));
+            Assert.False(xyz0.ReferenceEquals(xyz2));
+        }
+
+        [Fact]
         public void Int()
         {
             var checks = new Check<int>[]
@@ -724,6 +743,8 @@ namespace UnitTest
         private static partial ReadOnlySpan<byte> Str47();
         [Utf8("ab, cde, efgh, ij,  ")]
         private static partial ReadOnlySpan<byte> Str48();
+        [Utf8("xyzxyz")]
+        private static partial ReadOnlySpan<byte> Str49();
 
         static RawStringSource()
         {
@@ -776,6 +797,7 @@ namespace UnitTest
             Register(Str46());
             Register(Str47());
             Register(Str48());
+            Register(Str49());
 
             static unsafe void Register(ReadOnlySpan<byte> s)
             {

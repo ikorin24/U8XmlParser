@@ -33,6 +33,12 @@ namespace U8Xml.Unsafes
 
         public RawString AsRawString() => ((XmlObjectCore*)_core)->AsRawString();
 
+        public RawString AsRawString(int start) => ((XmlObjectCore*)_core)->AsRawString(start);
+
+        public RawString AsRawString(int start, int length) => ((XmlObjectCore*)_core)->AsRawString(start, length);
+
+        public RawString AsRawString(DataRange range) => ((XmlObjectCore*)_core)->AsRawString(range);
+
         public void Dispose()
         {
             var core = Interlocked.Exchange(ref Unsafe.AsRef(_core), IntPtr.Zero);
@@ -50,6 +56,20 @@ namespace U8Xml.Unsafes
         /// <param name="targetType">node type</param>
         /// <returns>all nodes</returns>
         public AllNodeList GetAllNodes(XmlNodeType? targetType) => ((XmlObjectCore*)_core)->GetAllNodes(targetType);
+
+        public DataLocation GetLocation(XmlNode node) => ((XmlObjectCore*)_core)->GetLocation(node);
+
+        public DataLocation GetLocation(XmlAttribute attr) => ((XmlObjectCore*)_core)->GetLocation(attr);
+
+        public DataLocation GetLocation(RawString str) => ((XmlObjectCore*)_core)->GetLocation(str);
+
+        public DataLocation GetLocation(DataRange range) => ((XmlObjectCore*)_core)->GetLocation(range);
+
+        public DataRange GetRange(XmlNode node) => ((XmlObjectCore*)_core)->GetRange(node);
+
+        public DataRange GetRange(XmlAttribute attr) => ((XmlObjectCore*)_core)->GetRange(attr);
+
+        public DataRange GetRange(RawString str) => ((XmlObjectCore*)_core)->GetRange(str);
 
         public override string ToString() => AsRawString().ToString();
 

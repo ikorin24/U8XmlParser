@@ -53,6 +53,17 @@ namespace U8Xml.Internal
             return _ptr[_count - 1];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryPeek(out XmlNode_* item)
+        {
+            if(_count == 0) {
+                item = null;
+                return false;
+            }
+            item = _ptr[_count - 1];
+            return true;
+        }
+
         public void Dispose()
         {
             Marshal.FreeHGlobal((IntPtr)_ptr);
