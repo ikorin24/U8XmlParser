@@ -601,6 +601,345 @@ namespace UnitTest
         }
 
         [Fact]
+        public void IndexOf()
+        {
+            {
+                var str = RawStringSource.Get("abcde");
+                Assert.Equal(0, str.IndexOf((byte)'a'));
+                Assert.Equal(1, str.IndexOf((byte)'b'));
+                Assert.Equal(2, str.IndexOf((byte)'c'));
+                Assert.Equal(3, str.IndexOf((byte)'d'));
+                Assert.Equal(4, str.IndexOf((byte)'e'));
+
+                Assert.Equal(-1, str.IndexOf((byte)'A'));
+
+                Assert.Equal((byte)'a', str[str.IndexOf((byte)'a')]);
+                Assert.Equal((byte)'b', str[str.IndexOf((byte)'b')]);
+                Assert.Equal((byte)'c', str[str.IndexOf((byte)'c')]);
+                Assert.Equal((byte)'d', str[str.IndexOf((byte)'d')]);
+                Assert.Equal((byte)'e', str[str.IndexOf((byte)'e')]);
+            }
+
+            {
+                var str = RawStringSource.Get("あa0");
+                Assert.Equal(3, str.IndexOf((byte)'a'));
+                Assert.Equal(4, str.IndexOf((byte)'0'));
+
+                Assert.Equal((byte)'a', str[str.IndexOf((byte)'a')]);
+                Assert.Equal((byte)'0', str[str.IndexOf((byte)'0')]);
+            }
+
+            {
+                var str = RawStringSource.Get("xyzxyz");
+                Assert.Equal(0, str.IndexOf((byte)'x'));
+                Assert.Equal(1, str.IndexOf((byte)'y'));
+                Assert.Equal(2, str.IndexOf((byte)'z'));
+            }
+        }
+
+        [Fact]
+        public void RangeOf()
+        {
+            // [Test for only ASCII]
+            {
+                var str = RawStringSource.Get("abcde");
+                Assert.Equal(new DataRange(0, 1), str.RangeOf('a'));
+                Assert.Equal(new DataRange(1, 1), str.RangeOf('b'));
+                Assert.Equal(new DataRange(2, 1), str.RangeOf('c'));
+                Assert.Equal(new DataRange(3, 1), str.RangeOf('d'));
+                Assert.Equal(new DataRange(4, 1), str.RangeOf('e'));
+
+                // (-1, 0) is returned if not found.
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf('A'));
+
+                // Test for overloads
+
+                // RawString
+                Assert.Equal(new DataRange(1, 3), str.RangeOf(str.Slice(1, 3)));
+                // ROS<byte>
+                Assert.Equal(new DataRange(1, 3), str.RangeOf(str.Slice(1, 3).AsSpan()));
+                // string
+                Assert.Equal(new DataRange(1, 3), str.RangeOf(str.Slice(1, 3).ToString()));
+                // ROS<char>
+                Assert.Equal(new DataRange(1, 3), str.RangeOf(str.Slice(1, 3).ToString().AsSpan()));
+
+                Assert.Equal(new DataRange(0, str.Length), str.RangeOf(str));
+                Assert.Equal(str, str.Slice(str.RangeOf(str)));
+
+
+                var str2 = RawStringSource.Get("ABCDE");
+
+                // (-1, 0) is returned if not found.
+
+                // RawString
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf(str2));
+                // ROS<byte>
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf(str2.AsSpan()));
+                // string
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf(str2.ToString()));
+                // ROS<char>
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf(str2.ToString().AsSpan()));
+            }
+
+
+            // [Test for RawString containing multi-bytes char]
+            {
+                var str = RawStringSource.Get("あいうえお");
+                Assert.Equal(new DataRange(0, 3), str.RangeOf('あ'));
+                Assert.Equal(new DataRange(3, 3), str.RangeOf('い'));
+                Assert.Equal(new DataRange(6, 3), str.RangeOf('う'));
+                Assert.Equal(new DataRange(9, 3), str.RangeOf('え'));
+                Assert.Equal(new DataRange(12, 3), str.RangeOf('お'));
+
+                // (-1, 0) is returned if not found.
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf('か'));
+
+                // Test overloads
+                var str2 = RawStringSource.Get("えお");
+
+                // RawString
+                Assert.Equal(new DataRange(9, 6), str.RangeOf(str2));
+                // ROS<byte>
+                Assert.Equal(new DataRange(9, 6), str.RangeOf(str2.AsSpan()));
+                // string
+                Assert.Equal(new DataRange(9, 6), str.RangeOf(str2.ToString()));
+                // ROS<char>
+                Assert.Equal(new DataRange(9, 6), str.RangeOf(str2.ToString().AsSpan()));
+
+
+                var str3 = RawStringSource.Get("ABCDE");
+
+                // (-1, 0) is returned if not found.
+
+                // RawString
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf(str3));
+                // ROS<byte>
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf(str3.AsSpan()));
+                // string
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf(str3.ToString()));
+                // ROS<char>
+                Assert.Equal(new DataRange(-1, 0), str.RangeOf(str3.ToString().AsSpan()));
+            }
+
+            {
+                // (0, 0) is returned if empty.
+
+                var str = RawStringSource.Get("abcde");
+                Assert.Equal(new DataRange(0, 0), str.RangeOf(RawString.Empty));
+                Assert.Equal(new DataRange(0, 0), str.RangeOf(ReadOnlySpan<byte>.Empty));
+                Assert.Equal(new DataRange(0, 0), str.RangeOf(string.Empty));
+                Assert.Equal(new DataRange(0, 0), str.RangeOf(ReadOnlySpan<char>.Empty));
+
+                var str2 = RawString.Empty;
+                Assert.Equal(new DataRange(0, 0), str2.RangeOf(RawString.Empty));
+                Assert.Equal(new DataRange(0, 0), str2.RangeOf(ReadOnlySpan<byte>.Empty));
+                Assert.Equal(new DataRange(0, 0), str2.RangeOf(string.Empty));
+                Assert.Equal(new DataRange(0, 0), str2.RangeOf(ReadOnlySpan<char>.Empty));
+            }
+
+            {
+                var xyzxyz = RawStringSource.Get("xyzxyz");
+                var xyz = xyzxyz.Slice(0, 3);
+
+                Assert.Equal(new DataRange(0, 3), xyzxyz.RangeOf(xyz));
+                Assert.Equal(new DataRange(0, 3), xyzxyz.RangeOf(xyz.AsSpan()));
+                Assert.Equal(new DataRange(0, 3), xyzxyz.RangeOf(xyz.ToString()));
+                Assert.Equal(new DataRange(0, 3), xyzxyz.RangeOf(xyz.ToString().AsSpan()));
+            }
+        }
+
+        [Fact]
+        public void LastIndexOf()
+        {
+            {
+                var str = RawStringSource.Get("abcde");
+                Assert.Equal(0, str.LastIndexOf((byte)'a'));
+                Assert.Equal(1, str.LastIndexOf((byte)'b'));
+                Assert.Equal(2, str.LastIndexOf((byte)'c'));
+                Assert.Equal(3, str.LastIndexOf((byte)'d'));
+                Assert.Equal(4, str.LastIndexOf((byte)'e'));
+
+                Assert.Equal(-1, str.LastIndexOf((byte)'A'));
+
+                Assert.Equal((byte)'a', str[str.LastIndexOf((byte)'a')]);
+                Assert.Equal((byte)'b', str[str.LastIndexOf((byte)'b')]);
+                Assert.Equal((byte)'c', str[str.LastIndexOf((byte)'c')]);
+                Assert.Equal((byte)'d', str[str.LastIndexOf((byte)'d')]);
+                Assert.Equal((byte)'e', str[str.LastIndexOf((byte)'e')]);
+            }
+
+            {
+                var str = RawStringSource.Get("あa0");
+                Assert.Equal(3, str.LastIndexOf((byte)'a'));
+                Assert.Equal(4, str.LastIndexOf((byte)'0'));
+
+                Assert.Equal((byte)'a', str[str.LastIndexOf((byte)'a')]);
+                Assert.Equal((byte)'0', str[str.LastIndexOf((byte)'0')]);
+            }
+
+            {
+                var str = RawStringSource.Get("xyzxyz");
+                Assert.Equal(3, str.LastIndexOf((byte)'x'));
+                Assert.Equal(4, str.LastIndexOf((byte)'y'));
+                Assert.Equal(5, str.LastIndexOf((byte)'z'));
+            }
+        }
+
+        [Fact]
+        public void LastRangeOf()
+        {
+            // [Test for only ASCII]
+            {
+                var str = RawStringSource.Get("abcde");
+                Assert.Equal(new DataRange(0, 1), str.LastRangeOf('a'));
+                Assert.Equal(new DataRange(1, 1), str.LastRangeOf('b'));
+                Assert.Equal(new DataRange(2, 1), str.LastRangeOf('c'));
+                Assert.Equal(new DataRange(3, 1), str.LastRangeOf('d'));
+                Assert.Equal(new DataRange(4, 1), str.LastRangeOf('e'));
+
+                // (-1, 0) is returned if not found.
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf('A'));
+
+                // Test for overloads
+
+                // RawString
+                Assert.Equal(new DataRange(1, 3), str.LastRangeOf(str.Slice(1, 3)));
+                // ROS<byte>
+                Assert.Equal(new DataRange(1, 3), str.LastRangeOf(str.Slice(1, 3).AsSpan()));
+                // string
+                Assert.Equal(new DataRange(1, 3), str.LastRangeOf(str.Slice(1, 3).ToString()));
+                // ROS<char>
+                Assert.Equal(new DataRange(1, 3), str.LastRangeOf(str.Slice(1, 3).ToString().AsSpan()));
+
+                Assert.Equal(new DataRange(0, str.Length), str.LastRangeOf(str));
+                Assert.Equal(str, str.Slice(str.LastRangeOf(str)));
+
+
+                var str2 = RawStringSource.Get("ABCDE");
+
+                // (-1, 0) is returned if not found.
+
+                // RawString
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf(str2));
+                // ROS<byte>
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf(str2.AsSpan()));
+                // string
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf(str2.ToString()));
+                // ROS<char>
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf(str2.ToString().AsSpan()));
+            }
+
+
+            // [Test for RawString containing multi-bytes char]
+            {
+                var str = RawStringSource.Get("あいうえお");
+                Assert.Equal(new DataRange(0, 3), str.LastRangeOf('あ'));
+                Assert.Equal(new DataRange(3, 3), str.LastRangeOf('い'));
+                Assert.Equal(new DataRange(6, 3), str.LastRangeOf('う'));
+                Assert.Equal(new DataRange(9, 3), str.LastRangeOf('え'));
+                Assert.Equal(new DataRange(12, 3), str.LastRangeOf('お'));
+
+                // (-1, 0) is returned if not found.
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf('か'));
+
+                // Test overloads
+                var str2 = RawStringSource.Get("えお");
+
+                // RawString
+                Assert.Equal(new DataRange(9, 6), str.LastRangeOf(str2));
+                // ROS<byte>
+                Assert.Equal(new DataRange(9, 6), str.LastRangeOf(str2.AsSpan()));
+                // string
+                Assert.Equal(new DataRange(9, 6), str.LastRangeOf(str2.ToString()));
+                // ROS<char>
+                Assert.Equal(new DataRange(9, 6), str.LastRangeOf(str2.ToString().AsSpan()));
+
+
+                var str3 = RawStringSource.Get("ABCDE");
+
+                // (-1, 0) is returned if not found.
+
+                // RawString
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf(str3));
+                // ROS<byte>
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf(str3.AsSpan()));
+                // string
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf(str3.ToString()));
+                // ROS<char>
+                Assert.Equal(new DataRange(-1, 0), str.LastRangeOf(str3.ToString().AsSpan()));
+            }
+
+            {
+                // (0, 0) is returned if empty.
+
+                var str = RawStringSource.Get("abcde");
+                Assert.Equal(new DataRange(0, 0), str.LastRangeOf(RawString.Empty));
+                Assert.Equal(new DataRange(0, 0), str.LastRangeOf(ReadOnlySpan<byte>.Empty));
+                Assert.Equal(new DataRange(0, 0), str.LastRangeOf(string.Empty));
+                Assert.Equal(new DataRange(0, 0), str.LastRangeOf(ReadOnlySpan<char>.Empty));
+
+                var str2 = RawString.Empty;
+                Assert.Equal(new DataRange(0, 0), str2.LastRangeOf(RawString.Empty));
+                Assert.Equal(new DataRange(0, 0), str2.LastRangeOf(ReadOnlySpan<byte>.Empty));
+                Assert.Equal(new DataRange(0, 0), str2.LastRangeOf(string.Empty));
+                Assert.Equal(new DataRange(0, 0), str2.LastRangeOf(ReadOnlySpan<char>.Empty));
+            }
+
+            {
+                var xyzxyz = RawStringSource.Get("xyzxyz");
+                var xyz = xyzxyz.Slice(0, 3);
+
+                Assert.Equal(new DataRange(3, 3), xyzxyz.LastRangeOf(xyz));
+                Assert.Equal(new DataRange(3, 3), xyzxyz.LastRangeOf(xyz.AsSpan()));
+                Assert.Equal(new DataRange(3, 3), xyzxyz.LastRangeOf(xyz.ToString()));
+                Assert.Equal(new DataRange(3, 3), xyzxyz.LastRangeOf(xyz.ToString().AsSpan()));
+            }
+        }
+
+        [Fact]
+        public unsafe void Contains()
+        {
+            var abcde = RawStringSource.Get("abcde");
+            Assert.True(abcde.Contains((byte)'a'));
+            Assert.True(abcde.Contains((byte)'b'));
+            Assert.True(abcde.Contains((byte)'c'));
+            Assert.True(abcde.Contains((byte)'d'));
+            Assert.True(abcde.Contains((byte)'e'));
+            Assert.True(abcde.Contains('a'));
+            Assert.True(abcde.Contains('b'));
+            Assert.True(abcde.Contains('c'));
+            Assert.True(abcde.Contains('d'));
+            Assert.True(abcde.Contains('e'));
+
+            Assert.False(abcde.Contains('A'));
+            Assert.False(abcde.Contains((byte)'A'));
+
+            byte* p = stackalloc byte[] { (byte)'b', (byte)'c', (byte)'d' };
+            var bcd = new RawString(p, 3);
+            Assert.True(abcde.Contains(bcd));
+            Assert.True(abcde.Contains(bcd.AsSpan()));
+            Assert.True(abcde.Contains(bcd.ToString()));
+            Assert.True(abcde.Contains(bcd.ToString().AsSpan()));
+
+            Assert.True(abcde.Contains(abcde));
+            Assert.True(abcde.Contains(abcde.AsSpan()));
+            Assert.True(abcde.Contains(abcde.ToString()));
+            Assert.True(abcde.Contains(abcde.ToString().AsSpan()));
+
+            Assert.True(abcde.Contains(RawString.Empty));
+            Assert.True(abcde.Contains(ReadOnlySpan<byte>.Empty));
+            Assert.True(abcde.Contains(string.Empty));
+            Assert.True(abcde.Contains(ReadOnlySpan<char>.Empty));
+
+
+            var ABCDE = RawStringSource.Get("ABCDE");
+            Assert.False(abcde.Contains(ABCDE));
+            Assert.False(abcde.Contains(ABCDE.AsSpan()));
+            Assert.False(abcde.Contains(ABCDE.ToString()));
+            Assert.False(abcde.Contains(ABCDE.ToString().AsSpan()));
+        }
+
+        [Fact]
         public void GetHashCodeTest()
         {
             var rawStr1 = RawStringSource.Get("あいうえお");
