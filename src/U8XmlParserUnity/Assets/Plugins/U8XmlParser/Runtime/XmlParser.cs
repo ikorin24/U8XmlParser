@@ -573,17 +573,27 @@ namespace U8Xml
                         // <!DOCTYPE rootname [...]>
                         goto INTERNAL_SUBSET;
                     }
-                    var typeStr = data.SliceUnsafe(i, data.Length - i);
-                    if(typeStr.StartsWith(Str_SYSTEM)) {
+                    var identifierStart = i;
+                    i++;
+                    while(true) {
+                        if(i >= data.Length) {
+                            throw NewFormatException(data, identifierStart, "Unexpected end of xml. Failed to parse DOCTYPE.");
+                        }
+                        if(IsEmptyChar(data.At(i++))) {
+                            break;
+                        }
+                    }
+                    var identifier = data.SliceUnsafe(identifierStart, i - 1 - identifierStart);
+                    if(identifier == Str_SYSTEM) {
                         // <!DOCTYPE rootname SYSTEM "...">
                         throw new NotImplementedException("DTD with SYSTEM identifier is not implemented yet.");
                     }
-                    else if(typeStr.StartsWith(Str_PUBLIC)) {
+                    else if(identifier == Str_PUBLIC) {
                         // <!DOCTYPE html PUBLIC "..." "...">
                         throw new NotImplementedException("DTD with PUBLIC identifier is not implemented yet.");
                     }
                     else {
-                        throw NewFormatException(data, i, "DTD identifier must be 'SYSTEM' or 'PUBLIC.");
+                        throw NewFormatException(data, i, $"DTD identifier must be 'SYSTEM' or 'PUBLIC. The identifier is '{identifier}'");
                     }
                 }
             }
