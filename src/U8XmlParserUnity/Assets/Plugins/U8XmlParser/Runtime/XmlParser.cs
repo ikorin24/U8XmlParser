@@ -509,6 +509,8 @@ namespace U8Xml
             // DOCTYPE has three types.
             // 
             // 1) internal
+            // <!DOCTYPE rootname [...]>
+            // or
             // <!DOCTYPE rootname[...]>
             //
             // 2) external (SYSTEM)
@@ -519,6 +521,9 @@ namespace U8Xml
 
             ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
 
+            ReadOnlySpan<byte> Str_SYSTEM = stackalloc byte[] { (byte)'S', (byte)'Y', (byte)'S', (byte)'T', (byte)'E', (byte)'M', };
+            ReadOnlySpan<byte> Str_PUBLIC = stackalloc byte[] { (byte)'P', (byte)'U', (byte)'B', (byte)'L', (byte)'I', (byte)'C' };
+
             if(data.Slice(i).StartsWith(DocTypeStr) == false) { return false; }
             if(hasNode) {
                 throw NewFormatException(data, i - 2, "DTD must be defined before the document root element.");
@@ -527,6 +532,9 @@ namespace U8Xml
                 throw NewFormatException(data, i - 2, "Cannot have multiple DTDs.");
             }
 
+            // <!DOCTYPE rootname
+            // |
+            // `--> data[bodyStart]
 
             var bodyStart = i - 2;
             var docType = optional.DocumentType;
@@ -535,15 +543,54 @@ namespace U8Xml
                 throw NewFormatException(data, bodyStart, "Failed to parse DOCTYPE.");
             }
 
+            // <!DOCTYPE rootname
+            //           |
+            //           `--> data[nameStart]
             var nameStart = i;
-            if(SkipUntil((byte)'[', data, ref i) == false) {
-                throw NewFormatException(data, bodyStart, "Unexpected end of xml. Can not find character '[' and failed to parse DOCTYPE.");
-            }
-            var nameLen = i - nameStart - 1;
-            var contentStart = i;
-            if(nameLen <= 0) { throw NewFormatException(data, nameStart, "Failed to parse DOCTYPE."); }
-            docType->Name = data.Slice(nameStart, nameLen).TrimEnd();
+            Debug.Assert(IsEmptyChar(data[nameStart]) == false);
+            i++;
 
+            while(true) {
+                if(i >= data.Length) {
+                    throw NewFormatException(data, bodyStart, "Unexpected end of xml. Failed to parse DOCTYPE.");
+                }
+                var c = data.At(i++);
+                if(c == '[') {
+                    // <!DOCTYPE rootname[...]>
+                    var name = data.Slice(nameStart, i - 1 - nameStart);
+                    Debug.Assert(name.Length > 0);
+                    docType->Name = name;
+                    goto INTERNAL_SUBSET;
+                }
+                else if(IsEmptyChar(c)) {
+                    var name = data.Slice(nameStart, i - 1 - nameStart);
+                    Debug.Assert(name.Length > 0);
+                    docType->Name = name;
+                    if(SkipEmpty(data, ref i) == false) {
+                        throw NewFormatException(data, nameStart + name.Length, "Unexpected end of xml. Failed to parse DOCTYPE.");
+                    }
+                    if(data.At(i) == '[') {
+                        // <!DOCTYPE rootname [...]>
+                        goto INTERNAL_SUBSET;
+                    }
+                    var typeStr = data.SliceUnsafe(i, data.Length - i);
+                    if(typeStr.StartsWith(Str_SYSTEM)) {
+                        // <!DOCTYPE rootname SYSTEM "...">
+                        throw new NotImplementedException("DTD with SYSTEM identifier is not implemented yet.");
+                    }
+                    else if(typeStr.StartsWith(Str_PUBLIC)) {
+                        // <!DOCTYPE html PUBLIC "..." "...">
+                        throw new NotImplementedException("DTD with PUBLIC identifier is not implemented yet.");
+                    }
+                    else {
+                        throw NewFormatException(data, i, "DTD identifier must be 'SYSTEM' or 'PUBLIC.");
+                    }
+                }
+            }
+
+        INTERNAL_SUBSET:
+            Debug.Assert(docType->Name.IsEmpty == false);
+            var contentStart = i;
             var list = default(RawStringPairList);
             try {
                 ParseDtd(data, ref i, ref list, true);
