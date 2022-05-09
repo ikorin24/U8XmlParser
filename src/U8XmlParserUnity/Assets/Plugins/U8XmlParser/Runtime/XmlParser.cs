@@ -504,8 +504,11 @@ namespace U8Xml
 
         private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional, ref RawStringTable entities)
         {
+            // Returns false if not DOCTYPE node.
+
             // data[i] is the next char of "<!"
 
+            // ------------------------------------------
             // DOCTYPE has three types.
             // 
             // 1) internal
@@ -519,12 +522,31 @@ namespace U8Xml
             // 3) external (PUBLIC)
             // <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN" "http://www.w3.org/MarkUp/Wilbur/HTML32.DTD">
 
-            ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
-
+            ReadOnlySpan<byte> Str_DOCTYPE = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E' };
             ReadOnlySpan<byte> Str_SYSTEM = stackalloc byte[] { (byte)'S', (byte)'Y', (byte)'S', (byte)'T', (byte)'E', (byte)'M', };
             ReadOnlySpan<byte> Str_PUBLIC = stackalloc byte[] { (byte)'P', (byte)'U', (byte)'B', (byte)'L', (byte)'I', (byte)'C' };
 
-            if(data.Slice(i).StartsWith(DocTypeStr) == false) { return false; }
+            // <!DOCTYPE rootname
+            // |
+            // `--> data[bodyStart]
+            var bodyStart = i - 2;
+
+            if(data.SliceUnsafe(i, data.Length - i).StartsWith(Str_DOCTYPE) == false) {
+                // The node is not DOCTYPE
+                return false;
+            }
+            {
+                var j = i + Str_DOCTYPE.Length;
+                if(j >= data.Length || IsEmptyChar(data.At(j)) == false) {
+                    // The node is not DOCTYPE
+                    return false;
+                }
+                i += Str_DOCTYPE.Length + 1;
+                if(SkipEmpty(data, ref i) == false) {
+                    throw NewFormatException(data, j, "Failed to parse DOCTYPE.");
+                }
+            }
+
             if(hasNode) {
                 throw NewFormatException(data, i - 2, "DTD must be defined before the document root element.");
             }
@@ -532,13 +554,8 @@ namespace U8Xml
                 throw NewFormatException(data, i - 2, "Cannot have multiple DTDs.");
             }
 
-            // <!DOCTYPE rootname
-            // |
-            // `--> data[bodyStart]
-
-            var bodyStart = i - 2;
             var docType = optional.DocumentType;
-            i += DocTypeStr.Length;
+            i += Str_DOCTYPE.Length;
             if(SkipEmpty(data, ref i) == false) {
                 throw NewFormatException(data, bodyStart, "Failed to parse DOCTYPE.");
             }
