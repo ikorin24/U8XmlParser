@@ -603,14 +603,67 @@ namespace U8Xml
                     var identifier = data.SliceUnsafe(identifierStart, i - 1 - identifierStart);
                     if(identifier == Str_SYSTEM) {
                         // <!DOCTYPE rootname SYSTEM "...">
-                        throw new NotImplementedException("DTD with SYSTEM identifier is not implemented yet.");
+                        RawString uri;
+                        {
+                            var pos = i;
+                            if(ReadQuotedString(data, ref i, out uri) == false) { throw NewFormatException(data, pos, "Failed to parse DOCTYPE."); }
+                        }
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
+                        if(i >= data.Length || data.At(i++) != '>') { throw NewFormatException(data, i, "Unexpected end of xml. DOCTYPE is not closed."); }
+
+                        var body = data.SliceUnsafe(bodyStart, i - bodyStart);
+                        var s = new ExternalDtdGetterState_
+                        {
+                            Body = body,
+                            DtdType = ExternalDtdType.System,
+                            PublicIdentifier = RawString.Empty,
+                            Uri = uri,
+                        };
+                        var state = new ExternalDtdGetterState(&s);
+                        throw new NotImplementedException($"DTD with SYSTEM identifier is not implemented yet. DtdType: '{state.DtdType}', PI: '{state.PublicIdentifier}', Uri: '{state.Uri}', Body: '{state.Body}'");
+                        docType->Body = body;
+                        return true;
                     }
                     else if(identifier == Str_PUBLIC) {
-                        // <!DOCTYPE html PUBLIC "..." "...">
-                        throw new NotImplementedException("DTD with PUBLIC identifier is not implemented yet.");
+                        // <!DOCTYPE rootnode PUBLIC "..." "...">
+                        RawString publicIdentifier;
+                        RawString uri;
+                        {
+                            var pos = i;
+                            if(ReadQuotedString(data, ref i, out publicIdentifier) == false) { throw NewFormatException(data, pos, "Failed to parse DOCTYPE."); }
+                        }
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
+                        {
+                            var pos = i;
+                            if(ReadQuotedString(data, ref i, out uri) == false) { throw NewFormatException(data, pos, "Failed to parse DOCTYPE."); }
+                        }
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
+                        if(i >= data.Length || data.At(i++) != '>') { throw NewFormatException(data, i, "Unexpected end of xml. DOCTYPE is not closed."); }
+
+                        var body = data.SliceUnsafe(bodyStart, i - bodyStart);
+                        var s = new ExternalDtdGetterState_
+                        {
+                            Body = body,
+                            DtdType = ExternalDtdType.Public,
+                            PublicIdentifier = publicIdentifier,
+                            Uri = uri,
+                        };
+                        var state = new ExternalDtdGetterState(&s);
+                        throw new NotImplementedException($"DTD with PUBLIC identifier is not implemented yet. DtdType: '{state.DtdType}', PI: '{state.PublicIdentifier}', Uri: '{state.Uri}', Body: '{state.Body}'");
+                        docType->Body = body;
+                        return true;
                     }
                     else {
-                        throw NewFormatException(data, i, $"DTD identifier must be 'SYSTEM' or 'PUBLIC. The identifier is '{identifier}'");
+                        throw NewFormatException(data, i, $"DTD identifier type must be 'SYSTEM' or 'PUBLIC. The identifier is '{identifier}'");
                     }
                 }
             }
@@ -681,6 +734,35 @@ namespace U8Xml
                 }
                 alias = RawString.Empty;
                 return false;
+            }
+
+            static bool ReadQuotedString(RawString data, ref int i, out RawString value)
+            {
+                if(i >= data.Length) {
+                    value = RawString.Empty;
+                    return false;
+                }
+                var quote = data.At(i++);
+                if(quote != '"' && quote != '\'') {
+                    value = RawString.Empty;
+                    return false;
+                }
+
+                // "foo"
+                // |
+                // `--> data[i]
+
+                var start = i;
+                while(true) {
+                    if(i >= data.Length) {
+                        value = RawString.Empty;
+                        return false;
+                    }
+                    if(data.At(i++) == quote) {
+                        value = data.SliceUnsafe(start, i - 1 - start);
+                        return true;
+                    }
+                }
             }
         }
 
