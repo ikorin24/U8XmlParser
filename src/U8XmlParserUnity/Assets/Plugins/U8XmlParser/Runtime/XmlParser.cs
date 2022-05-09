@@ -502,6 +502,65 @@ namespace U8Xml
             }
         }
 
+        private static void ParseDtdInternalSubset(RawString data, ref int i, ref RawStringTable entities, out RawString internalSubset)
+        {
+            var contentStart = i;
+            var list = default(RawStringPairList);
+            try {
+                ParseDtd(data, ref i, ref list, true);
+                internalSubset = data.Slice(contentStart, i - contentStart - 1);
+
+                {
+                    var pos = i;
+                    while(true) {
+                        if(i >= data.Length) { throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed."); }
+                        if(data.At(i++) == '>') { break; }
+                    }
+                }
+
+                if(list.Count == 0) {
+                    return;
+                }
+
+                entities = RawStringTable.Create(list.Count);
+                for(int l = 0; l < list.Count; l++) {
+                    ref readonly var item = ref list[l];
+
+                    // An entity can refer to another entity that was defined before it.
+                    if(ContainsAlias(item.Value, out var alias)) {
+                        if(entities.TryGetValue(alias, out _) == false) {
+                            int offset = checked((int)(uint)(alias.GetPtr() - data.GetPtr()));
+                            throw NewFormatException(data, offset, "Alias can not be resolved.");
+                        }
+                    }
+
+                    // Ignore the entity if the key is duplicated.
+                    entities.TryAdd(item.Key, item.Value);
+                }
+                return;
+            }
+            finally {
+                list.Dispose();
+            }
+
+            static bool ContainsAlias(RawString str, out RawString alias)
+            {
+                int pos = 0;
+                for(int i = 0; i < str.Length; i++) {
+                    if(str.At(i) == '&' && pos == 0) {
+                        pos = i + 1;
+                        continue;
+                    }
+                    if(str.At(i) == ';' && pos != 1) {
+                        alias = str.SliceUnsafe(pos, i - 1 - pos);
+                        return true;
+                    }
+                }
+                alias = RawString.Empty;
+                return false;
+            }
+        }
+
         private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional, ref RawStringTable entities)
         {
             // Returns false if not DOCTYPE node.
@@ -577,7 +636,9 @@ namespace U8Xml
                     var name = data.Slice(nameStart, i - 1 - nameStart);
                     Debug.Assert(name.Length > 0);
                     docType->Name = name;
-                    goto INTERNAL_SUBSET;
+                    ParseDtdInternalSubset(data, ref i, ref entities, out docType->InternalSubset);
+                    docType->Body = data.Slice(bodyStart, i - bodyStart);
+                    return true;
                 }
                 else if(IsEmptyChar(c)) {
                     var name = data.Slice(nameStart, i - 1 - nameStart);
@@ -588,7 +649,9 @@ namespace U8Xml
                     }
                     if(data.At(i) == '[') {
                         // <!DOCTYPE rootname [...]>
-                        goto INTERNAL_SUBSET;
+                        ParseDtdInternalSubset(data, ref i, ref entities, out docType->InternalSubset);
+                        docType->Body = data.Slice(bodyStart, i - bodyStart);
+                        return true;
                     }
                     var identifierStart = i;
                     i++;
@@ -615,15 +678,16 @@ namespace U8Xml
                         if(i >= data.Length || data.At(i++) != '>') { throw NewFormatException(data, i, "Unexpected end of xml. DOCTYPE is not closed."); }
 
                         var body = data.SliceUnsafe(bodyStart, i - bodyStart);
-                        var s = new ExternalDtdGetterState_
+                        var state = new ExternalDtdGetterState_
                         {
                             Body = body,
                             DtdType = ExternalDtdType.System,
                             PublicIdentifier = RawString.Empty,
                             Uri = uri,
                         };
-                        var state = new ExternalDtdGetterState(&s);
-                        throw new NotImplementedException($"DTD with SYSTEM identifier is not implemented yet. DtdType: '{state.DtdType}', PI: '{state.PublicIdentifier}', Uri: '{state.Uri}', Body: '{state.Body}'");
+                        // TODO:
+                        DefaultExternalDtdGetter.Instance.GetDtd(new ExternalDtdGetterState(&state));
+                        //throw new NotImplementedException($"DTD with SYSTEM identifier is not implemented yet. DtdType: '{state.DtdType}', PI: '{state.PublicIdentifier}', Uri: '{state.Uri}', Body: '{state.Body}'");
                         docType->Body = body;
                         return true;
                     }
@@ -650,15 +714,16 @@ namespace U8Xml
                         if(i >= data.Length || data.At(i++) != '>') { throw NewFormatException(data, i, "Unexpected end of xml. DOCTYPE is not closed."); }
 
                         var body = data.SliceUnsafe(bodyStart, i - bodyStart);
-                        var s = new ExternalDtdGetterState_
+                        var state = new ExternalDtdGetterState_
                         {
                             Body = body,
                             DtdType = ExternalDtdType.Public,
                             PublicIdentifier = publicIdentifier,
                             Uri = uri,
                         };
-                        var state = new ExternalDtdGetterState(&s);
-                        throw new NotImplementedException($"DTD with PUBLIC identifier is not implemented yet. DtdType: '{state.DtdType}', PI: '{state.PublicIdentifier}', Uri: '{state.Uri}', Body: '{state.Body}'");
+                        // TODO:
+                        DefaultExternalDtdGetter.Instance.GetDtd(new ExternalDtdGetterState(&state));
+                        //throw new NotImplementedException($"DTD with PUBLIC identifier is not implemented yet. DtdType: '{state.DtdType}', PI: '{state.PublicIdentifier}', Uri: '{state.Uri}', Body: '{state.Body}'");
                         docType->Body = body;
                         return true;
                     }
@@ -666,74 +731,6 @@ namespace U8Xml
                         throw NewFormatException(data, i, $"DTD identifier type must be 'SYSTEM' or 'PUBLIC. The identifier is '{identifier}'");
                     }
                 }
-            }
-
-        INTERNAL_SUBSET:
-            Debug.Assert(docType->Name.IsEmpty == false);
-            var contentStart = i;
-            var list = default(RawStringPairList);
-            try {
-                ParseDtd(data, ref i, ref list, true);
-                docType->InternalSubset = data.Slice(contentStart, i - contentStart - 1);
-
-                {
-                    var pos = i;
-                    if(SkipUntil((byte)'>', data, ref i) == false) {
-                        throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed.");
-                    }
-                }
-                docType->Body = data.Slice(bodyStart, i - bodyStart);
-
-                if(list.Count == 0) {
-                    return true;
-                }
-
-                entities = RawStringTable.Create(list.Count);
-                for(int l = 0; l < list.Count; l++) {
-                    ref readonly var item = ref list[l];
-
-                    // An entity can refer to another entity that was defined before it.
-                    if(ContainsAlias(item.Value, out var alias)) {
-                        if(entities.TryGetValue(alias, out _) == false) {
-                            int offset = checked((int)(uint)(alias.GetPtr() - data.GetPtr()));
-                            throw NewFormatException(data, offset, "Alias can not be resolved.");
-                        }
-                    }
-
-                    // Ignore the entity if the key is duplicated.
-                    entities.TryAdd(item.Key, item.Value);
-                }
-                return true;
-            }
-            finally {
-                list.Dispose();
-            }
-
-            static bool SkipUntil(byte ascii, RawString data, ref int i)
-            {
-                // Returns false if end of file
-
-                while(true) {
-                    if(i >= data.Length) { return false; }
-                    if(data.At(i++) == ascii) { return true; }
-                }
-            }
-
-            static bool ContainsAlias(RawString str, out RawString alias)
-            {
-                int pos = 0;
-                for(int i = 0; i < str.Length; i++) {
-                    if(str.At(i) == '&' && pos == 0) {
-                        pos = i + 1;
-                        continue;
-                    }
-                    if(str.At(i) == ';' && pos != 1) {
-                        alias = str.SliceUnsafe(pos, i - 1 - pos);
-                        return true;
-                    }
-                }
-                alias = RawString.Empty;
-                return false;
             }
 
             static bool ReadQuotedString(RawString data, ref int i, out RawString value)
