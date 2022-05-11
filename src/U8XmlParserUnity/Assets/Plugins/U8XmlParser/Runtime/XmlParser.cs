@@ -1,4 +1,8 @@
 ﻿#nullable enable
+#if UNITY_2018_1_OR_NEWER
+#define IS_UNITY
+#endif
+
 using System;
 using System.IO;
 using System.Diagnostics;
@@ -407,8 +411,10 @@ namespace U8Xml
             }
         }
 
-        private static void ParseDtd(RawString data, ref int i, ref RawStringPairList list, bool isInternalSubset)
+        private static void ParseDtd(RawString data, ref int i, ref RawStringPairList list)
         {
+            ReadOnlySpan<byte> Str_ENTITY = stackalloc byte[7] { (byte)'!', (byte)'E', (byte)'N', (byte)'T', (byte)'I', (byte)'T', (byte)'Y' };
+
             while(true) {
                 {
                     var pos = i;
@@ -416,7 +422,7 @@ namespace U8Xml
                 }
 
                 var c = data.At(i++);
-                if(isInternalSubset && c == ']') {
+                if(c == ']') {
                     break;
                 }
 
@@ -424,16 +430,26 @@ namespace U8Xml
                 if((i + 2 < data.Length) && (data.At(i) == '!') && (data.At(i + 1) == '-') && (data.At(i + 2) == '-'))  // Start with "<!--"
                 {
                     // Skip comment <!--xxx-->
-                    SkipComment(data, ref i);
+                    var commentStart = i - 1;
+                    if(SkipComment(data, ref i) == false) { throw NewFormatException(data, commentStart, "The comment is not closed."); }
                     continue;
                 }
 
-                if(((i + 6) < data.Length) &&
-                   (data.At(i) == '!') && (data.At(i + 1) == 'E') && (data.At(i + 2) == 'N') && (data.At(i + 3) == 'T') &&
-                   (data.At(i + 4) == 'I') && (data.At(i + 5) == 'T') && (data.At(i + 6) == 'Y') && (data.At(i + 7) == ' ')) {
+                if(data.SliceUnsafe(i, data.Length - i).StartsWith(Str_ENTITY)) {
+                    // ENTITY is
+                    // <!ENTITY aaa "123">
+                    // or
+                    // <!ENTITY bbb SYSTEM "file://foo.xml">
+                    //
+                    // The parser ignores external entity.
 
-                    // "<!ENTITY "
-                    i += 8;
+                    i += Str_ENTITY.Length;
+                    if(IsEmptyChar(data.At(i)) == false) { throw NewFormatException(data, i, "Invalid character."); }
+                    i++;
+                    {
+                        var pos = i;
+                        if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed."); }
+                    }
 
                     var entityNameStart = i;
                     if(SkipToEmpty(data, ref i) == false) {
@@ -445,19 +461,19 @@ namespace U8Xml
                     }
 
                     var quote = data.At(i);
-                    if(quote != '"' && quote != '\'') { throw NewFormatException(data, i, $"Invalid character. expected ''' or '\"', actual: '{(char)quote}'."); }
-                    i++;
-                    var k = i;
-                    while(true) {
+                    if(quote == '"' || quote == '\'') {
                         i++;
-                        if(i >= data.Length) { throw NewFormatException(data, k, "Unexpected end of xml. ENTITY is not closed."); }
-                        var q = data.At(i);
-                        if(q == quote) { break; }
+                        var k = i;
+                        while(true) {
+                            i++;
+                            if(i >= data.Length) { throw NewFormatException(data, k, "Unexpected end of xml. ENTITY is not closed."); }
+                            var q = data.At(i);
+                            if(q == quote) { break; }
+                        }
+                        var value = data.SliceUnsafe(k, i - k);
+                        i++;
+                        list.Add(name, value);
                     }
-                    var value = data.SliceUnsafe(k, i - k);
-                    i++;
-                    list.Add(name, value);
-
                     {
                         var pos = i;
                         if(SkipUntil((byte)'>', data, ref i) == false) {
@@ -507,7 +523,7 @@ namespace U8Xml
             var contentStart = i;
             var list = default(RawStringPairList);
             try {
-                ParseDtd(data, ref i, ref list, true);
+                ParseDtd(data, ref i, ref list);
                 internalSubset = data.Slice(contentStart, i - contentStart - 1);
 
                 {
@@ -635,7 +651,6 @@ namespace U8Xml
                     var name = data.Slice(nameStart, i - 1 - nameStart);
                     Debug.Assert(name.Length > 0);
                     docType->Name = name;
-                    i++;
                     ParseDtdInternalSubset(data, ref i, ref entities, out docType->InternalSubset);
                     docType->Body = data.Slice(bodyStart, i - bodyStart);
                     return true;
@@ -667,6 +682,10 @@ namespace U8Xml
                     var identifier = data.SliceUnsafe(identifierStart, i - 1 - identifierStart);
                     if(identifier == Str_SYSTEM) {
                         // <!DOCTYPE rootname SYSTEM "...">
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
                         RawString uri;
                         {
                             var pos = i;
@@ -679,21 +698,19 @@ namespace U8Xml
                         if(i >= data.Length || data.At(i++) != '>') { throw NewFormatException(data, i, "Unexpected end of xml. DOCTYPE is not closed."); }
 
                         var body = data.SliceUnsafe(bodyStart, i - bodyStart);
-                        var state = new ExternalDtdGetterState_
-                        {
-                            Body = body,
-                            DtdType = ExternalDtdType.System,
-                            PublicIdentifier = RawString.Empty,
-                            Uri = uri,
-                        };
-                        // TODO:
-                        DefaultExternalDtdGetter.Instance.GetDtd(new ExternalDtdGetterState(&state));
-                        //throw new NotImplementedException($"DTD with SYSTEM identifier is not implemented yet. DtdType: '{state.DtdType}', PI: '{state.PublicIdentifier}', Uri: '{state.Uri}', Body: '{state.Body}'");
                         docType->Body = body;
+#if DEBUG && !IS_UNITY
+                        Debug.WriteLine($"External DTD; type: SYSTEM, name: {name}, uri: {uri}");
+                        Debug.WriteLine(body);
+#endif
                         return true;
                     }
                     else if(identifier == Str_PUBLIC) {
                         // <!DOCTYPE rootnode PUBLIC "..." "...">
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
                         RawString publicIdentifier;
                         RawString uri;
                         {
@@ -715,17 +732,11 @@ namespace U8Xml
                         if(i >= data.Length || data.At(i++) != '>') { throw NewFormatException(data, i, "Unexpected end of xml. DOCTYPE is not closed."); }
 
                         var body = data.SliceUnsafe(bodyStart, i - bodyStart);
-                        var state = new ExternalDtdGetterState_
-                        {
-                            Body = body,
-                            DtdType = ExternalDtdType.Public,
-                            PublicIdentifier = publicIdentifier,
-                            Uri = uri,
-                        };
-                        // TODO:
-                        DefaultExternalDtdGetter.Instance.GetDtd(new ExternalDtdGetterState(&state));
-                        //throw new NotImplementedException($"DTD with PUBLIC identifier is not implemented yet. DtdType: '{state.DtdType}', PI: '{state.PublicIdentifier}', Uri: '{state.Uri}', Body: '{state.Body}'");
                         docType->Body = body;
+#if DEBUG && !IS_UNITY
+                        Debug.WriteLine($"External DTD; type: PUBLIC, name: {name}, identifier: {publicIdentifier}, uri: {uri}");
+                        Debug.WriteLine(body);
+#endif
                         return true;
                     }
                     else {
