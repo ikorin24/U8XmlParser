@@ -614,7 +614,6 @@ namespace U8Xml
             }
 
             var docType = optional.DocumentType;
-            i += Str_DOCTYPE.Length;
             if(SkipEmpty(data, ref i) == false) {
                 throw NewFormatException(data, bodyStart, "Failed to parse DOCTYPE.");
             }
@@ -636,6 +635,7 @@ namespace U8Xml
                     var name = data.Slice(nameStart, i - 1 - nameStart);
                     Debug.Assert(name.Length > 0);
                     docType->Name = name;
+                    i++;
                     ParseDtdInternalSubset(data, ref i, ref entities, out docType->InternalSubset);
                     docType->Body = data.Slice(bodyStart, i - bodyStart);
                     return true;
@@ -649,6 +649,7 @@ namespace U8Xml
                     }
                     if(data.At(i) == '[') {
                         // <!DOCTYPE rootname [...]>
+                        i++;
                         ParseDtdInternalSubset(data, ref i, ref entities, out docType->InternalSubset);
                         docType->Body = data.Slice(bodyStart, i - bodyStart);
                         return true;
