@@ -1,4 +1,8 @@
 ﻿#nullable enable
+#if UNITY_2018_1_OR_NEWER
+#define IS_UNITY
+#endif
+
 using System;
 using System.IO;
 using System.Diagnostics;
@@ -407,57 +411,45 @@ namespace U8Xml
             }
         }
 
-        private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional, ref RawStringTable entities)
+        private static void ParseDtd(RawString data, ref int i, ref RawStringPairList list)
         {
-            // data[i] is the next char of "<!"
+            ReadOnlySpan<byte> Str_ENTITY = stackalloc byte[7] { (byte)'!', (byte)'E', (byte)'N', (byte)'T', (byte)'I', (byte)'T', (byte)'Y' };
 
-            // <!DOCTYPE foo[...]>
-            ReadOnlySpan<byte> DocTypeStr = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E', (byte)' ' };
-
-            if(data.Slice(i).StartsWith(DocTypeStr) == false) { return false; }
-            if(hasNode) {
-                throw NewFormatException(data, i - 2, "DTD must be defined before the document root element.");
-            }
-            if(optional.DocumentType->Body.IsEmpty == false) {
-                throw NewFormatException(data, i - 2, "Cannot have multiple DTDs.");
-            }
-
-
-            var bodyStart = i - 2;
-            var docType = optional.DocumentType;
-            i += DocTypeStr.Length;
-            if(SkipEmpty(data, ref i) == false) {
-                throw NewFormatException(data, bodyStart, "Failed to parse DOCTYPE.");
-            }
-
-            var nameStart = i;
-            if(SkipUntil((byte)'[', data, ref i) == false) {
-                throw NewFormatException(data, bodyStart, "Unexpected end of xml. Can not find character '[' and failed to parse DOCTYPE.");
-            }
-            var nameLen = i - nameStart - 1;
-            var contentStart = i;
-            if(nameLen <= 0) { throw NewFormatException(data, nameStart, "Failed to parse DOCTYPE."); }
-            docType->Name = data.Slice(nameStart, nameLen).TrimEnd();
-
-            using var list = default(RawStringPairList);
             while(true) {
-                if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, bodyStart, "Unexpected end of xml. DOCTYPE is not closed."); }
+                {
+                    var pos = i;
+                    if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed."); }
+                }
+
                 var c = data.At(i++);
-                if(c == ']') { break; }
+                if(c == ']') {
+                    break;
+                }
+
                 if(c != '<') { throw NewFormatException(data, i - 1, $"Failed to parse DOCTYPE. expected: '<', actual: '{(char)c}'."); }
                 if((i + 2 < data.Length) && (data.At(i) == '!') && (data.At(i + 1) == '-') && (data.At(i + 2) == '-'))  // Start with "<!--"
                 {
                     // Skip comment <!--xxx-->
-                    SkipComment(data, ref i);
+                    var commentStart = i - 1;
+                    if(SkipComment(data, ref i) == false) { throw NewFormatException(data, commentStart, "The comment is not closed."); }
                     continue;
                 }
 
-                if(((i + 6) < data.Length) &&
-                   (data.At(i) == '!') && (data.At(i + 1) == 'E') && (data.At(i + 2) == 'N') && (data.At(i + 3) == 'T') &&
-                   (data.At(i + 4) == 'I') && (data.At(i + 5) == 'T') && (data.At(i + 6) == 'Y') && (data.At(i + 7) == ' ')) {
+                if(data.SliceUnsafe(i, data.Length - i).StartsWith(Str_ENTITY)) {
+                    // ENTITY is
+                    // <!ENTITY aaa "123">
+                    // or
+                    // <!ENTITY bbb SYSTEM "file://foo.xml">
+                    //
+                    // The parser ignores external entity.
 
-                    // "<!ENTITY "
-                    i += 8;
+                    i += Str_ENTITY.Length;
+                    if(IsEmptyChar(data.At(i)) == false) { throw NewFormatException(data, i, "Invalid character."); }
+                    i++;
+                    {
+                        var pos = i;
+                        if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed."); }
+                    }
 
                     var entityNameStart = i;
                     if(SkipToEmpty(data, ref i) == false) {
@@ -469,19 +461,19 @@ namespace U8Xml
                     }
 
                     var quote = data.At(i);
-                    if(quote != '"' && quote != '\'') { throw NewFormatException(data, i, $"Invalid character. expected ''' or '\"', actual: '{(char)quote}'."); }
-                    i++;
-                    var k = i;
-                    while(true) {
+                    if(quote == '"' || quote == '\'') {
                         i++;
-                        if(i >= data.Length) { throw NewFormatException(data, k, "Unexpected end of xml. ENTITY is not closed."); }
-                        var q = data.At(i);
-                        if(q == quote) { break; }
+                        var k = i;
+                        while(true) {
+                            i++;
+                            if(i >= data.Length) { throw NewFormatException(data, k, "Unexpected end of xml. ENTITY is not closed."); }
+                            var q = data.At(i);
+                            if(q == quote) { break; }
+                        }
+                        var value = data.SliceUnsafe(k, i - k);
+                        i++;
+                        list.Add(name, value);
                     }
-                    var value = data.SliceUnsafe(k, i - k);
-                    i++;
-                    list.Add(name, value);
-
                     {
                         var pos = i;
                         if(SkipUntil((byte)'>', data, ref i) == false) {
@@ -501,35 +493,6 @@ namespace U8Xml
                 }
             }
 
-            docType->InternalSubset = data.Slice(contentStart, i - contentStart - 1);
-            {
-                var pos = i;
-                if(SkipUntil((byte)'>', data, ref i) == false) {
-                    throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed.");
-                }
-            }
-            docType->Body = data.Slice(bodyStart, i - bodyStart);
-
-            if(list.Count == 0) {
-                return true;
-            }
-
-            entities = RawStringTable.Create(list.Count);
-            for(int l = 0; l < list.Count; l++) {
-                ref readonly var item = ref list[l];
-
-                // An entity can refer to another entity that was defined before it.
-                if(ContainsAlias(item.Value, out var alias)) {
-                    if(entities.TryGetValue(alias, out _) == false) {
-                        int offset = checked((int)(uint)(alias.GetPtr() - data.GetPtr()));
-                        throw NewFormatException(data, offset, "Alias can not be resolved.");
-                    }
-                }
-
-                // Ignore the entity if the key is duplicated.
-                entities.TryAdd(item.Key, item.Value);
-            }
-            return true;
 
             static bool SkipUntil(byte ascii, RawString data, ref int i)
             {
@@ -553,6 +516,48 @@ namespace U8Xml
                 }
                 return true;
             }
+        }
+
+        private static void ParseDtdInternalSubset(RawString data, ref int i, ref RawStringTable entities, out RawString internalSubset)
+        {
+            var contentStart = i;
+            var list = default(RawStringPairList);
+            try {
+                ParseDtd(data, ref i, ref list);
+                internalSubset = data.Slice(contentStart, i - contentStart - 1);
+
+                {
+                    var pos = i;
+                    while(true) {
+                        if(i >= data.Length) { throw NewFormatException(data, pos, "Unexpected end of xml. DOCTYPE is not closed."); }
+                        if(data.At(i++) == '>') { break; }
+                    }
+                }
+
+                if(list.Count == 0) {
+                    return;
+                }
+
+                entities = RawStringTable.Create(list.Count);
+                for(int l = 0; l < list.Count; l++) {
+                    ref readonly var item = ref list[l];
+
+                    // An entity can refer to another entity that was defined before it.
+                    if(ContainsAlias(item.Value, out var alias)) {
+                        if(entities.TryGetValue(alias, out _) == false) {
+                            int offset = checked((int)(uint)(alias.GetPtr() - data.GetPtr()));
+                            throw NewFormatException(data, offset, "Alias can not be resolved.");
+                        }
+                    }
+
+                    // Ignore the entity if the key is duplicated.
+                    entities.TryAdd(item.Key, item.Value);
+                }
+                return;
+            }
+            finally {
+                list.Dispose();
+            }
 
             static bool ContainsAlias(RawString str, out RawString alias)
             {
@@ -569,6 +574,204 @@ namespace U8Xml
                 }
                 alias = RawString.Empty;
                 return false;
+            }
+        }
+
+        private static bool TryParseDocType(RawString data, ref int i, bool hasNode, OptionalNodeList optional, ref RawStringTable entities)
+        {
+            // Returns false if not DOCTYPE node.
+
+            // data[i] is the next char of "<!"
+
+            // ------------------------------------------
+            // DOCTYPE has three types.
+            // 
+            // 1) internal
+            // <!DOCTYPE rootname [...]>
+            // or
+            // <!DOCTYPE rootname[...]>
+            //
+            // 2) external (SYSTEM)
+            // <!DOCTYPE rootname SYSTEM "http://github.com/ikorin24/foo.dtd">
+            //
+            // 3) external (PUBLIC)
+            // <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN" "http://www.w3.org/MarkUp/Wilbur/HTML32.DTD">
+
+            ReadOnlySpan<byte> Str_DOCTYPE = stackalloc byte[] { (byte)'D', (byte)'O', (byte)'C', (byte)'T', (byte)'Y', (byte)'P', (byte)'E' };
+            ReadOnlySpan<byte> Str_SYSTEM = stackalloc byte[] { (byte)'S', (byte)'Y', (byte)'S', (byte)'T', (byte)'E', (byte)'M', };
+            ReadOnlySpan<byte> Str_PUBLIC = stackalloc byte[] { (byte)'P', (byte)'U', (byte)'B', (byte)'L', (byte)'I', (byte)'C' };
+
+            // <!DOCTYPE rootname
+            // |
+            // `--> data[bodyStart]
+            var bodyStart = i - 2;
+
+            if(data.SliceUnsafe(i, data.Length - i).StartsWith(Str_DOCTYPE) == false) {
+                // The node is not DOCTYPE
+                return false;
+            }
+            {
+                var j = i + Str_DOCTYPE.Length;
+                if(j >= data.Length || IsEmptyChar(data.At(j)) == false) {
+                    // The node is not DOCTYPE
+                    return false;
+                }
+                i += Str_DOCTYPE.Length + 1;
+                if(SkipEmpty(data, ref i) == false) {
+                    throw NewFormatException(data, j, "Failed to parse DOCTYPE.");
+                }
+            }
+
+            if(hasNode) {
+                throw NewFormatException(data, i - 2, "DTD must be defined before the document root element.");
+            }
+            if(optional.DocumentType->Body.IsEmpty == false) {
+                throw NewFormatException(data, i - 2, "Cannot have multiple DTDs.");
+            }
+
+            var docType = optional.DocumentType;
+            if(SkipEmpty(data, ref i) == false) {
+                throw NewFormatException(data, bodyStart, "Failed to parse DOCTYPE.");
+            }
+
+            // <!DOCTYPE rootname
+            //           |
+            //           `--> data[nameStart]
+            var nameStart = i;
+            Debug.Assert(IsEmptyChar(data[nameStart]) == false);
+            i++;
+
+            while(true) {
+                if(i >= data.Length) {
+                    throw NewFormatException(data, bodyStart, "Unexpected end of xml. Failed to parse DOCTYPE.");
+                }
+                var c = data.At(i++);
+                if(c == '[') {
+                    // <!DOCTYPE rootname[...]>
+                    var name = data.Slice(nameStart, i - 1 - nameStart);
+                    Debug.Assert(name.Length > 0);
+                    docType->Name = name;
+                    ParseDtdInternalSubset(data, ref i, ref entities, out docType->InternalSubset);
+                    docType->Body = data.Slice(bodyStart, i - bodyStart);
+                    return true;
+                }
+                else if(IsEmptyChar(c)) {
+                    var name = data.Slice(nameStart, i - 1 - nameStart);
+                    Debug.Assert(name.Length > 0);
+                    docType->Name = name;
+                    if(SkipEmpty(data, ref i) == false) {
+                        throw NewFormatException(data, nameStart + name.Length, "Unexpected end of xml. Failed to parse DOCTYPE.");
+                    }
+                    if(data.At(i) == '[') {
+                        // <!DOCTYPE rootname [...]>
+                        i++;
+                        ParseDtdInternalSubset(data, ref i, ref entities, out docType->InternalSubset);
+                        docType->Body = data.Slice(bodyStart, i - bodyStart);
+                        return true;
+                    }
+                    var identifierStart = i;
+                    i++;
+                    while(true) {
+                        if(i >= data.Length) {
+                            throw NewFormatException(data, identifierStart, "Unexpected end of xml. Failed to parse DOCTYPE.");
+                        }
+                        if(IsEmptyChar(data.At(i++))) {
+                            break;
+                        }
+                    }
+                    var identifier = data.SliceUnsafe(identifierStart, i - 1 - identifierStart);
+                    if(identifier == Str_SYSTEM) {
+                        // <!DOCTYPE rootname SYSTEM "...">
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
+                        RawString uri;
+                        {
+                            var pos = i;
+                            if(ReadQuotedString(data, ref i, out uri) == false) { throw NewFormatException(data, pos, "Failed to parse DOCTYPE."); }
+                        }
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
+                        if(i >= data.Length || data.At(i++) != '>') { throw NewFormatException(data, i, "Unexpected end of xml. DOCTYPE is not closed."); }
+
+                        var body = data.SliceUnsafe(bodyStart, i - bodyStart);
+                        docType->Body = body;
+#if DEBUG && !IS_UNITY
+                        Debug.WriteLine($"External DTD; type: SYSTEM, name: {name}, uri: {uri}");
+                        Debug.WriteLine(body);
+#endif
+                        return true;
+                    }
+                    else if(identifier == Str_PUBLIC) {
+                        // <!DOCTYPE rootnode PUBLIC "..." "...">
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
+                        RawString publicIdentifier;
+                        RawString uri;
+                        {
+                            var pos = i;
+                            if(ReadQuotedString(data, ref i, out publicIdentifier) == false) { throw NewFormatException(data, pos, "Failed to parse DOCTYPE."); }
+                        }
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
+                        {
+                            var pos = i;
+                            if(ReadQuotedString(data, ref i, out uri) == false) { throw NewFormatException(data, pos, "Failed to parse DOCTYPE."); }
+                        }
+                        {
+                            var pos = i;
+                            if(SkipEmpty(data, ref i) == false) { throw NewFormatException(data, pos, "Unexpected end of xml. Failed to parse DOCTYPE."); }
+                        }
+                        if(i >= data.Length || data.At(i++) != '>') { throw NewFormatException(data, i, "Unexpected end of xml. DOCTYPE is not closed."); }
+
+                        var body = data.SliceUnsafe(bodyStart, i - bodyStart);
+                        docType->Body = body;
+#if DEBUG && !IS_UNITY
+                        Debug.WriteLine($"External DTD; type: PUBLIC, name: {name}, identifier: {publicIdentifier}, uri: {uri}");
+                        Debug.WriteLine(body);
+#endif
+                        return true;
+                    }
+                    else {
+                        throw NewFormatException(data, i, $"DTD identifier type must be 'SYSTEM' or 'PUBLIC. The identifier is '{identifier}'");
+                    }
+                }
+            }
+
+            static bool ReadQuotedString(RawString data, ref int i, out RawString value)
+            {
+                if(i >= data.Length) {
+                    value = RawString.Empty;
+                    return false;
+                }
+                var quote = data.At(i++);
+                if(quote != '"' && quote != '\'') {
+                    value = RawString.Empty;
+                    return false;
+                }
+
+                // "foo"
+                // |
+                // `--> data[i]
+
+                var start = i;
+                while(true) {
+                    if(i >= data.Length) {
+                        value = RawString.Empty;
+                        return false;
+                    }
+                    if(data.At(i++) == quote) {
+                        value = data.SliceUnsafe(start, i - 1 - start);
+                        return true;
+                    }
+                }
             }
         }
 
