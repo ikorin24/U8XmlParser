@@ -10,11 +10,11 @@
     <Authors>ikorin24</Authors>
     <Company>ikorin24</Company>
     <Description>High performance C# xml parser</Description>
-    <Copyright>Copyright © 2021 ikorin24</Copyright>
+    <Copyright>Copyright © 2022 ikorin24</Copyright>
     <RepositoryUrl>https://github.com/ikorin24/U8XmlParser.git</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryType>git</RepositoryType>
-    <Version>1.5.0</Version>
+    <Version>1.6.0</Version>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
