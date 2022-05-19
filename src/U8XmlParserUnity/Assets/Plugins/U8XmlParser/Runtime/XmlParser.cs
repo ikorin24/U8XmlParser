@@ -263,7 +263,10 @@ namespace U8Xml
                 // Must be '<', otherwise error.
                 if(data.At(i) == '<') {
                     if(nodeStack.Count == 0 && store.NodeCount > 0) {
-                        throw NewFormatException(data, i, "Xml does not have multiple root nodes.");
+                        var isComment = (i + 3 < data.Length) && (data.At(i + 1) == '!') && (data.At(i + 2) == '-') && (data.At(i + 3) == '-');
+                        if(!isComment) {
+                            throw NewFormatException(data, i, "Xml does not have multiple root nodes.");
+                        }
                     }
                     if(i + 1 < data.Length && data.At(i + 1) == '/') {
                         i += 2;
