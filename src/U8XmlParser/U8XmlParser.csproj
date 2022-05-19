@@ -14,7 +14,7 @@
     <RepositoryUrl>https://github.com/ikorin24/U8XmlParser.git</RepositoryUrl>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryType>git</RepositoryType>
-    <Version>1.6.0</Version>
+    <Version>1.6.1</Version>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
